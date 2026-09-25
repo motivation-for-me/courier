@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=JetBrains+Mono:wght@100..900&display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100vw;margin:0;padding:0;}body{overscroll-behavior:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "on-tertiary-fixed-variant": "#004b73", "on-secondary-fixed-variant": "#3f465c", "on-tertiary": "#ffffff", "error": "#ba1a1a", "surface-container-highest": "#d3e4fe", "on-error-container": "#93000a", "on-secondary": "#ffffff", "error-container": "#ffdad6", "secondary-container": "#dae2fd", "on-tertiary-fixed": "#001d31", "surface": "#f8f9ff", "primary": "#a33900", "surface-container": "#e5eeff", "on-primary-fixed": "#370e00", "on-secondary-container": "#5c647a", "tertiary-container": "#007bb9", "inverse-primary": "#ffb599", "on-primary-fixed-variant": "#7f2b00", "on-secondary-fixed": "#131b2e", "on-surface": "#0b1c30", "secondary-fixed-dim": "#bec6e0", "surface-container-lowest": "#ffffff", "surface-container-high": "#dce9ff", "surface-dim": "#cbdbf5", "on-background": "#0b1c30", "on-error": "#ffffff", "on-tertiary-container": "#fdfcff", "outline-variant": "#e2bfb2", "surface-tint": "#a73a00", "secondary": "#565e74", "primary-fixed-dim": "#ffb599", "surface-container-low": "#eff4ff", "secondary-fixed": "#dae2fd", "tertiary": "#006194", "tertiary-fixed-dim": "#93ccff", "outline": "#8e7166", "tertiary-fixed": "#cce5ff", "on-surface-variant": "#5a4138", "inverse-surface": "#213145", "surface-variant": "#d3e4fe", "primary-fixed": "#ffdbce", "on-primary": "#ffffff", "background": "#f8f9ff", "inverse-on-surface": "#eaf1ff", "on-primary-container": "#fffbff", "surface-bright": "#f8f9ff", "primary-container": "#cc4900" }, "borderRadius": { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" }, "spacing": { "space-xl": "1rem", "space-md": "0.5rem", "space-2xl": "1.5rem", "gutter-lg": "1rem", "space-sm": "0.375rem", "gutter": "0.75rem", "space-2xs": "0.125rem", "space-xs": "0.25rem", "margin-lg": "1.5rem", "space-lg": "0.75rem", "margin": "1rem" }, "fontFamily": { "body-dense": ["Inter"], "label-mono-sm": ["JetBrains Mono"], "headline-sm": ["Inter"], "headline-lg": ["Inter"], "display": ["Inter"], "body-default": ["Inter"], "label-mono-bold": ["JetBrains Mono"], "caption": ["Inter"], "title-md": ["Inter"] }, "fontSize": { "body-dense": ["12px", { "lineHeight": "16px", "letterSpacing": "0em", "fontWeight": "400" }], "label-mono-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.02em", "fontWeight": "500" }], "headline-sm": ["18px", { "lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600" }], "display": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "body-default": ["13px", { "lineHeight": "18px", "letterSpacing": "0em", "fontWeight": "400" }], "label-mono-bold": ["12px", { "lineHeight": "16px", "letterSpacing": "0.04em", "fontWeight": "700" }], "caption": ["11px", { "lineHeight": "14px", "letterSpacing": "0.01em", "fontWeight": "500" }], "title-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "600" }] } } } };</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface font-body-default text-body-default text-on-surface flex flex-col min-h-screen"><header class="fixed top-0 w-full z-50 bg-surface/85 backdrop-blur-xl pt-safe shadow-[0_1px_8px_rgba(11,28,48,0.05)]"><div class="h-16 px-gutter flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-sm min-w-0"><img alt="SwiftLog Courier Brand Logo" class="h-8 w-auto object-contain flex-shrink-0" src="https://lh3.googleusercontent.com/aida/AEtjO1XHRNdw7WrWsb9fREtr_T2bEhBOKnjXCH9IZ9tMZavj1_ogMhXlyoTmDpyWYh--sOZQqrxn2KWNpIbYurh_Dgu0Wz30hGciiZMKfgYO0ebesmhs2YUret8c9tT6I-WFEI8urMWoZkS2SOnbx5X97HlQAyDx1-B3NJ24uhr3vxxioMSpc_PsGmVGyhKC8SYbLc_IEuvbU8maAvVJx4Thr0KjuH0Y7Z_S8yNC56KP0yu8hgZb9vmTSm8XiLfq"/><div class="flex flex-col min-w-0"><div class="flex items-center gap-space-xs"><span class="w-2 h-2 rounded-full bg-primary animate-pulse flex-shrink-0"></span><span class="font-label-mono-bold text-label-mono-bold text-on-surface truncate uppercase">Central Hub DXB-01</span></div><span class="font-caption text-caption text-secondary truncate">Dashboard</span></div></div><div class="flex items-center gap-space-xs flex-shrink-0"><button class="min-w-[44px] min-h-[44px] w-11 h-11 flex items-center justify-center rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface transition-colors" type="button"><span class="material-symbols-outlined text-[20px]">barcode_scanner</span></button><button class="relative min-w-[44px] min-h-[44px] w-11 h-11 flex items-center justify-center rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface transition-colors" type="button"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-2 right-2 w-4 h-4 rounded-full bg-primary text-on-primary font-label-mono-sm text-[10px] flex items-center justify-center leading-none">3</span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="flex-1 flex flex-col relative w-full pt-16 pb-20 bg-surface"><div class="flex flex-col w-full px-gutter py-space-sm space-y-space-md">
+<!-- Hub Context & Quick Switcher -->
+<div class="flex items-center justify-between gap-space-xs bg-surface-container-low px-space-md py-space-xs rounded-xl shadow-sm">
+<div class="flex items-center gap-space-xs min-w-0">
+<span class="material-symbols-outlined text-[16px] text-primary flex-shrink-0">storefront</span>
+<span class="font-label-mono-bold text-label-mono-bold text-on-surface truncate">Hub DXB-04 • Central Logistics</span>
+</div>
+<button class="min-h-[32px] px-space-sm py-space-2xs bg-surface-container-highest hover:bg-secondary-container text-on-secondary-fixed text-caption font-caption rounded-lg flex items-center gap-space-2xs flex-shrink-0 transition-colors" type="button">
+<span>Switch</span>
+<span class="material-symbols-outlined text-[14px]">expand_more</span>
+</button>
+</div>
+<!-- Action Scan & Global Search Bar -->
+<div class="flex items-center gap-space-xs">
+<div class="relative flex-1 min-w-0 bg-surface-container-lowest rounded-xl shadow-sm flex items-center">
+<span class="material-symbols-outlined text-[18px] text-secondary ml-space-sm flex-shrink-0">search</span>
+<input class="w-full bg-transparent py-space-sm px-space-xs text-body-dense font-body-dense text-on-surface placeholder:text-secondary focus:outline-none min-w-0" placeholder="Search CN, manifest, rider phone..." type="text"/>
+<button class="w-8 h-8 flex items-center justify-center text-primary hover:bg-surface-container-low rounded-lg mr-space-2xs transition-transform active:scale-95" title="Barcode Scan" type="button">
+<span class="material-symbols-outlined text-[20px]">barcode_scanner</span>
+</button>
+</div>
+<button class="w-10 h-10 flex items-center justify-center bg-surface-container-lowest hover:bg-surface-container text-secondary rounded-xl shadow-sm flex-shrink-0 transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">mic</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center bg-surface-container-lowest hover:bg-surface-container text-secondary rounded-xl shadow-sm flex-shrink-0 transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">tune</span>
+</button>
+</div>
+<!-- Operational Quick Actions Pill Slider -->
+<div class="flex items-center gap-space-xs overflow-x-auto no-scrollbar -mx-gutter px-gutter py-space-2xs">
+<button class="h-8 px-space-md bg-primary hover:bg-primary-container text-on-primary font-caption text-caption rounded-full flex items-center gap-space-xs flex-shrink-0 shadow-sm transition-transform active:scale-95" type="button">
+<span class="material-symbols-outlined text-[16px]">add_circle</span>
+<span>New Booking</span>
+</button>
+<button class="h-8 px-space-md bg-inverse-surface hover:bg-on-background text-inverse-on-surface font-caption text-caption rounded-full flex items-center gap-space-xs flex-shrink-0 shadow-sm transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">local_shipping</span>
+<span>Manifest Dispatch</span>
+</button>
+<button class="h-8 px-space-md bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-caption text-caption rounded-full flex items-center gap-space-xs flex-shrink-0 shadow-sm transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">input</span>
+<span>Inbound Scan</span>
+</button>
+<button class="h-8 px-space-md bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-caption text-caption rounded-full flex items-center gap-space-xs flex-shrink-0 shadow-sm transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">group_add</span>
+<span>Rider Allocation</span>
+</button>
+</div>
+<!-- Real-time Operations KPI 2x2 Dense Grid -->
+<div class="grid grid-cols-2 gap-space-xs">
+<!-- Total Active -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col justify-between space-y-space-xs">
+<div class="flex items-center justify-between">
+<span class="font-caption text-caption text-secondary">Total Active CNs</span>
+<span class="w-6 h-6 rounded-md bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[14px]">package_2</span>
+</span>
+</div>
+<div>
+<div class="font-label-mono-bold text-headline-sm text-on-surface">4,892</div>
+<div class="flex items-center gap-space-2xs text-[11px] font-label-mono-sm text-tertiary">
+<span class="material-symbols-outlined text-[13px]">trending_up</span>
+<span>+12.4% vs yday</span>
+</div>
+</div>
+</div>
+<!-- Out for Delivery -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col justify-between space-y-space-xs">
+<div class="flex items-center justify-between">
+<span class="font-caption text-caption text-secondary">Out for Delivery</span>
+<span class="w-6 h-6 rounded-md bg-secondary-container flex items-center justify-center text-on-secondary-fixed">
+<span class="material-symbols-outlined text-[14px]">sports_motorsports</span>
+</span>
+</div>
+<div>
+<div class="font-label-mono-bold text-headline-sm text-on-surface">1,420</div>
+<div class="flex items-center gap-space-2xs">
+<span class="bg-secondary-container text-on-secondary-container font-label-mono-sm text-[10px] px-space-xs py-space-2xs rounded">88% on schedule</span>
+</div>
+</div>
+</div>
+<!-- Failed Attempts (High Priority) -->
+<div class="bg-error-container p-space-md rounded-xl shadow-sm flex flex-col justify-between space-y-space-xs">
+<div class="flex items-center justify-between">
+<span class="font-caption text-caption text-on-error-container">Failed Delivery</span>
+<span class="w-6 h-6 rounded-md bg-error text-on-error flex items-center justify-center">
+<span class="material-symbols-outlined text-[14px]">warning</span>
+</span>
+</div>
+<div>
+<div class="font-label-mono-bold text-headline-sm text-on-error-container">48</div>
+<div class="flex items-center gap-space-2xs">
+<span class="bg-error text-on-error font-label-mono-bold text-[10px] uppercase px-space-xs py-space-2xs rounded">Action Needed</span>
+</div>
+</div>
+</div>
+<!-- COD Pending -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col justify-between space-y-space-xs">
+<div class="flex items-center justify-between">
+<span class="font-caption text-caption text-secondary">COD Pending Hub</span>
+<span class="w-6 h-6 rounded-md bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[14px]">payments</span>
+</span>
+</div>
+<div>
+<div class="font-label-mono-bold text-headline-sm text-on-surface">$38,450</div>
+<div class="font-label-mono-sm text-caption text-secondary">142 consignments</div>
+</div>
+</div>
+</div>
+<!-- Live Funnel Metric Strip -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm space-y-space-xs">
+<div class="flex items-center justify-between">
+<span class="font-title-md text-title-md text-on-surface">Hub Dispatch Funnel</span>
+<span class="font-label-mono-sm text-caption text-secondary">Live Auto-Sync</span>
+</div>
+<!-- Mini Multi-segment Bar -->
+<div class="w-full h-2 rounded-full overflow-hidden flex bg-surface-container">
+<div class="h-full bg-secondary" style="width: 14%;" title="Booked"></div>
+<div class="h-full bg-tertiary" style="width: 38%;" title="In Transit"></div>
+<div class="h-full bg-primary" style="width: 29%;" title="Out for Delivery"></div>
+<div class="h-full bg-on-tertiary-fixed-variant" style="width: 18%;" title="Delivered"></div>
+<div class="h-full bg-error" style="width: 2%;" title="RTO/Exception"></div>
+</div>
+<div class="flex items-center justify-between gap-space-2xs overflow-x-auto no-scrollbar pt-space-xs text-center">
+<div class="flex-1 min-w-[58px] p-space-2xs rounded bg-surface-container-low">
+<div class="font-label-mono-bold text-caption text-secondary">680</div>
+<div class="font-caption text-[10px] text-secondary truncate">Booked</div>
+</div>
+<div class="flex-1 min-w-[58px] p-space-2xs rounded bg-surface-container-low">
+<div class="font-label-mono-bold text-caption text-tertiary">1,840</div>
+<div class="font-caption text-[10px] text-secondary truncate">Transit</div>
+</div>
+<div class="flex-1 min-w-[58px] p-space-2xs rounded bg-surface-container-low">
+<div class="font-label-mono-bold text-caption text-primary">1,420</div>
+<div class="font-caption text-[10px] text-secondary truncate">OFD</div>
+</div>
+<div class="flex-1 min-w-[58px] p-space-2xs rounded bg-surface-container-low">
+<div class="font-label-mono-bold text-caption text-on-surface">890</div>
+<div class="font-caption text-[10px] text-secondary truncate">Delivered</div>
+</div>
+<div class="flex-1 min-w-[58px] p-space-2xs rounded bg-error-container">
+<div class="font-label-mono-bold text-caption text-on-error-container">62</div>
+<div class="font-caption text-[10px] text-on-error-container truncate">RTO/Exc</div>
+</div>
+</div>
+</div>
+<!-- Exception Alert Banner -->
+<div class="bg-surface-container-highest p-space-md rounded-xl shadow-sm relative overflow-hidden">
+<div class="flex items-start gap-space-sm">
+<div class="w-8 h-8 rounded-lg bg-error text-on-error flex items-center justify-center flex-shrink-0 mt-space-2xs">
+<span class="material-symbols-outlined text-[18px]">emergency_home</span>
+</div>
+<div class="flex-1 min-w-0 space-y-space-2xs">
+<div class="flex items-center justify-between gap-space-xs">
+<span class="font-title-md text-title-md text-on-surface">48 Delivery Failures Today</span>
+<span class="bg-error text-on-error font-label-mono-bold text-[10px] uppercase px-space-xs py-space-2xs rounded">Urgent</span>
+</div>
+<p class="font-body-dense text-body-dense text-secondary">
+          32 Unreachable, 11 Address Invalid, 5 Customer Refused. Review to re-dispatch or assign return manifest.
+        </p>
+<button class="inline-flex items-center gap-space-2xs text-primary hover:text-on-primary-fixed-variant font-label-mono-bold text-label-mono-bold pt-space-xs transition-colors" type="button">
+<span>Review Exceptions</span>
+<span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Real-Time Rider Fleet Status Snapshot -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm space-y-space-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[20px]">two_wheeler</span>
+<span class="font-title-md text-title-md text-on-surface">Fleet Deployment</span>
+</div>
+<span class="font-label-mono-sm text-caption text-secondary">42 Active Couriers</span>
+</div>
+<!-- Active Couriers visual badges -->
+<div class="grid grid-cols-3 gap-space-xs">
+<div class="bg-surface-container-low p-space-xs rounded-lg text-center">
+<span class="font-label-mono-bold text-caption text-on-surface">38</span>
+<span class="block font-caption text-[10px] text-secondary">En Route</span>
+</div>
+<div class="bg-surface-container-low p-space-xs rounded-lg text-center">
+<span class="font-label-mono-bold text-caption text-on-surface">4</span>
+<span class="block font-caption text-[10px] text-secondary">At Hub Bay</span>
+</div>
+<div class="bg-surface-container-low p-space-xs rounded-lg text-center">
+<span class="font-label-mono-bold text-caption text-primary">96.2%</span>
+<span class="block font-caption text-[10px] text-secondary">SLA Adherence</span>
+</div>
+</div>
+<!-- Daily Progress Metric -->
+<div class="space-y-space-2xs pt-space-2xs">
+<div class="flex justify-between items-center text-caption font-caption">
+<span class="text-secondary">Dispatched Deliveries Completed</span>
+<span class="font-label-mono-bold text-on-surface">890 / 2,310 (68%)</span>
+</div>
+<div class="w-full bg-surface-container h-2 rounded-full overflow-hidden">
+<div class="bg-primary h-full rounded-full transition-all duration-500" style="width: 68%;"></div>
+</div>
+</div>
+</div>
+<!-- Consignment Live Feed Table / Cards -->
+<div class="space-y-space-xs">
+<div class="flex items-center justify-between px-space-2xs">
+<div class="flex items-center gap-space-xs">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+<span class="font-title-md text-title-md text-on-surface">Live CN Feed</span>
+</div>
+<a class="font-caption text-caption text-primary font-bold" href="#">View All 4.8k</a>
+</div>
+<div class="space-y-space-xs">
+<!-- Item 1: Out for Delivery -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm space-y-space-xs">
+<div class="flex items-center justify-between gap-space-xs">
+<div class="flex items-center gap-space-xs min-w-0">
+<span class="font-label-mono-bold text-label-mono-bold text-on-surface truncate">CN-98234-DXB</span>
+<button class="text-secondary hover:text-on-surface transition-colors" title="Copy CN" type="button">
+<span class="material-symbols-outlined text-[14px]">content_copy</span>
+</button>
+</div>
+<span class="bg-surface-container-high text-primary font-label-mono-sm text-[10px] px-space-xs py-space-2xs rounded uppercase flex-shrink-0">Out for Delivery</span>
+</div>
+<div class="flex items-center justify-between text-body-dense font-body-dense text-secondary">
+<div class="truncate">
+<span class="text-on-surface font-medium">Sarah Jenkins</span> • Al Barsha 2
+          </div>
+<span class="font-label-mono-sm text-[11px] flex-shrink-0 text-secondary">2m ago</span>
+</div>
+<div class="flex items-center justify-between pt-space-2xs text-caption font-caption text-secondary bg-surface-container-low -mx-space-md -mb-space-md p-space-xs px-space-md rounded-b-xl">
+<span class="flex items-center gap-space-2xs">
+<span class="material-symbols-outlined text-[14px] text-tertiary">person</span>
+<span>Rider: Tariq M. (Van 14)</span>
+</span>
+<button class="text-primary font-bold flex items-center gap-space-2xs" type="button">
+<span class="material-symbols-outlined text-[14px]">call</span>
+<span>Call</span>
+</button>
+</div>
+</div>
+<!-- Item 2: Attempt Failed -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm space-y-space-xs">
+<div class="flex items-center justify-between gap-space-xs">
+<div class="flex items-center gap-space-xs min-w-0">
+<span class="font-label-mono-bold text-label-mono-bold text-on-surface truncate">CN-98231-AUH</span>
+<button class="text-secondary hover:text-on-surface transition-colors" title="Copy CN" type="button">
+<span class="material-symbols-outlined text-[14px]">content_copy</span>
+</button>
+</div>
+<span class="bg-error-container text-on-error-container font-label-mono-sm text-[10px] px-space-xs py-space-2xs rounded uppercase flex-shrink-0">Attempt Failed</span>
+</div>
+<div class="flex items-center justify-between text-body-dense font-body-dense text-secondary">
+<div class="truncate">
+<span class="text-on-surface font-medium">Omar Al-Fayed</span> • Yas Island W4
+          </div>
+<span class="font-label-mono-sm text-[11px] flex-shrink-0 text-secondary">8m ago</span>
+</div>
+<div class="flex items-center justify-between pt-space-2xs text-caption font-caption bg-surface-container-low -mx-space-md -mb-space-md p-space-xs px-space-md rounded-b-xl">
+<span class="text-error font-medium truncate">Reason: Customer Unreachable (Ring 3x)</span>
+<button class="text-primary font-bold flex items-center gap-space-2xs flex-shrink-0" type="button">
+<span>Re-Route</span>
+<span class="material-symbols-outlined text-[14px]">alt_route</span>
+</button>
+</div>
+</div>
+<!-- Item 3: Delivered with COD -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm space-y-space-xs">
+<div class="flex items-center justify-between gap-space-xs">
+<div class="flex items-center gap-space-xs min-w-0">
+<span class="font-label-mono-bold text-label-mono-bold text-on-surface truncate">CN-98229-SHJ</span>
+<button class="text-secondary hover:text-on-surface transition-colors" title="Copy CN" type="button">
+<span class="material-symbols-outlined text-[14px]">content_copy</span>
+</button>
+</div>
+<span class="bg-surface-container text-on-surface font-label-mono-sm text-[10px] px-space-xs py-space-2xs rounded uppercase flex-shrink-0">Delivered</span>
+</div>
+<div class="flex items-center justify-between text-body-dense font-body-dense text-secondary">
+<div class="truncate">
+<span class="text-on-surface font-medium">Layla Qasimi</span> • Al Nahda Tower
+          </div>
+<span class="font-label-mono-sm text-[11px] flex-shrink-0 text-secondary">14m ago</span>
+</div>
+<div class="flex items-center justify-between pt-space-2xs text-caption font-caption text-secondary bg-surface-container-low -mx-space-md -mb-space-md p-space-xs px-space-md rounded-b-xl">
+<span class="flex items-center gap-space-2xs text-on-surface font-medium">
+<span class="material-symbols-outlined text-[14px] text-tertiary">verified</span>
+<span>OTP Confirmed • COD $120.00 Collected</span>
+</span>
+<button class="text-secondary hover:text-on-surface font-bold" type="button">
+<span>Receipt</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Operational Hub Live Footnote -->
+<div class="py-space-xs text-center">
+<p class="font-label-mono-sm text-[10px] text-secondary">
+      DXB-04 TERMINAL GATEWAY • SERVER SYNC LATENCY: 24ms
+    </p>
+</div>
+</div></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface/90 backdrop-blur-xl shadow-[0_-2px_12px_rgba(11,28,48,0.06)]" data-active-classes="text-primary"><div class="h-16 px-space-xs flex items-center justify-between relative"><a aria-current="page" class="flex-1 min-h-[44px] flex flex-col items-center justify-center gap-space-2xs transition-colors text-primary" data-path="dashboard" href="#"><span class="material-symbols-outlined text-[22px]">dashboard</span><span class="font-caption text-caption">Dashboard</span></a><a class="flex-1 min-h-[44px] flex flex-col items-center justify-center gap-space-2xs text-secondary hover:text-on-surface transition-colors" data-path="shipments" href="#"><span class="material-symbols-outlined text-[22px]">inventory_2</span><span class="font-caption text-caption">Shipments</span></a><div class="flex-1 flex items-center justify-center -mt-5"><a class="min-w-[50px] min-h-[50px] w-12 h-12 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-[0_4px_12px_rgba(163,57,0,0.35)] hover:bg-primary-container transition-transform active:scale-95" data-path="quick-scan" href="#"><span class="material-symbols-outlined text-[26px]">qr_code_scanner</span></a></div><a class="flex-1 min-h-[44px] flex flex-col items-center justify-center gap-space-2xs text-secondary hover:text-on-surface transition-colors" data-path="dispatch-manifests" href="#"><span class="material-symbols-outlined text-[22px]">local_shipping</span><span class="font-caption text-caption">Dispatch</span></a><a class="flex-1 min-h-[44px] flex flex-col items-center justify-center gap-space-2xs text-secondary hover:text-on-surface transition-colors" data-path="more-settings" href="#"><span class="material-symbols-outlined text-[22px]">menu</span><span class="font-caption text-caption">More</span></a></div></nav></body></html>

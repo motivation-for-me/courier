@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"surface-container":"#e5eeff","background":"#f8f9ff","inverse-primary":"#ffb599","on-error-container":"#93000a","on-tertiary":"#ffffff","tertiary-container":"#007bb9","on-background":"#0b1c30","surface-container-high":"#dce9ff","inverse-on-surface":"#eaf1ff","error":"#ba1a1a","on-secondary-fixed-variant":"#3f465c","on-secondary-container":"#5c647a","on-secondary":"#ffffff","surface-container-low":"#eff4ff","secondary-fixed":"#dae2fd","on-primary-container":"#fffbff","outline-variant":"#e2bfb2","primary-container":"#cc4900","primary-fixed":"#ffdbce","primary-fixed-dim":"#ffb599","error-container":"#ffdad6","secondary-fixed-dim":"#bec6e0","secondary":"#565e74","surface-bright":"#f8f9ff","surface-container-highest":"#d3e4fe","on-secondary-fixed":"#131b2e","on-tertiary-container":"#fdfcff","on-error":"#ffffff","surface-tint":"#a73a00","on-tertiary-fixed-variant":"#004b73","tertiary":"#006194","on-primary-fixed":"#370e00","primary":"#a33900","on-tertiary-fixed":"#001d31","on-primary-fixed-variant":"#7f2b00","inverse-surface":"#213145","on-primary":"#ffffff","secondary-container":"#dae2fd","tertiary-fixed-dim":"#93ccff","on-surface-variant":"#5a4138","outline":"#8e7166","surface":"#f8f9ff","surface-container-lowest":"#ffffff","on-surface":"#0b1c30","tertiary-fixed":"#cce5ff","surface-dim":"#cbdbf5","surface-variant":"#d3e4fe"},borderRadius:{"DEFAULT":"0.125rem","lg":"0.25rem","xl":"0.5rem","full":"0.75rem"},spacing:{"space-2xs":"0.125rem","space-md":"0.5rem","space-2xl":"1.5rem","gutter-lg":"1rem","margin-lg":"1.5rem","space-xs":"0.25rem","space-sm":"0.375rem","space-xl":"1rem","margin":"1rem","gutter":"0.75rem","space-lg":"0.75rem"},fontFamily:{"display":["Inter"],"caption":["Inter"],"headline-lg":["Inter"],"headline-sm":["Inter"],"body-default":["Inter"],"title-md":["Inter"],"label-mono-sm":["JetBrains Mono"],"label-mono-bold":["JetBrains Mono"],"body-dense":["Inter"]},fontSize:{"display":["32px",{"lineHeight":"40px","letterSpacing":"-0.02em","fontWeight":"700"}],"caption":["11px",{"lineHeight":"14px","letterSpacing":"0.01em","fontWeight":"500"}],"headline-lg":["24px",{"lineHeight":"32px","letterSpacing":"-0.015em","fontWeight":"600"}],"headline-sm":["18px",{"lineHeight":"24px","letterSpacing":"-0.01em","fontWeight":"600"}],"body-default":["13px",{"lineHeight":"18px","letterSpacing":"0em","fontWeight":"400"}],"title-md":["14px",{"lineHeight":"20px","letterSpacing":"0em","fontWeight":"600"}],"label-mono-sm":["11px",{"lineHeight":"14px","letterSpacing":"0.02em","fontWeight":"500"}],"label-mono-bold":["12px",{"lineHeight":"16px","letterSpacing":"0.04em","fontWeight":"700"}],"body-dense":["12px",{"lineHeight":"16px","letterSpacing":"0em","fontWeight":"400"}]}}}};</script></head><body class="bg-surface font-body-default text-body-default text-on-surface antialiased"><aside class="fixed left-0 top-0 h-full w-64 bg-surface-container-lowest shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-50 flex flex-col justify-between overflow-hidden"><div class="flex flex-col h-full"><div class="h-14 px-margin flex items-center gap-space-md border-b border-surface-container-high bg-surface-container-lowest shrink-0"><img alt="Brand logo. - Primary color: #ea580c
+- Font: inter
+- Mode: light
+- Roundness: rounded-sm
+" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1UONCNqhbzQUVwfslFhAU-X64lTHnDNsPqHeRtLKLl1bmJU797R9WUEyZ8N7LjZoZjRWUXpQWCjfQFyAuyPO1klIGooThHLnI59FYtieBBhWHAApbReEYIIODnW7psJVH7rZwaCTdsxnEyr1sdE-z5D9nzUMuO8HYiGYxwLAUiuiRIKnxKupERmo5ktfoHEEEpBb8c6xg5bOq7t1eg3_5sXlXPvFVxKtwnEsXEYN9sZNAorF9bYfbGZFeoN"/><div class="flex flex-col min-w-0"><span class="font-title-md text-title-md text-on-surface font-semibold tracking-tight truncate leading-tight">SwiftLog OS</span><span class="font-label-mono-sm text-caption text-secondary tracking-wider uppercase">Dispatch Core</span></div></div><nav class="flex-1 overflow-y-auto px-space-md py-space-sm space-y-space-md" data-active-classes="bg-surface-container text-primary font-semibold"><div class="space-y-space-2xs"><span class="px-space-md font-label-mono-sm text-caption uppercase text-secondary tracking-wider">Dashboard</span><a class="flex items-center gap-space-md px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="operations-dashboard" href="#"><span class="material-symbols-outlined text-[18px]">speed</span><span class="font-body-dense text-body-dense">Operations</span></a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="branch-dashboard" href="#"><span class="material-symbols-outlined text-[18px]">store</span><span class="font-body-dense text-body-dense">Branch</span></a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="hub-dashboard" href="#"><span class="material-symbols-outlined text-[18px]">warehouse</span><span class="font-body-dense text-body-dense">Hub</span></a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="finance-dashboard" href="#"><span class="material-symbols-outlined text-[18px]">query_stats</span><span class="font-body-dense text-body-dense">Finance</span></a></div><div class="space-y-space-2xs"><span class="px-space-md font-label-mono-sm text-caption uppercase text-secondary tracking-wider">Operations</span><a class="flex items-center gap-space-md px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="consignments" href="#"><span class="material-symbols-outlined text-[18px]">inventory_2</span><span class="font-body-dense text-body-dense">Consignments</span></a><a aria-current="page" class="flex items-center gap-space-md px-space-md py-space-xs rounded transition-colors bg-surface-container text-primary font-semibold" data-path="booking" href="#"><span class="material-symbols-outlined text-[18px]">add_box</span><span class="font-body-dense text-body-dense">Booking</span></a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="pickup" href="#"><span class="material-symbols-outlined text-[18px]">outbox</span><span class="font-body-dense text-body-dense">Pickup</span></a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="tracking" href="#"><span class="material-symbols-outlined text-[18px]">near_me</span><span class="font-body-dense text-body-dense">Tracking</span></a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="manifests" href="#"><span class="material-symbols-outlined text-[18px]">receipt_long</span><span class="font-body-dense text-body-dense">Manifests</span></a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="transit" href="#"><span class="material-symbols-outlined text-[18px]">local_shipping</span><span class="font-body-dense text-body-dense">Transit</span></a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="delivery" href="#"><span class="material-symbols-outlined text-[18px]">done_all</span><span class="font-body-dense text-body-dense">Delivery</span></a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="returns" href="#"><span class="material-symbols-outlined text-[18px]">keyboard_return</span><span class="font-body-dense text-body-dense">Returns</span></a></div><div class="space-y-space-2xs"><span class="px-space-md font-label-mono-sm text-caption uppercase text-secondary tracking-wider">Network</span><a class="flex items-center gap-space-md px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="branches" href="#"><span class="material-symbols-outlined text-[18px]">domain</span><span class="font-body-dense text-body-dense">Branches</span></a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="hubs" href="#"><span class="material-symbols-outlined text-[18px]">hub</span><span class="font-body-dense text-body-dense">Hubs</span></a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="routes" href="#"><span class="material-symbols-outlined text-[18px]">alt_route</span><span class="font-body-dense text-body-dense">Routes</span></a></div><div class="space-y-space-2xs"><span class="px-space-md font-label-mono-sm text-caption uppercase text-secondary tracking-wider">People</span><a class="flex items-center gap-space-md px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="riders" href="#"><span class="material-symbols-outlined text-[18px]">two_wheeler</span><span class="font-body-dense text-body-dense">Riders</span></a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="customers" href="#"><span class="material-symbols-outlined text-[18px]">group</span><span class="font-body-dense text-body-dense">Customers</span></a></div><div class="space-y-space-2xs"><span class="px-space-md font-label-mono-sm text-caption uppercase text-secondary tracking-wider">Finance</span><a class="flex items-center gap-space-md px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="payments" href="#"><span class="material-symbols-outlined text-[18px]">account_balance_wallet</span><span class="font-body-dense text-body-dense">Payments</span></a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="cod" href="#"><span class="material-symbols-outlined text-[18px]">payments</span><span class="font-body-dense text-body-dense">COD</span></a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="settlements" href="#"><span class="material-symbols-outlined text-[18px]">request_quote</span><span class="font-body-dense text-body-dense">Settlements</span></a></div><div class="space-y-space-2xs"><span class="px-space-md font-label-mono-sm text-caption uppercase text-secondary tracking-wider">Reports</span><a class="flex items-center gap-space-md px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="reports-center" href="#"><span class="material-symbols-outlined text-[18px]">insert_chart</span><span class="font-body-dense text-body-dense">Reports Center</span></a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="documents" href="#"><span class="material-symbols-outlined text-[18px]">description</span><span class="font-body-dense text-body-dense">Documents</span></a></div><div class="space-y-space-2xs pb-space-lg"><span class="px-space-md font-label-mono-sm text-caption uppercase text-secondary tracking-wider">Administration</span><a class="flex items-center gap-space-md px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="users" href="#"><span class="material-symbols-outlined text-[18px]">manage_accounts</span><span class="font-body-dense text-body-dense">Users</span></a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="roles-permissions" href="#"><span class="material-symbols-outlined text-[18px]">admin_panel_settings</span><span class="font-body-dense text-body-dense">Roles &amp; Permissions</span></a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="audit-logs" href="#"><span class="material-symbols-outlined text-[18px]">history</span><span class="font-body-dense text-body-dense">Audit Logs</span></a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="settings" href="#"><span class="material-symbols-outlined text-[18px]">settings</span><span class="font-body-dense text-body-dense">Settings</span></a></div></nav><div class="p-space-md bg-surface-container-low border-t border-surface-container-high shrink-0"><div class="flex items-center justify-between text-secondary"><div class="flex items-center gap-space-xs"><span class="w-2 h-2 rounded-full bg-tertiary-container animate-pulse"></span><span class="font-label-mono-sm text-caption uppercase text-on-secondary-container">Cluster Node: DXB-01</span></div><span class="font-label-mono-sm text-caption text-secondary">v4.18.2</span></div></div></div></aside><div class="pl-64"><header class="fixed top-0 left-64 right-0 h-14 bg-surface-container-lowest/90 backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.04)] border-b border-surface-container-high z-40 flex items-center justify-between px-gutter-lg"><div class="flex items-center gap-space-lg flex-1 max-w-xl"><div class="relative w-full flex items-center"><span class="material-symbols-outlined absolute left-space-md text-secondary text-[18px]">barcode_scanner</span><input class="w-full h-8 pl-9 pr-14 bg-surface-container-low border border-surface-container-highest rounded text-on-surface font-label-mono-sm text-caption focus:outline-none focus:border-primary" placeholder="Scan AWB / Quick Search..." type="text"/><div class="absolute right-space-xs flex items-center gap-space-2xs bg-surface-container-lowest px-1.5 py-0.5 rounded border border-surface-container-high shadow-xs pointer-events-none"><span class="font-label-mono-sm text-caption text-secondary">⌘K</span></div></div></div><div class="flex items-center gap-space-lg"><div class="flex items-center gap-space-xs bg-surface-container-low border border-surface-container-highest px-space-md py-1 rounded"><span class="material-symbols-outlined text-primary text-[16px]">location_on</span><span class="font-label-mono-bold text-caption text-on-surface uppercase tracking-tight">Central Hub DXB-01</span><span class="px-1.5 py-0.2 bg-secondary-fixed text-on-secondary-fixed font-label-mono-sm text-[10px] rounded uppercase">Active</span></div><div class="flex items-center gap-space-xs"><span class="w-2 h-2 rounded-full bg-tertiary-container"></span><span class="font-caption text-caption text-secondary font-medium hidden sm:inline">Network Live</span></div><button class="relative p-1.5 text-secondary hover:text-on-surface hover:bg-surface-container-low rounded transition-colors"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full"></span></button><div class="h-5 w-[1px] bg-surface-container-high"></div><div class="flex items-center gap-space-sm pl-space-xs"><div class="flex flex-col text-right hidden md:block"><span class="font-title-md text-caption text-on-surface font-semibold leading-tight">S. Al-Maktoum</span><span class="font-label-mono-sm text-[10px] text-secondary tracking-wide uppercase leading-none">Dispatch Supervisor</span></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="w-full pt-14 bg-surface min-h-screen"><div class="flex flex-col w-full">
+<div class="w-full bg-surface-container-low px-gutter-lg py-space-sm flex flex-col gap-space-xs shadow-sm">
+<div class="flex items-center justify-between">
+<nav class="flex items-center gap-space-xs font-label-mono-sm text-caption text-secondary">
+<span class="hover:text-primary transition-colors cursor-pointer">Operations</span>
+<span class="text-secondary/60">/</span>
+<span class="hover:text-primary transition-colors cursor-pointer">Consignments</span>
+<span class="text-secondary/60">/</span>
+<span class="text-on-surface font-semibold">New Booking</span>
+</nav>
+<div class="flex items-center gap-space-md">
+<span class="inline-flex items-center gap-space-2xs bg-secondary-container text-on-secondary-fixed font-label-mono-sm text-caption px-space-md py-space-2xs rounded">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-ping"></span>
+          LIVE DOCKET
+        </span>
+<div class="flex items-center gap-space-xs bg-surface-container-lowest px-space-md py-space-2xs rounded shadow-sm text-secondary font-label-mono-sm text-caption">
+<span class="material-symbols-outlined text-[14px]">keyboard</span>
+<span>Tab: Next Field</span>
+<span class="text-secondary/40">|</span>
+<span class="font-semibold text-primary">Ctrl + Enter: Dispatch</span>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between flex-wrap gap-space-md pt-space-2xs">
+<div class="flex items-baseline gap-space-md">
+<h1 class="font-headline-sm text-headline-sm text-on-surface tracking-tight font-bold">Express Docket Intake</h1>
+<div class="flex items-center gap-space-xs bg-primary-fixed text-on-primary-fixed px-space-md py-space-2xs rounded">
+<span class="material-symbols-outlined text-[16px] text-primary">tag</span>
+<span class="font-label-mono-bold text-caption tracking-wider">CN-98455-DXB</span>
+<span class="font-caption text-[10px] bg-primary text-on-primary px-1 rounded uppercase tracking-widest font-semibold">Reserved</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm">
+<button class="h-8 px-space-md bg-surface-container text-secondary font-title-md text-caption rounded hover:bg-surface-container-high transition-colors flex items-center gap-space-2xs" type="button">
+<span class="material-symbols-outlined text-[16px]">history</span>
+<span>Recall Previous</span>
+</button>
+<button class="h-8 px-space-md bg-surface-container-highest text-on-surface font-title-md text-caption rounded hover:bg-surface-container transition-colors flex items-center gap-space-2xs" type="button">
+<span class="material-symbols-outlined text-[16px]">qr_code_scanner</span>
+<span>Bulk Inward</span>
+</button>
+</div>
+</div>
+</div>
+<div class="w-full bg-surface-container-lowest shadow-sm px-gutter-lg py-space-md">
+<div class="grid grid-cols-2 md:grid-cols-6 gap-space-xs">
+<div class="flex items-center gap-space-sm p-space-xs bg-surface-container-low rounded group transition-all">
+<div class="w-7 h-7 rounded bg-primary text-on-primary font-label-mono-bold text-caption flex items-center justify-center shrink-0">01</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-mono-bold text-caption text-primary uppercase leading-tight truncate">Sender</span>
+<span class="font-caption text-[10px] text-secondary truncate">Shipper DXB-01</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm p-space-xs bg-surface-container-lowest rounded group transition-all">
+<div class="w-7 h-7 rounded bg-secondary-fixed text-on-secondary-fixed font-label-mono-bold text-caption flex items-center justify-center shrink-0">02</div>
+<div class="flex flex-col min-w-0">
+<span class="font-title-md text-caption text-on-surface uppercase leading-tight truncate">Consignee</span>
+<span class="font-caption text-[10px] text-secondary truncate">Destination UAE</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm p-space-xs bg-surface-container-lowest rounded group transition-all">
+<div class="w-7 h-7 rounded bg-secondary-fixed text-on-secondary-fixed font-label-mono-bold text-caption flex items-center justify-center shrink-0">03</div>
+<div class="flex flex-col min-w-0">
+<span class="font-title-md text-caption text-on-surface uppercase leading-tight truncate">Service SLA</span>
+<span class="font-caption text-[10px] text-secondary truncate">Air / Express Line</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm p-space-xs bg-surface-container-lowest rounded group transition-all">
+<div class="w-7 h-7 rounded bg-secondary-fixed text-on-secondary-fixed font-label-mono-bold text-caption flex items-center justify-center shrink-0">04</div>
+<div class="flex flex-col min-w-0">
+<span class="font-title-md text-caption text-on-surface uppercase leading-tight truncate">Cargo Specs</span>
+<span class="font-caption text-[10px] text-secondary truncate">Dim &amp; Volumetric</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm p-space-xs bg-surface-container-lowest rounded group transition-all">
+<div class="w-7 h-7 rounded bg-secondary-fixed text-on-secondary-fixed font-label-mono-bold text-caption flex items-center justify-center shrink-0">05</div>
+<div class="flex flex-col min-w-0">
+<span class="font-title-md text-caption text-on-surface uppercase leading-tight truncate">Billing &amp; COD</span>
+<span class="font-caption text-[10px] text-secondary truncate">Terms &amp; Currency</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm p-space-xs bg-surface-container-lowest rounded group transition-all">
+<div class="w-7 h-7 rounded bg-secondary-fixed text-on-secondary-fixed font-label-mono-bold text-caption flex items-center justify-center shrink-0">06</div>
+<div class="flex flex-col min-w-0">
+<span class="font-title-md text-caption text-on-surface uppercase leading-tight truncate">Label Dispatch</span>
+<span class="font-caption text-[10px] text-secondary truncate">Thermal Auto-Print</span>
+</div>
+</div>
+</div>
+</div>
+<div class="p-gutter-lg grid grid-cols-1 lg:grid-cols-12 gap-gutter-lg items-start">
+<div class="lg:col-span-8 flex flex-col gap-space-lg">
+<div class="bg-surface-container-lowest p-space-lg rounded shadow-sm flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="w-1.5 h-4 bg-primary rounded-full"></span>
+<span class="font-label-mono-bold text-caption uppercase tracking-wider text-secondary">Section 01</span>
+<h2 class="font-title-md text-title-md text-on-surface font-bold pl-space-xs">Sender Profile &amp; Consignor Origin</h2>
+</div>
+<span class="font-label-mono-sm text-[11px] bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded font-semibold">Origin Hub: DXB-01 (Cargo Gate 4)</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-space-md">
+<div class="md:col-span-2 flex flex-col gap-space-2xs">
+<label class="font-label-mono-sm text-caption text-secondary flex items-center justify-between">
+<span>Account Master Search</span>
+<span class="text-primary font-caption text-[10px]">Autofill active</span>
+</label>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-space-md text-secondary text-[18px]">domain_verification</span>
+<input class="w-full h-8 pl-9 pr-space-md bg-surface-container-low rounded text-on-surface font-label-mono-sm text-caption focus:outline-none focus:bg-surface-container-lowest focus:shadow-[0_0_0_2px_#a33900]" type="text" value="ACC-89104 - Al Futtaim Logistics Prime"/>
+</div>
+</div>
+<div class="flex flex-col gap-space-2xs">
+<label class="font-label-mono-sm text-caption text-secondary">Account Tier / SLA</label>
+<div class="h-8 bg-surface-container-low px-space-md rounded flex items-center justify-between">
+<span class="font-label-mono-bold text-caption text-on-surface">PLATINUM-CORP</span>
+<span class="font-caption text-[10px] bg-tertiary text-on-tertiary px-1 rounded">Net 30</span>
+</div>
+</div>
+<div class="flex flex-col gap-space-2xs">
+<label class="font-label-mono-sm text-caption text-secondary">Company Entity</label>
+<input class="h-8 px-space-md bg-surface-container-low rounded text-on-surface font-body-default text-body-dense focus:outline-none focus:bg-surface-container-lowest focus:shadow-[0_0_0_2px_#a33900]" type="text" value="Al Futtaim Global Logistics LLC"/>
+</div>
+<div class="flex flex-col gap-space-2xs">
+<label class="font-label-mono-sm text-caption text-secondary">Shipper Contact Name</label>
+<input class="h-8 px-space-md bg-surface-container-low rounded text-on-surface font-body-default text-body-dense focus:outline-none focus:bg-surface-container-lowest focus:shadow-[0_0_0_2px_#a33900]" type="text" value="Rashid bin Tariq"/>
+</div>
+<div class="flex flex-col gap-space-2xs">
+<label class="font-label-mono-sm text-caption text-secondary">Origin Phone</label>
+<input class="h-8 px-space-md bg-surface-container-low rounded text-on-surface font-label-mono-sm text-caption focus:outline-none focus:bg-surface-container-lowest focus:shadow-[0_0_0_2px_#a33900]" type="text" value="+971 4 292 8811"/>
+</div>
+<div class="md:col-span-3 flex flex-col gap-space-2xs">
+<label class="font-label-mono-sm text-caption text-secondary">Warehouse Pickup Bay / Physical Location</label>
+<input class="h-8 px-space-md bg-surface-container-low rounded text-on-surface font-body-default text-body-dense focus:outline-none focus:bg-surface-container-lowest focus:shadow-[0_0_0_2px_#a33900]" type="text" value="Warehouse 14B, Al Quoz Industrial Area 3, Latifa bint Hamdan St, Dubai"/>
+</div>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-space-lg rounded shadow-sm flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="w-1.5 h-4 bg-tertiary rounded-full"></span>
+<span class="font-label-mono-bold text-caption uppercase tracking-wider text-secondary">Section 02</span>
+<h2 class="font-title-md text-title-md text-on-surface font-bold pl-space-xs">Consignee &amp; Last-Mile Dropoff Destination</h2>
+</div>
+<span class="font-label-mono-sm text-[11px] text-tertiary bg-tertiary-fixed px-2 py-0.5 rounded font-semibold">Destination Matrix: AUH Hub-02</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-space-md">
+<div class="flex flex-col gap-space-2xs">
+<label class="font-label-mono-sm text-caption text-secondary">Receiver Full Name *</label>
+<input class="h-8 px-space-md bg-surface-container-low rounded text-on-surface font-body-default text-body-dense focus:outline-none focus:bg-surface-container-lowest focus:shadow-[0_0_0_2px_#a33900]" placeholder="e.g. Tariq Mansoor" type="text" value="Khalfan Electronics Trading"/>
+</div>
+<div class="flex flex-col gap-space-2xs">
+<label class="font-label-mono-sm text-caption text-secondary">Mobile (+971 UAE) *</label>
+<div class="relative flex items-center">
+<span class="font-label-mono-bold text-caption text-secondary absolute left-space-md">+971</span>
+<input class="w-full h-8 pl-12 pr-space-md bg-surface-container-low rounded text-on-surface font-label-mono-sm text-caption focus:outline-none focus:bg-surface-container-lowest focus:shadow-[0_0_0_2px_#a33900]" placeholder="50 123 4567" type="text" value="55 892 4110"/>
+</div>
+</div>
+<div class="flex flex-col gap-space-2xs">
+<label class="font-label-mono-sm text-caption text-secondary">Alternate Contact / Tel</label>
+<input class="h-8 px-space-md bg-surface-container-low rounded text-on-surface font-label-mono-sm text-caption focus:outline-none focus:bg-surface-container-lowest focus:shadow-[0_0_0_2px_#a33900]" placeholder="Optional telephone" type="text"/>
+</div>
+<div class="md:col-span-2 flex flex-col gap-space-2xs">
+<label class="font-label-mono-sm text-caption text-secondary">Delivery Street &amp; Building Address *</label>
+<input class="h-8 px-space-md bg-surface-container-low rounded text-on-surface font-body-default text-body-dense focus:outline-none focus:bg-surface-container-lowest focus:shadow-[0_0_0_2px_#a33900]" type="text" value="Tower B, Office 602, Corniche Commercial Avenue"/>
+</div>
+<div class="flex flex-col gap-space-2xs">
+<label class="font-label-mono-sm text-caption text-secondary">Zone / Cluster *</label>
+<select class="h-8 px-space-md bg-surface-container-low rounded text-on-surface font-body-dense text-body-dense focus:outline-none focus:bg-surface-container-lowest focus:shadow-[0_0_0_2px_#a33900]">
+<option selected="">AUH-Z03 (Al Danah / Corniche)</option>
+<option>AUH-Z01 (Khalifa City)</option>
+<option>AUH-Z08 (Mussafah Industrial)</option>
+<option>DXB-Z04 (Downtown / Business Bay)</option>
+<option>SHJ-Z02 (Al Nahda Core)</option>
+</select>
+</div>
+<div class="flex flex-col gap-space-2xs">
+<label class="font-label-mono-sm text-caption text-secondary">Prominent Landmark</label>
+<input class="h-8 px-space-md bg-surface-container-low rounded text-on-surface font-body-default text-body-dense focus:outline-none focus:bg-surface-container-lowest focus:shadow-[0_0_0_2px_#a33900]" type="text" value="Opposite Landmark Plaza, behind Central Bank"/>
+</div>
+<div class="md:col-span-2 flex flex-col gap-space-2xs">
+<label class="font-label-mono-sm text-caption text-secondary">Driver Dispatch Notes / Gate Code</label>
+<input class="h-8 px-space-md bg-surface-container-low rounded text-on-surface font-body-default text-body-dense focus:outline-none focus:bg-surface-container-lowest focus:shadow-[0_0_0_2px_#a33900]" type="text" value="Ring security bell at loading dock. Cargo elevator accessible till 18:00."/>
+</div>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-space-lg rounded shadow-sm flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="w-1.5 h-4 bg-primary rounded-full"></span>
+<span class="font-label-mono-bold text-caption uppercase tracking-wider text-secondary">Section 03</span>
+<h2 class="font-title-md text-title-md text-on-surface font-bold pl-space-xs">Package &amp; Cargo Volumetrics</h2>
+</div>
+<div class="flex items-center gap-space-xs">
+<span class="font-label-mono-sm text-caption text-secondary">Volumetric Factor:</span>
+<span class="font-label-mono-bold text-caption bg-surface-container-high px-1.5 py-0.5 rounded text-on-surface">1 : 5000</span>
+</div>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-6 gap-space-md items-end">
+<div class="flex flex-col gap-space-2xs">
+<label class="font-label-mono-sm text-caption text-secondary">Colli Count</label>
+<input class="h-8 px-space-md bg-surface-container-low rounded text-on-surface font-label-mono-bold text-caption focus:outline-none focus:bg-surface-container-lowest focus:shadow-[0_0_0_2px_#a33900]" id="pkgCount" min="1" type="number" value="2"/>
+</div>
+<div class="flex flex-col gap-space-2xs">
+<label class="font-label-mono-sm text-caption text-secondary">Dead Wt (kg)</label>
+<input class="h-8 px-space-md bg-surface-container-low rounded text-on-surface font-label-mono-bold text-caption focus:outline-none focus:bg-surface-container-lowest focus:shadow-[0_0_0_2px_#a33900]" id="deadWeight" step="0.1" type="number" value="4.5"/>
+</div>
+<div class="flex flex-col gap-space-2xs">
+<label class="font-label-mono-sm text-caption text-secondary">L (cm)</label>
+<input class="h-8 px-space-md bg-surface-container-low rounded text-on-surface font-label-mono-bold text-caption focus:outline-none focus:bg-surface-container-lowest focus:shadow-[0_0_0_2px_#a33900]" id="dimL" type="number" value="42"/>
+</div>
+<div class="flex flex-col gap-space-2xs">
+<label class="font-label-mono-sm text-caption text-secondary">W (cm)</label>
+<input class="h-8 px-space-md bg-surface-container-low rounded text-on-surface font-label-mono-bold text-caption focus:outline-none focus:bg-surface-container-lowest focus:shadow-[0_0_0_2px_#a33900]" id="dimW" type="number" value="30"/>
+</div>
+<div class="flex flex-col gap-space-2xs">
+<label class="font-label-mono-sm text-caption text-secondary">H (cm)</label>
+<input class="h-8 px-space-md bg-surface-container-low rounded text-on-surface font-label-mono-bold text-caption focus:outline-none focus:bg-surface-container-lowest focus:shadow-[0_0_0_2px_#a33900]" id="dimH" type="number" value="25"/>
+</div>
+<div class="flex flex-col gap-space-2xs">
+<label class="font-label-mono-sm text-caption text-primary font-semibold">Chg. Wt (kg)</label>
+<div class="h-8 px-space-md bg-primary-fixed text-on-primary-fixed rounded flex items-center font-label-mono-bold text-title-md" id="chargeableWeight">
+              6.30 kg
+            </div>
+</div>
+</div>
+<div class="bg-surface-container-low p-space-md rounded flex items-center justify-between flex-wrap gap-space-md">
+<div class="flex items-center gap-space-xl">
+<label class="flex items-center gap-space-xs cursor-pointer select-none">
+<input class="w-4 h-4 rounded text-primary focus:ring-primary accent-primary" type="checkbox"/>
+<span class="font-title-md text-caption text-on-surface">Fragile / Sensitive Optics</span>
+</label>
+<label class="flex items-center gap-space-xs cursor-pointer select-none">
+<input class="w-4 h-4 rounded text-primary focus:ring-primary accent-primary" type="checkbox"/>
+<span class="font-title-md text-caption text-on-surface">Dangerous Goods (DG Lithium Class 9)</span>
+</label>
+<label class="flex items-center gap-space-xs cursor-pointer select-none">
+<input checked="" class="w-4 h-4 rounded text-primary focus:ring-primary accent-primary" type="checkbox"/>
+<span class="font-title-md text-caption text-on-surface">Stackable Unit</span>
+</label>
+</div>
+<div class="font-label-mono-sm text-[11px] text-secondary">
+            CBM: <span class="text-on-surface font-semibold" id="cbmVal">0.0315 m³</span>
+</div>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-space-lg rounded shadow-sm flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="w-1.5 h-4 bg-tertiary-container rounded-full"></span>
+<span class="font-label-mono-bold text-caption uppercase tracking-wider text-secondary">Section 04</span>
+<h2 class="font-title-md text-title-md text-on-surface font-bold pl-space-xs">Service Level &amp; Payment Terms</h2>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-space-md">
+<div class="flex flex-col gap-space-2xs cursor-pointer p-space-md rounded bg-surface-container-low border-2 border-primary transition-all">
+<div class="flex items-center justify-between">
+<span class="font-label-mono-bold text-caption text-primary">EXPRESS SAME-DAY</span>
+<span class="material-symbols-outlined text-primary text-[18px]">bolt</span>
+</div>
+<span class="font-caption text-caption text-secondary">Guaranteed delivery by 20:00 within UAE metro.</span>
+<div class="pt-space-xs font-label-mono-bold text-title-md text-on-surface">AED 45.00 <span class="font-caption text-[10px] text-secondary font-normal">base</span></div>
+</div>
+<div class="flex flex-col gap-space-2xs cursor-pointer p-space-md rounded bg-surface-container-lowest hover:bg-surface-container-low transition-all">
+<div class="flex items-center justify-between">
+<span class="font-label-mono-bold text-caption text-on-surface">STANDARD NEXT-DAY</span>
+<span class="material-symbols-outlined text-secondary text-[18px]">schedule</span>
+</div>
+<span class="font-caption text-caption text-secondary">Economy hub line-haul delivery under 24 hours.</span>
+<div class="pt-space-xs font-label-mono-bold text-title-md text-on-surface">AED 25.00 <span class="font-caption text-[10px] text-secondary font-normal">base</span></div>
+</div>
+<div class="flex flex-col gap-space-2xs cursor-pointer p-space-md rounded bg-surface-container-lowest hover:bg-surface-container-low transition-all">
+<div class="flex items-center justify-between">
+<span class="font-label-mono-bold text-caption text-tertiary">COLD CHAIN (+4°C)</span>
+<span class="material-symbols-outlined text-tertiary text-[18px]">ac_unit</span>
+</div>
+<span class="font-caption text-caption text-secondary">Refrigerated pharma/perishable certified transit.</span>
+<div class="pt-space-xs font-label-mono-bold text-title-md text-on-surface">AED 85.00 <span class="font-caption text-[10px] text-secondary font-normal">base</span></div>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-space-md pt-space-xs">
+<div class="flex flex-col gap-space-2xs">
+<label class="font-label-mono-sm text-caption text-secondary">Billing Term *</label>
+<select class="h-8 px-space-md bg-surface-container-low rounded text-on-surface font-body-dense text-body-dense focus:outline-none focus:bg-surface-container-lowest focus:shadow-[0_0_0_2px_#a33900]" id="billingTermsSelect">
+<option value="PREPAID">Prepaid Shipper Account</option>
+<option selected="" value="COD">Cash On Delivery (COD)</option>
+<option value="CONSIGNEE">Consignee Freight Collect</option>
+</select>
+</div>
+<div class="flex flex-col gap-space-2xs">
+<label class="font-label-mono-sm text-caption text-secondary">COD Collection Amount (AED)</label>
+<div class="relative flex items-center">
+<span class="font-label-mono-bold text-caption text-secondary absolute left-space-md">AED</span>
+<input class="w-full h-8 pl-12 pr-space-md bg-surface-container-low rounded text-on-surface font-label-mono-bold text-caption focus:outline-none focus:bg-surface-container-lowest focus:shadow-[0_0_0_2px_#a33900]" id="codValueInput" type="number" value="780.00"/>
+</div>
+</div>
+<div class="flex flex-col gap-space-2xs">
+<label class="font-label-mono-sm text-caption text-secondary">Declared Cargo Value (for Insurance)</label>
+<div class="relative flex items-center">
+<span class="font-label-mono-bold text-caption text-secondary absolute left-space-md">AED</span>
+<input class="w-full h-8 pl-12 pr-space-md bg-surface-container-low rounded text-on-surface font-label-mono-sm text-caption focus:outline-none focus:bg-surface-container-lowest focus:shadow-[0_0_0_2px_#a33900]" type="number" value="1250.00"/>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="lg:col-span-4 sticky top-16 flex flex-col gap-space-md">
+<div class="bg-surface-container-lowest p-space-lg rounded shadow-sm flex flex-col gap-space-md">
+<div class="flex items-center justify-between pb-space-xs">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[18px]">calculate</span>
+<span class="font-title-md text-title-md text-on-surface font-bold">Consignment Rating</span>
+</div>
+<span class="font-label-mono-sm text-caption text-secondary">Tariff v24.2</span>
+</div>
+<div class="flex items-center justify-between p-space-sm bg-surface-container-low rounded">
+<div class="flex flex-col">
+<span class="font-caption text-[10px] text-secondary uppercase">Rating Basis</span>
+<span class="font-label-mono-bold text-body-dense text-on-surface">6.30 kg (Volumetric)</span>
+</div>
+<div class="flex flex-col text-right">
+<span class="font-caption text-[10px] text-secondary uppercase">Origin -&gt; Dest</span>
+<span class="font-label-mono-bold text-body-dense text-primary">DXB -&gt; AUH</span>
+</div>
+</div>
+<div class="flex flex-col gap-space-xs font-label-mono-sm text-caption text-secondary pt-space-2xs">
+<div class="flex items-center justify-between">
+<span>Base Freight Tariff (Express)</span>
+<span class="text-on-surface font-semibold">AED 45.00</span>
+</div>
+<div class="flex items-center justify-between">
+<span>Incremental Weight (1.3kg @ 5.00)</span>
+<span class="text-on-surface font-semibold">AED 10.00</span>
+</div>
+<div class="flex items-center justify-between">
+<span>Bunker / Fuel Surcharge (12.5%)</span>
+<span class="text-on-surface font-semibold">AED 6.88</span>
+</div>
+<div class="flex items-center justify-between">
+<span>Inter-Emirate Sector Fee</span>
+<span class="text-on-surface font-semibold">AED 12.00</span>
+</div>
+<div class="flex items-center justify-between text-tertiary">
+<span>COD Collection Fee (2.0%)</span>
+<span class="font-semibold">AED 15.60</span>
+</div>
+<div class="flex items-center justify-between">
+<span>Remote Area / Surcharge</span>
+<span class="text-secondary/60">AED 0.00</span>
+</div>
+<div class="h-px bg-surface-container-high my-space-xs"></div>
+<div class="flex items-center justify-between">
+<span>Subtotal Freight</span>
+<span class="text-on-surface font-bold">AED 89.48</span>
+</div>
+<div class="flex items-center justify-between">
+<span>Federal VAT (5.0%)</span>
+<span class="text-on-surface font-semibold">AED 4.47</span>
+</div>
+</div>
+<div class="p-space-md bg-secondary-fixed text-on-secondary-fixed rounded flex flex-col gap-space-2xs">
+<div class="flex items-center justify-between">
+<span class="font-label-mono-bold text-caption uppercase tracking-wider">Total Net Freight</span>
+<span class="font-label-mono-bold text-headline-sm">AED 93.95</span>
+</div>
+<div class="flex items-center justify-between text-caption font-label-mono-sm pt-space-2xs opacity-80">
+<span>To Collect at Delivery (COD):</span>
+<span class="font-bold">AED 780.00</span>
+</div>
+</div>
+<div class="flex flex-col gap-space-xs pt-space-2xs">
+<button class="w-full h-10 bg-primary hover:bg-primary-container text-on-primary font-title-md text-title-md rounded transition-colors flex items-center justify-center gap-space-xs shadow-sm" id="bookAndPrintBtn">
+<span class="material-symbols-outlined text-[18px]">print</span>
+<span>Book &amp; Print AWB Label</span>
+</button>
+<div class="grid grid-cols-2 gap-space-xs">
+<button class="h-8 bg-surface-container-low hover:bg-surface-container text-on-surface font-title-md text-caption rounded transition-colors flex items-center justify-center gap-space-2xs">
+<span class="material-symbols-outlined text-[16px]">save</span>
+<span>Draft (F2)</span>
+</button>
+<button class="h-8 bg-surface-container-low hover:bg-surface-container text-error font-title-md text-caption rounded transition-colors flex items-center justify-center gap-space-2xs">
+<span class="material-symbols-outlined text-[16px]">close</span>
+<span>Cancel Entry</span>
+</button>
+</div>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-space-md rounded shadow-sm flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-mono-bold text-caption text-secondary uppercase">AWB Output Target</span>
+<span class="font-caption text-[10px] bg-tertiary text-on-tertiary px-1 rounded">Zebra ZT411</span>
+</div>
+<div class="flex items-center gap-space-md">
+<div class="w-10 h-10 rounded bg-surface-container-low flex items-center justify-center text-secondary shrink-0">
+<span class="material-symbols-outlined text-[20px]">precision_manufacturing</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-title-md text-caption text-on-surface truncate">Bay-04 Thermal Label Engine</span>
+<span class="font-label-mono-sm text-[10px] text-secondary truncate">4x6 inch standard • 203 DPI ready</span>
+</div>
+</div>
+</div>
+<div class="p-space-md rounded bg-surface-container-low flex items-start gap-space-sm">
+<span class="material-symbols-outlined text-primary text-[18px] shrink-0 mt-0.5">info</span>
+<div class="flex flex-col gap-space-2xs">
+<span class="font-title-md text-caption text-on-surface font-semibold">Automated Route Optimization</span>
+<span class="font-caption text-[11px] text-secondary leading-snug">
+            Docket will route via <strong class="text-on-surface">AUH Line-Haul Trunk 03</strong> departing DXB-01 Hub at 14:30. Est. Last-Mile Courier assigned: <strong class="text-on-surface">F. Al-Sayed (Van AUH-12)</strong>.
+          </span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<script>
+  (function initConsignmentCalculator() {
+    const deadWeightInput = document.getElementById('deadWeight');
+    const dimL = document.getElementById('dimL');
+    const dimW = document.getElementById('dimW');
+    const dimH = document.getElementById('dimH');
+    const chgWeightDisplay = document.getElementById('chargeableWeight');
+    const cbmDisplay = document.getElementById('cbmVal');
+
+    function calculateMetrics() {
+      const l = parseFloat(dimL.value) || 0;
+      const w = parseFloat(dimW.value) || 0;
+      const h = parseFloat(dimH.value) || 0;
+      const deadWt = parseFloat(deadWeightInput.value) || 0;
+
+      const cbm = (l * w * h) / 1000000;
+      const volWt = (l * w * h) / 5000;
+      const chargeable = Math.max(deadWt, volWt);
+
+      if (cbmDisplay) {
+        cbmDisplay.textContent = cbm.toFixed(4) + ' m³';
+      }
+      if (chgWeightDisplay) {
+        chgWeightDisplay.textContent = chargeable.toFixed(2) + ' kg';
+      }
+    }
+
+    [deadWeightInput, dimL, dimW, dimH].forEach(el => {
+      if (el) el.addEventListener('input', calculateMetrics);
+    });
+
+    // Keyboard shortcut for dispatch
+    window.addEventListener('keydown', function(e) {
+      if (e.ctrlKey && e.key === 'Enter') {
+        const btn = document.getElementById('bookAndPrintBtn');
+        if (btn) {
+          btn.classList.add('scale-95');
+          setTimeout(() => btn.classList.remove('scale-95'), 150);
+          btn.click();
+        }
+      }
+    });
+
+    const bookBtn = document.getElementById('bookAndPrintBtn');
+    if (bookBtn) {
+      bookBtn.addEventListener('click', function() {
+        alert('Consignment CN-98455-DXB generated and spooled to Zebra ZT411 thermal label dispatch queue.');
+      });
+    }
+  })();
+</script></main></div></body></html>

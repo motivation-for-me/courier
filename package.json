@@ -1,0 +1,21 @@
+{
+  "name": "courier-management-system",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "npm@11",
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "dev": "npm run dev --workspaces --if-present",
+    "start": "npm run start --workspace @courier/api",
+    "start:api": "npm run start --workspace @courier/api",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "db:generate": "prisma generate --schema prisma/schema.prisma",
+    "db:validate": "prisma validate --schema prisma/schema.prisma",
+    "db:migrate": "prisma migrate deploy --schema prisma/schema.prisma",
+    "db:status": "prisma migrate status --schema prisma/schema.prisma"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

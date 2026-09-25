@@ -1,0 +1,760 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum ConsignmentStatus {
+  BOOKED
+  VERIFIED
+  MANIFESTED
+  DISPATCHED
+  IN_TRANSIT
+  RECEIVED
+  ASSIGNED_TO_RIDER
+  OUT_FOR_DELIVERY
+  DELIVERY_ATTEMPT_FAILED
+  DELIVERED
+  RETURNED
+  CANCELLED
+  HELD
+  DAMAGED
+  LOST
+}
+
+enum ManifestStatus {
+  DRAFT
+  SEALED
+  DISPATCHED
+  RECEIVED
+  RECONCILED
+}
+
+enum ManifestItemStatus {
+  EXPECTED
+  RECEIVED
+  MISSING
+  EXCESS
+  DIVERTED
+  DISCREPANCY
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  BANK_TRANSFER
+  OTHER
+}
+
+enum PaymentStatus {
+  PENDING
+  PROOF_UPLOADED
+  VERIFICATION_PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum DeliveryOutcome {
+  FAILED
+  DELIVERED
+  RESCHEDULED
+  RETURN_INITIATED
+}
+
+enum ReturnStatus {
+  REQUESTED
+  IN_TRANSIT
+  RECEIVED
+  COMPLETED
+  CANCELLED
+}
+
+enum DocumentType {
+  CONSIGNMENT
+  LABEL
+  MANIFEST
+  POD
+  TRACKING_HISTORY
+  COD_REPORT
+  PAYMENT_REPORT
+  OPERATIONAL_REPORT
+  PAYMENT_PROOF
+}
+
+enum AssignmentStatus {
+  ACTIVE
+  ENDED
+}
+
+enum PickupStatus {
+  REQUESTED
+  ASSIGNED
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+model Organization {
+  id           String        @id @default(uuid())
+  name         String
+  code         String        @unique
+  currencyCode String        @default("AED")
+  timezone     String        @default("UTC")
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  branches     Branch[]
+  hubs         Hub[]
+  locations    Location[]
+  users        User[]
+  riders       Rider[]
+  customers    Customer[]
+  consignments Consignment[]
+  manifests    Manifest[]
+  documents    Document[]
+  idempotencyRecords IdempotencyRecord[]
+  roles        Role[]
+  permissions  Permission[]
+  auditLogs    AuditLog[]
+  settings     Setting[]
+  pickups      Pickup[]
+}
+
+model Branch {
+  id             String        @id @default(uuid())
+  organizationId String
+  code           String
+  name           String
+  organization   Organization   @relation(fields: [organizationId], references: [id])
+  hubs           Hub[]
+  riders         Rider[]
+  users          User[]
+  consignments   Consignment[]  @relation("OriginBranch")
+  assignments    RiderAssignment[]
+  manifestsFrom  Manifest[]    @relation("ManifestOriginBranch")
+  manifestsTo    Manifest[]    @relation("ManifestDestinationBranch")
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@unique([organizationId, code])
+  @@index([organizationId])
+}
+
+model Hub {
+  id             String        @id @default(uuid())
+  organizationId String
+  branchId       String?
+  code           String
+  name           String
+  organization   Organization   @relation(fields: [organizationId], references: [id])
+  branch         Branch?        @relation(fields: [branchId], references: [id])
+  users          User[]
+  consignments   Consignment[]  @relation("CurrentHub")
+  manifestsFrom  Manifest[]    @relation("ManifestOriginHub")
+  manifestsTo    Manifest[]    @relation("ManifestDestinationHub")
+  events         TrackingEvent[]
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@unique([organizationId, code])
+  @@index([organizationId, branchId])
+}
+
+model Location {
+  id             String          @id @default(uuid())
+  organizationId String
+  name           String
+  code           String?
+  addressLine    String?
+  city           String?
+  region         String?
+  countryCode    String?
+  latitude       Decimal?        @db.Decimal(10, 7)
+  longitude      Decimal?        @db.Decimal(10, 7)
+  organization   Organization    @relation(fields: [organizationId], references: [id])
+  events         TrackingEvent[]
+  attempts       DeliveryAttempt[]
+  consignments   Consignment[]    @relation("CurrentLocation")
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@index([organizationId, code])
+}
+
+model User {
+  id             String             @id @default(uuid())
+  organizationId String
+  branchId       String?
+  hubId          String?
+  email          String
+  passwordHash   String
+  displayName    String
+  phone          String?
+  isActive       Boolean            @default(true)
+  organization   Organization       @relation(fields: [organizationId], references: [id])
+  branch         Branch?            @relation(fields: [branchId], references: [id])
+  hub            Hub?               @relation(fields: [hubId], references: [id])
+  roles          UserRole[]
+  rider          Rider?
+  bookings      Consignment[]       @relation("BookedBy")
+  events        TrackingEvent[]
+  attempts      DeliveryAttempt[]
+  assignments   RiderAssignment[]   @relation("AssignmentActor")
+  audits        AuditLog[]
+  documents     Document[]          @relation("DocumentCreatedBy")
+  idempotencyRecords IdempotencyRecord[]
+  collectedPayments Payment[]       @relation("PaymentCollector")
+  verifiedPayments  Payment[]       @relation("PaymentVerifier")
+  sessions      AuthSession[]
+  otpChallenges OtpChallenge[]      @relation("OtpCreatedBy")
+  requestedPickups Pickup[]         @relation("PickupRequester")
+  assignedPickups  Pickup[]         @relation("PickupAssignee")
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  @@unique([organizationId, email])
+  @@index([organizationId, branchId, hubId])
+}
+
+model AuthSession {
+  id           String   @id @default(uuid())
+  userId       String
+  refreshHash  String
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+
+  @@index([userId, expiresAt])
+}
+
+model OtpChallenge {
+  id            String      @id @default(uuid())
+  consignmentId String
+  createdById   String?
+  purpose       String
+  codeHash      String
+  expiresAt     DateTime
+  attempts      Int         @default(0)
+  maxAttempts   Int         @default(5)
+  verifiedAt    DateTime?
+  consignment   Consignment @relation(fields: [consignmentId], references: [id], onDelete: Cascade)
+  createdBy     User?       @relation("OtpCreatedBy", fields: [createdById], references: [id])
+  createdAt     DateTime    @default(now())
+
+  @@index([consignmentId, purpose, expiresAt])
+}
+
+model IdempotencyRecord {
+  id             String   @id @default(uuid())
+  organizationId String
+  actorId        String
+  operation      String
+  resourceKey    String
+  requestHash    String
+  response       Json
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  actor          User         @relation(fields: [actorId], references: [id])
+  createdAt      DateTime @default(now())
+
+  @@unique([organizationId, actorId, operation, resourceKey])
+}
+
+model Role {
+  id             String        @id @default(uuid())
+  organizationId String
+  name           String
+  description    String?
+  organization   Organization  @relation(fields: [organizationId], references: [id])
+  users          UserRole[]
+  permissions    RolePermission[]
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@unique([organizationId, name])
+}
+
+model Permission {
+  id             String        @id @default(uuid())
+  organizationId String
+  code           String
+  description    String?
+  organization   Organization  @relation(fields: [organizationId], references: [id])
+  roles          RolePermission[]
+
+  @@unique([organizationId, code])
+}
+
+model UserRole {
+  userId         String
+  roleId         String
+  organizationId String
+  branchId       String?
+  hubId          String?
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role           Role          @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+  @@index([organizationId, branchId, hubId])
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+}
+
+model Customer {
+  id             String        @id @default(uuid())
+  organizationId String
+  name           String
+  email          String?
+  phone          String?
+  organization   Organization  @relation(fields: [organizationId], references: [id])
+  addresses      CustomerAddress[]
+  consignments   Consignment[] @relation("CustomerConsignments")
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([organizationId, phone])
+}
+
+model CustomerAddress {
+  id          String    @id @default(uuid())
+  customerId  String
+  label       String?
+  addressLine String
+  city        String?
+  region      String?
+  countryCode String?
+  latitude    Decimal?  @db.Decimal(10, 7)
+  longitude   Decimal?  @db.Decimal(10, 7)
+  customer    Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Consignment {
+  id                String              @id @default(uuid())
+  organizationId    String
+  cnNumber          String
+  bookedById        String
+  customerId        String?
+  originBranchId    String?
+  currentHubId      String?
+  currentLocationId String?
+  status            ConsignmentStatus   @default(BOOKED)
+  serviceType       String
+  currentStatusAt   DateTime            @default(now())
+  bookedAt          DateTime            @default(now())
+  deliveredAt       DateTime?
+  organization      Organization        @relation(fields: [organizationId], references: [id])
+  bookedBy          User                @relation("BookedBy", fields: [bookedById], references: [id])
+  customer          Customer?           @relation("CustomerConsignments", fields: [customerId], references: [id])
+  originBranch      Branch?             @relation("OriginBranch", fields: [originBranchId], references: [id])
+  currentHub        Hub?                @relation("CurrentHub", fields: [currentHubId], references: [id])
+  currentLocation   Location?           @relation("CurrentLocation", fields: [currentLocationId], references: [id])
+  parties           ConsignmentParty[]
+  addresses        ConsignmentAddress[]
+  packages         ConsignmentPackage[]
+  items            ConsignmentItem[]
+  events           TrackingEvent[]
+  attempts         DeliveryAttempt[]
+  assignments      RiderAssignment[]
+  manifestItems    ManifestItem[]
+  payments         Payment[]
+  codTransactions  CodTransaction[]
+  returns          ReturnRecord[]
+  documents        Document[]
+  otpChallenges    OtpChallenge[]
+  pickup           Pickup?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  @@unique([organizationId, cnNumber])
+  @@index([organizationId, status, currentStatusAt])
+  @@index([organizationId, currentHubId, status])
+}
+
+model ConsignmentParty {
+  id           String      @id @default(uuid())
+  consignmentId String
+  kind         String
+  name         String
+  phone        String?
+  email        String?
+  customerRef  String?
+  consignment  Consignment @relation(fields: [consignmentId], references: [id], onDelete: Cascade)
+
+  @@index([consignmentId, kind])
+}
+
+model Pickup {
+  id             String       @id @default(uuid())
+  organizationId String
+  consignmentId  String       @unique
+  requestedById  String
+  assignedToId   String?
+  status         PickupStatus @default(REQUESTED)
+  requestedAt    DateTime     @default(now())
+  assignedAt     DateTime?
+  startedAt      DateTime?
+  completedAt    DateTime?
+  failureReason  String?
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  consignment    Consignment  @relation(fields: [consignmentId], references: [id], onDelete: Restrict)
+  requestedBy    User         @relation("PickupRequester", fields: [requestedById], references: [id])
+  assignedTo     User?        @relation("PickupAssignee", fields: [assignedToId], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId, status, requestedAt])
+  @@index([assignedToId, status])
+}
+
+model ConsignmentAddress {
+  id           String      @id @default(uuid())
+  consignmentId String
+  kind         String
+  addressLine  String
+  city         String?
+  region       String?
+  countryCode  String?
+  zone         String?
+  landmark     String?
+  deliveryNote String?
+  consignment  Consignment @relation(fields: [consignmentId], references: [id], onDelete: Cascade)
+
+  @@index([consignmentId, kind])
+}
+
+model ConsignmentPackage {
+  id              String      @id @default(uuid())
+  consignmentId   String
+  packageNumber   Int
+  physicalWeight  Decimal?    @db.Decimal(10, 3)
+  volumetricWeight Decimal?   @db.Decimal(10, 3)
+  chargeableWeight Decimal?   @db.Decimal(10, 3)
+  lengthCm        Decimal?    @db.Decimal(10, 2)
+  widthCm         Decimal?    @db.Decimal(10, 2)
+  heightCm        Decimal?    @db.Decimal(10, 2)
+  declaredValue   Decimal?    @db.Decimal(14, 2)
+  handlingFlags   Json?
+  consignment     Consignment @relation(fields: [consignmentId], references: [id], onDelete: Cascade)
+
+  @@unique([consignmentId, packageNumber])
+}
+
+model ConsignmentItem {
+  id           String      @id @default(uuid())
+  consignmentId String
+  description  String
+  quantity     Int         @default(1)
+  metadata     Json?
+  consignment  Consignment @relation(fields: [consignmentId], references: [id], onDelete: Cascade)
+}
+
+model TrackingEvent {
+  id            String       @id @default(uuid())
+  consignmentId String
+  eventType     ConsignmentStatus
+  eventTime     DateTime     @default(now())
+  locationId    String?
+  hubId         String?
+  riderId       String?
+  performedById String
+  remarks       String?
+  metadata      Json?
+  idempotencyKey String?
+  consignment   Consignment   @relation(fields: [consignmentId], references: [id], onDelete: Restrict)
+  location      Location?    @relation(fields: [locationId], references: [id])
+  hub           Hub?         @relation(fields: [hubId], references: [id])
+  rider         Rider?       @relation(fields: [riderId], references: [id])
+  performedBy   User         @relation(fields: [performedById], references: [id])
+  createdAt     DateTime     @default(now())
+
+  @@index([consignmentId, eventTime])
+  @@unique([consignmentId, idempotencyKey])
+}
+
+model DeliveryAttempt {
+  id            String          @id @default(uuid())
+  consignmentId String
+  riderId       String?
+  attemptNumber Int
+  reason        String?
+  remarks       String?
+  outcome       DeliveryOutcome
+  attemptedAt   DateTime        @default(now())
+  locationId    String?
+  createdById   String
+  consignment   Consignment      @relation(fields: [consignmentId], references: [id], onDelete: Restrict)
+  rider         Rider?          @relation(fields: [riderId], references: [id])
+  location      Location?       @relation(fields: [locationId], references: [id])
+  createdBy     User            @relation(fields: [createdById], references: [id])
+
+  @@unique([consignmentId, attemptNumber])
+  @@index([consignmentId, attemptedAt])
+}
+
+model Rider {
+  id             String          @id @default(uuid())
+  userId         String          @unique
+  organizationId String
+  branchId       String?
+  employeeCode   String
+  vehicleDetails Json?
+  isActive       Boolean         @default(true)
+  user           User            @relation(fields: [userId], references: [id])
+  assignments    RiderAssignment[]
+  events         TrackingEvent[]
+  attempts       DeliveryAttempt[]
+  organization   Organization    @relation(fields: [organizationId], references: [id])
+  branch         Branch?         @relation(fields: [branchId], references: [id])
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@unique([organizationId, employeeCode])
+  @@index([organizationId, branchId, isActive])
+}
+
+model RiderAssignment {
+  id            String           @id @default(uuid())
+  consignmentId String
+  riderId       String
+  branchId      String?
+  assignedById  String
+  status        AssignmentStatus @default(ACTIVE)
+  reason        String?
+  assignedAt    DateTime         @default(now())
+  endedAt       DateTime?
+  consignment   Consignment       @relation(fields: [consignmentId], references: [id], onDelete: Restrict)
+  rider         Rider             @relation(fields: [riderId], references: [id])
+  branch        Branch?           @relation(fields: [branchId], references: [id])
+  assignedBy    User              @relation("AssignmentActor", fields: [assignedById], references: [id])
+
+  @@index([consignmentId, status])
+  @@index([riderId, status])
+}
+
+model Manifest {
+  id                 String        @id @default(uuid())
+  organizationId     String
+  manifestNumber     String
+  originBranchId     String?
+  destinationBranchId String?
+  originHubId        String?
+  destinationHubId   String?
+  status             ManifestStatus @default(DRAFT)
+  sealedAt           DateTime?
+  dispatchedAt       DateTime?
+  receivedAt         DateTime?
+  reconciledAt       DateTime?
+  organization       Organization  @relation(fields: [organizationId], references: [id])
+  originBranch       Branch?       @relation("ManifestOriginBranch", fields: [originBranchId], references: [id])
+  destinationBranch  Branch?       @relation("ManifestDestinationBranch", fields: [destinationBranchId], references: [id])
+  originHub          Hub?          @relation("ManifestOriginHub", fields: [originHubId], references: [id])
+  destinationHub     Hub?          @relation("ManifestDestinationHub", fields: [destinationHubId], references: [id])
+  items              ManifestItem[]
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  @@unique([organizationId, manifestNumber])
+  @@index([organizationId, status])
+}
+
+model ManifestItem {
+  id            String             @id @default(uuid())
+  manifestId    String
+  consignmentId String
+  status        ManifestItemStatus @default(EXPECTED)
+  expectedAt    DateTime           @default(now())
+  receivedAt    DateTime?
+  discrepancy   String?
+  manifest      Manifest           @relation(fields: [manifestId], references: [id], onDelete: Cascade)
+  consignment   Consignment        @relation(fields: [consignmentId], references: [id], onDelete: Restrict)
+
+  @@unique([manifestId, consignmentId])
+  @@index([manifestId, status])
+}
+
+model Payment {
+  id            String        @id @default(uuid())
+  consignmentId String
+  amount        Decimal       @db.Decimal(14, 2)
+  currencyCode  String
+  method        PaymentMethod
+  status        PaymentStatus @default(PENDING)
+  reference     String?
+  collectedById String?
+  verifiedById  String?
+  remarks       String?
+  collectedAt   DateTime?
+  verifiedAt    DateTime?
+  collectedBy   User?         @relation("PaymentCollector", fields: [collectedById], references: [id])
+  verifiedBy    User?         @relation("PaymentVerifier", fields: [verifiedById], references: [id])
+  consignment   Consignment   @relation(fields: [consignmentId], references: [id], onDelete: Restrict)
+  proofs        PaymentProof[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([consignmentId, status])
+}
+
+model PaymentProof {
+  id          String   @id @default(uuid())
+  paymentId   String
+  documentId  String
+  uploadedById String
+  reviewNote  String?
+  reviewedAt  DateTime?
+  payment     Payment  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  document    Document @relation(fields: [documentId], references: [id])
+
+  @@index([paymentId])
+}
+
+model CodTransaction {
+  id            String      @id @default(uuid())
+  consignmentId String
+  expectedAmount Decimal    @db.Decimal(14, 2)
+  collectedAmount Decimal?  @db.Decimal(14, 2)
+  pendingAmount Decimal?    @db.Decimal(14, 2)
+  collectedByRiderId String?
+  collectedAt   DateTime?
+  remarks       String?
+  consignment   Consignment @relation(fields: [consignmentId], references: [id], onDelete: Restrict)
+  settlements   CodSettlement[]
+
+  @@index([consignmentId])
+}
+
+model CodSettlement {
+  id              String        @id @default(uuid())
+  codTransactionId String
+  fromRiderId     String?
+  toBranchId      String?
+  amount          Decimal       @db.Decimal(14, 2)
+  variance        Decimal       @default(0) @db.Decimal(14, 2)
+  settledAt       DateTime?
+  approvedById    String?
+  remarks         String?
+  codTransaction  CodTransaction @relation(fields: [codTransactionId], references: [id], onDelete: Restrict)
+  createdAt       DateTime      @default(now())
+
+  @@index([codTransactionId, settledAt])
+}
+
+model ReturnRecord {
+  id            String       @id @default(uuid())
+  consignmentId String
+  returnNumber  String
+  reason        String
+  status        ReturnStatus @default(REQUESTED)
+  requestedAt   DateTime     @default(now())
+  completedAt   DateTime?
+  consignment   Consignment  @relation(fields: [consignmentId], references: [id], onDelete: Restrict)
+  attempts      ReturnAttempt[]
+  events        ReturnEvent[]
+
+  @@unique([returnNumber])
+  @@index([consignmentId, status])
+}
+
+model ReturnAttempt {
+  id            String       @id @default(uuid())
+  returnId      String
+  reason        String?
+  outcome       String
+  attemptedAt   DateTime     @default(now())
+  createdById   String
+  returnRecord  ReturnRecord @relation(fields: [returnId], references: [id], onDelete: Cascade)
+
+  @@index([returnId, attemptedAt])
+}
+
+model ReturnEvent {
+  id            String       @id @default(uuid())
+  returnId      String
+  eventType     ReturnStatus
+  occurredAt    DateTime     @default(now())
+  remarks       String?
+  returnRecord  ReturnRecord @relation(fields: [returnId], references: [id], onDelete: Cascade)
+}
+
+model Document {
+  id            String       @id @default(uuid())
+  organizationId String
+  consignmentId String?
+  type          DocumentType
+  storageKey    String
+  mimeType      String
+  checksum      String?
+  version       Int          @default(1)
+  createdById   String?
+  organization  Organization @relation(fields: [organizationId], references: [id])
+  consignment   Consignment? @relation(fields: [consignmentId], references: [id])
+  createdBy     User?        @relation("DocumentCreatedBy", fields: [createdById], references: [id])
+  paymentProofs PaymentProof[]
+  createdAt     DateTime     @default(now())
+
+  @@index([organizationId, type])
+  @@index([consignmentId, type])
+}
+
+model Notification {
+  id             String   @id @default(uuid())
+  organizationId String
+  recipientId    String?
+  channel        String
+  template       String
+  status         String
+  providerRef    String?
+  payload        Json?
+  sentAt         DateTime?
+  createdAt      DateTime @default(now())
+
+  @@index([organizationId, status, createdAt])
+}
+
+model AuditLog {
+  id             String       @id @default(uuid())
+  organizationId String
+  actorId        String?
+  action         String
+  entityType     String
+  entityId       String?
+  oldValues      Json?
+  newValues      Json?
+  ipAddress      String?
+  userAgent      String?
+  requestId      String?
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  actor          User?        @relation(fields: [actorId], references: [id])
+
+  @@index([organizationId, entityType, entityId, createdAt])
+  @@index([organizationId, actorId, createdAt])
+}
+
+model Setting {
+  id             String       @id @default(uuid())
+  organizationId String
+  scopeType      String
+  scopeId        String?
+  key            String
+  value          Json
+  version        Int          @default(1)
+  effectiveAt    DateTime?
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([organizationId, scopeType, scopeId, key])
+}

@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"surface-container":"#e5eeff","background":"#f8f9ff","inverse-primary":"#ffb599","on-error-container":"#93000a","on-tertiary":"#ffffff","tertiary-container":"#007bb9","on-background":"#0b1c30","surface-container-high":"#dce9ff","inverse-on-surface":"#eaf1ff","error":"#ba1a1a","on-secondary-fixed-variant":"#3f465c","on-secondary-container":"#5c647a","on-secondary":"#ffffff","surface-container-low":"#eff4ff","secondary-fixed":"#dae2fd","on-primary-container":"#fffbff","outline-variant":"#e2bfb2","primary-container":"#cc4900","primary-fixed":"#ffdbce","primary-fixed-dim":"#ffb599","error-container":"#ffdad6","secondary-fixed-dim":"#bec6e0","secondary":"#565e74","surface-bright":"#f8f9ff","surface-container-highest":"#d3e4fe","on-secondary-fixed":"#131b2e","on-tertiary-container":"#fdfcff","on-error":"#ffffff","surface-tint":"#a73a00","on-tertiary-fixed-variant":"#004b73","tertiary":"#006194","on-primary-fixed":"#370e00","primary":"#a33900","on-tertiary-fixed":"#001d31","on-primary-fixed-variant":"#7f2b00","inverse-surface":"#213145","on-primary":"#ffffff","secondary-container":"#dae2fd","tertiary-fixed-dim":"#93ccff","on-surface-variant":"#5a4138","outline":"#8e7166","surface":"#f8f9ff","surface-container-lowest":"#ffffff","on-surface":"#0b1c30","tertiary-fixed":"#cce5ff","surface-dim":"#cbdbf5","surface-variant":"#d3e4fe"},borderRadius:{"DEFAULT":"0.125rem","lg":"0.25rem","xl":"0.5rem","full":"0.75rem"},spacing:{"space-2xs":"0.125rem","space-md":"0.5rem","space-2xl":"1.5rem","gutter-lg":"1rem","margin-lg":"1.5rem","space-xs":"0.25rem","space-sm":"0.375rem","space-xl":"1rem","margin":"1rem","gutter":"0.75rem","space-lg":"0.75rem"},fontFamily:{"display":["Inter"],"caption":["Inter"],"headline-lg":["Inter"],"headline-sm":["Inter"],"body-default":["Inter"],"title-md":["Inter"],"label-mono-sm":["JetBrains Mono"],"label-mono-bold":["JetBrains Mono"],"body-dense":["Inter"]},fontSize:{"display":["32px",{"lineHeight":"40px","letterSpacing":"-0.02em","fontWeight":"700"}],"caption":["11px",{"lineHeight":"14px","letterSpacing":"0.01em","fontWeight":"500"}],"headline-lg":["24px",{"lineHeight":"32px","letterSpacing":"-0.015em","fontWeight":"600"}],"headline-sm":["18px",{"lineHeight":"24px","letterSpacing":"-0.01em","fontWeight":"600"}],"body-default":["13px",{"lineHeight":"18px","letterSpacing":"0em","fontWeight":"400"}],"title-md":["14px",{"lineHeight":"20px","letterSpacing":"0em","fontWeight":"600"}],"label-mono-sm":["11px",{"lineHeight":"14px","letterSpacing":"0.02em","fontWeight":"500"}],"label-mono-bold":["12px",{"lineHeight":"16px","letterSpacing":"0.04em","fontWeight":"700"}],"body-dense":["12px",{"lineHeight":"16px","letterSpacing":"0em","fontWeight":"400"}]}}}};</script></head><body class="bg-surface font-body-default text-body-default text-on-surface antialiased"><aside class="fixed left-0 top-0 h-full w-64 bg-surface-container-lowest shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-50 flex flex-col justify-between overflow-hidden"><div class="flex flex-col h-full"><div class="h-14 px-margin flex items-center gap-space-md border-b border-surface-container-high bg-surface-container-lowest shrink-0"><img alt="Brand logo. - Primary color: #ea580c
+- Font: inter
+- Mode: light
+- Roundness: rounded-sm
+" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1UONCNqhbzQUVwfslFhAU-X64lTHnDNsPqHeRtLKLl1bmJU797R9WUEyZ8N7LjZoZjRWUXpQWCjfQFyAuyPO1klIGooThHLnI59FYtieBBhWHAApbReEYIIODnW7psJVH7rZwaCTdsxnEyr1sdE-z5D9nzUMuO8HYiGYxwLAUiuiRIKnxKupERmo5ktfoHEEEpBb8c6xg5bOq7t1eg3_5sXlXPvFVxKtwnEsXEYN9sZNAorF9bYfbGZFeoN"/><div class="flex flex-col min-w-0"><span class="font-title-md text-title-md text-on-surface font-semibold tracking-tight truncate leading-tight">SwiftLog OS</span><span class="font-label-mono-sm text-caption text-secondary tracking-wider uppercase">Dispatch Core</span></div></div><nav class="flex-1 overflow-y-auto px-space-md py-space-sm space-y-space-md" data-active-classes="bg-surface-container text-primary font-semibold"><div class="space-y-space-2xs"><span class="px-space-md font-label-mono-sm text-caption uppercase text-secondary tracking-wider">Dashboard</span><a class="flex items-center gap-space-md px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="operations-dashboard" href="#"><span class="material-symbols-outlined text-[18px]">speed</span><span class="font-body-dense text-body-dense">Operations</span></a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="branch-dashboard" href="#"><span class="material-symbols-outlined text-[18px]">store</span><span class="font-body-dense text-body-dense">Branch</span></a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="hub-dashboard" href="#"><span class="material-symbols-outlined text-[18px]">warehouse</span><span class="font-body-dense text-body-dense">Hub</span></a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="finance-dashboard" href="#"><span class="material-symbols-outlined text-[18px]">query_stats</span><span class="font-body-dense text-body-dense">Finance</span></a></div><div class="space-y-space-2xs"><span class="px-space-md font-label-mono-sm text-caption uppercase text-secondary tracking-wider">Operations</span><a class="flex items-center gap-space-md px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="consignments" href="#"><span class="material-symbols-outlined text-[18px]">inventory_2</span><span class="font-body-dense text-body-dense">Consignments</span></a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="booking" href="#"><span class="material-symbols-outlined text-[18px]">add_box</span><span class="font-body-dense text-body-dense">Booking</span></a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="pickup" href="#"><span class="material-symbols-outlined text-[18px]">outbox</span><span class="font-body-dense text-body-dense">Pickup</span></a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="tracking" href="#"><span class="material-symbols-outlined text-[18px]">near_me</span><span class="font-body-dense text-body-dense">Tracking</span></a><a aria-current="page" class="flex items-center gap-space-md px-space-md py-space-xs rounded transition-colors bg-surface-container text-primary font-semibold" data-path="manifests" href="#"><span class="material-symbols-outlined text-[18px]">receipt_long</span><span class="font-body-dense text-body-dense">Manifests</span></a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="transit" href="#"><span class="material-symbols-outlined text-[18px]">local_shipping</span><span class="font-body-dense text-body-dense">Transit</span></a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="delivery" href="#"><span class="material-symbols-outlined text-[18px]">done_all</span><span class="font-body-dense text-body-dense">Delivery</span></a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="returns" href="#"><span class="material-symbols-outlined text-[18px]">keyboard_return</span><span class="font-body-dense text-body-dense">Returns</span></a></div><div class="space-y-space-2xs"><span class="px-space-md font-label-mono-sm text-caption uppercase text-secondary tracking-wider">Network</span><a class="flex items-center gap-space-md px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="branches" href="#"><span class="material-symbols-outlined text-[18px]">domain</span><span class="font-body-dense text-body-dense">Branches</span></a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="hubs" href="#"><span class="material-symbols-outlined text-[18px]">hub</span><span class="font-body-dense text-body-dense">Hubs</span></a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="routes" href="#"><span class="material-symbols-outlined text-[18px]">alt_route</span><span class="font-body-dense text-body-dense">Routes</span></a></div><div class="space-y-space-2xs"><span class="px-space-md font-label-mono-sm text-caption uppercase text-secondary tracking-wider">People</span><a class="flex items-center gap-space-md px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="riders" href="#"><span class="material-symbols-outlined text-[18px]">two_wheeler</span><span class="font-body-dense text-body-dense">Riders</span></a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="customers" href="#"><span class="material-symbols-outlined text-[18px]">group</span><span class="font-body-dense text-body-dense">Customers</span></a></div><div class="space-y-space-2xs"><span class="px-space-md font-label-mono-sm text-caption uppercase text-secondary tracking-wider">Finance</span><a class="flex items-center gap-space-md px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="payments" href="#"><span class="material-symbols-outlined text-[18px]">account_balance_wallet</span><span class="font-body-dense text-body-dense">Payments</span></a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="cod" href="#"><span class="material-symbols-outlined text-[18px]">payments</span><span class="font-body-dense text-body-dense">COD</span></a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="settlements" href="#"><span class="material-symbols-outlined text-[18px]">request_quote</span><span class="font-body-dense text-body-dense">Settlements</span></a></div><div class="space-y-space-2xs"><span class="px-space-md font-label-mono-sm text-caption uppercase text-secondary tracking-wider">Reports</span><a class="flex items-center gap-space-md px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="reports-center" href="#"><span class="material-symbols-outlined text-[18px]">insert_chart</span><span class="font-body-dense text-body-dense">Reports Center</span></a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="documents" href="#"><span class="material-symbols-outlined text-[18px]">description</span><span class="font-body-dense text-body-dense">Documents</span></a></div><div class="space-y-space-2xs pb-space-lg"><span class="px-space-md font-label-mono-sm text-caption uppercase text-secondary tracking-wider">Administration</span><a class="flex items-center gap-space-md px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="users" href="#"><span class="material-symbols-outlined text-[18px]">manage_accounts</span><span class="font-body-dense text-body-dense">Users</span></a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="roles-permissions" href="#"><span class="material-symbols-outlined text-[18px]">admin_panel_settings</span><span class="font-body-dense text-body-dense">Roles &amp; Permissions</span></a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="audit-logs" href="#"><span class="material-symbols-outlined text-[18px]">history</span><span class="font-body-dense text-body-dense">Audit Logs</span></a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="settings" href="#"><span class="material-symbols-outlined text-[18px]">settings</span><span class="font-body-dense text-body-dense">Settings</span></a></div></nav><div class="p-space-md bg-surface-container-low border-t border-surface-container-high shrink-0"><div class="flex items-center justify-between text-secondary"><div class="flex items-center gap-space-xs"><span class="w-2 h-2 rounded-full bg-tertiary-container animate-pulse"></span><span class="font-label-mono-sm text-caption uppercase text-on-secondary-container">Cluster Node: DXB-01</span></div><span class="font-label-mono-sm text-caption text-secondary">v4.18.2</span></div></div></div></aside><div class="pl-64"><header class="fixed top-0 left-64 right-0 h-14 bg-surface-container-lowest/90 backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.04)] border-b border-surface-container-high z-40 flex items-center justify-between px-gutter-lg"><div class="flex items-center gap-space-lg flex-1 max-w-xl"><div class="relative w-full flex items-center"><span class="material-symbols-outlined absolute left-space-md text-secondary text-[18px]">barcode_scanner</span><input class="w-full h-8 pl-9 pr-14 bg-surface-container-low border border-surface-container-highest rounded text-on-surface font-label-mono-sm text-caption focus:outline-none focus:border-primary" placeholder="Scan AWB / Quick Search..." type="text"/><div class="absolute right-space-xs flex items-center gap-space-2xs bg-surface-container-lowest px-1.5 py-0.5 rounded border border-surface-container-high shadow-xs pointer-events-none"><span class="font-label-mono-sm text-caption text-secondary">⌘K</span></div></div></div><div class="flex items-center gap-space-lg"><div class="flex items-center gap-space-xs bg-surface-container-low border border-surface-container-highest px-space-md py-1 rounded"><span class="material-symbols-outlined text-primary text-[16px]">location_on</span><span class="font-label-mono-bold text-caption text-on-surface uppercase tracking-tight">Central Hub DXB-01</span><span class="px-1.5 py-0.2 bg-secondary-fixed text-on-secondary-fixed font-label-mono-sm text-[10px] rounded uppercase">Active</span></div><div class="flex items-center gap-space-xs"><span class="w-2 h-2 rounded-full bg-tertiary-container"></span><span class="font-caption text-caption text-secondary font-medium hidden sm:inline">Network Live</span></div><button class="relative p-1.5 text-secondary hover:text-on-surface hover:bg-surface-container-low rounded transition-colors"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full"></span></button><div class="h-5 w-[1px] bg-surface-container-high"></div><div class="flex items-center gap-space-sm pl-space-xs"><div class="flex flex-col text-right hidden md:block"><span class="font-title-md text-caption text-on-surface font-semibold leading-tight">S. Al-Maktoum</span><span class="font-label-mono-sm text-[10px] text-secondary tracking-wide uppercase leading-none">Dispatch Supervisor</span></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="w-full pt-14 bg-surface min-h-screen"><div class="flex flex-col w-full">
+<div class="p-space-lg md:p-space-2xl space-y-space-xl max-w-[1720px] mx-auto w-full">
+<!-- Top Operations Control Ribbon -->
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-lg bg-surface-container-lowest rounded-xl p-space-xl shadow-sm">
+<div class="flex items-start sm:items-center gap-space-lg">
+<div class="w-12 h-12 rounded-xl bg-primary text-on-primary flex items-center justify-center shrink-0 shadow-md">
+<span class="material-symbols-outlined text-[26px]">terminal</span>
+</div>
+<div class="space-y-space-2xs min-w-0">
+<div class="flex flex-wrap items-center gap-space-sm">
+<span class="font-headline-sm text-headline-sm text-on-surface tracking-tight font-semibold">Manifest Dispatch &amp; Ingestion</span>
+<span class="px-2 py-0.5 rounded font-label-mono-bold text-caption bg-surface-container-high text-on-surface">MNF-2025-0841</span>
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded font-label-mono-sm text-caption bg-primary-fixed text-on-primary-fixed font-bold uppercase tracking-wider">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-ping"></span>
+              Live Reconciliation
+            </span>
+</div>
+<div class="flex items-center gap-space-md text-secondary font-label-mono-sm text-caption flex-wrap">
+<span class="flex items-center gap-1 text-on-surface"><span class="material-symbols-outlined text-[15px]">local_shipping</span> Line-Haul: DXB Central → AUH South Terminal</span>
+<span class="text-secondary-container">•</span>
+<span>Trailer: TRK-9921-AE</span>
+<span class="text-secondary-container">•</span>
+<span>Bay: Door 14-B</span>
+<span class="text-secondary-container">•</span>
+<span class="text-tertiary font-semibold">Seal Integrity: Active</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-space-sm self-end lg:self-center shrink-0">
+<div class="flex items-center bg-surface-container rounded-lg p-1 text-secondary text-caption font-label-mono-sm">
+<button class="flex items-center gap-1.5 px-2.5 py-1.5 rounded font-semibold bg-surface-container-lowest text-primary shadow-xs transition-all" id="audio-toggle" onclick="toggleAudio()">
+<span class="material-symbols-outlined text-[16px]" id="audio-icon">volume_up</span>
+<span id="audio-status">Chime On</span>
+</button>
+<button class="flex items-center gap-1.5 px-2.5 py-1.5 rounded text-secondary hover:text-on-surface transition-all" id="haptic-toggle" onclick="toggleHaptic()">
+<span class="material-symbols-outlined text-[16px]">vibration</span>
+<span>Haptics</span>
+</button>
+</div>
+<div class="flex items-center gap-space-xs bg-surface-container-high text-on-surface px-3 py-1.5 rounded-lg font-label-mono-sm text-caption">
+<span class="material-symbols-outlined text-tertiary-container text-[16px]">sync</span>
+<span class="font-bold">Sync: 12ms</span>
+</div>
+</div>
+</div>
+<!-- Metric High-Scan KPI Tiles -->
+<div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-space-md">
+<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-secondary">
+<span class="font-label-mono-sm text-caption uppercase tracking-wider">Expected CNs</span>
+<span class="material-symbols-outlined text-[20px]">inventory_2</span>
+</div>
+<div class="mt-space-md flex items-baseline justify-between">
+<span class="font-display text-display text-on-surface font-bold">120</span>
+<span class="font-label-mono-sm text-caption text-secondary">Manifested</span>
+</div>
+<div class="w-full bg-surface-container h-1 rounded-full mt-space-sm overflow-hidden">
+<div class="bg-secondary w-full h-full"></div>
+</div>
+</div>
+<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-tertiary">
+<span class="font-label-mono-sm text-caption uppercase tracking-wider font-semibold">Scanned &amp; Ingested</span>
+<span class="material-symbols-outlined text-[20px]">check_circle</span>
+</div>
+<div class="mt-space-md flex items-baseline justify-between">
+<span class="font-display text-display text-on-surface font-bold text-tertiary">114</span>
+<span class="font-label-mono-bold text-caption text-tertiary font-bold">95.0%</span>
+</div>
+<div class="w-full bg-surface-container h-1 rounded-full mt-space-sm overflow-hidden">
+<div class="bg-tertiary w-[95%] h-full"></div>
+</div>
+</div>
+<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-secondary">
+<span class="font-label-mono-sm text-caption uppercase tracking-wider">Pending Scan</span>
+<span class="material-symbols-outlined text-[20px]">pending_actions</span>
+</div>
+<div class="mt-space-md flex items-baseline justify-between">
+<span class="font-display text-display text-primary font-bold">4</span>
+<span class="font-label-mono-sm text-caption text-secondary">Unreconciled</span>
+</div>
+<div class="w-full bg-surface-container h-1 rounded-full mt-space-sm overflow-hidden">
+<div class="bg-primary w-[3.3%] h-full"></div>
+</div>
+</div>
+<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-error">
+<span class="font-label-mono-sm text-caption uppercase tracking-wider font-semibold">Discrepancies / Divert</span>
+<span class="material-symbols-outlined text-[20px]">warning</span>
+</div>
+<div class="mt-space-md flex items-baseline justify-between">
+<span class="font-display text-display text-error font-bold">2</span>
+<span class="font-label-mono-bold text-caption text-error font-bold">Requires Action</span>
+</div>
+<div class="w-full bg-surface-container h-1 rounded-full mt-space-sm overflow-hidden">
+<div class="bg-error w-[1.7%] h-full"></div>
+</div>
+</div>
+<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col justify-between col-span-2 sm:col-span-1">
+<div class="flex items-center justify-between text-secondary">
+<span class="font-label-mono-sm text-caption uppercase tracking-wider">Gross Weight</span>
+<span class="material-symbols-outlined text-[20px]">scale</span>
+</div>
+<div class="mt-space-md flex items-baseline justify-between">
+<span class="font-display text-display text-on-surface font-bold">1,420<span class="text-title-md font-normal text-secondary">.5 kg</span></span>
+<span class="font-label-mono-sm text-caption text-secondary">± 0.2 kg var</span>
+</div>
+<div class="w-full bg-surface-container h-1 rounded-full mt-space-sm overflow-hidden">
+<div class="bg-tertiary-container w-[78%] h-full"></div>
+</div>
+</div>
+</div>
+<!-- Main Operational Workspace: Split Plane -->
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-space-xl items-start">
+<!-- LEFT COLUMN: High-Speed Scanning Zone (5 Cols) -->
+<div class="xl:col-span-5 space-y-space-lg">
+<!-- Live Hardware Scanner Trigger Deck -->
+<div class="bg-surface-container-lowest rounded-xl p-space-xl shadow-sm space-y-space-lg">
+<div class="flex items-center justify-between pb-space-xs">
+<div class="flex items-center gap-space-sm">
+<span class="w-2.5 h-2.5 rounded-full bg-primary animate-pulse"></span>
+<span class="font-title-md text-title-md text-on-surface font-semibold tracking-tight">Active Scan Receiver</span>
+</div>
+<div class="flex items-center gap-2">
+<label class="text-caption font-label-mono-sm text-secondary cursor-pointer select-none" for="auto-mode">Auto-Ingest</label>
+<input checked="" class="accent-primary w-4 h-4 cursor-pointer" id="auto-mode" type="checkbox"/>
+</div>
+</div>
+<!-- Barcode Capture Zone -->
+<div class="relative group">
+<div class="flex items-center bg-surface-container-low rounded-lg p-space-md shadow-inner transition-all group-focus-within:bg-surface-container-lowest">
+<span class="material-symbols-outlined text-primary text-[28px] mr-space-md">barcode_reader</span>
+<input autocomplete="off" autofocus="" class="w-full bg-transparent font-label-mono-bold text-headline-sm text-on-surface placeholder:text-secondary placeholder:font-body-default focus:outline-none tracking-wider uppercase" id="barcode-input" onkeydown="handleScanInput(event)" placeholder="Scan CN or Manifest Barcode (e.g. CN-982...)" type="text"/>
+<button class="px-3 py-1.5 bg-primary text-on-primary font-label-mono-bold text-caption rounded shadow-xs hover:bg-primary-container transition-colors shrink-0" onclick="simulateScan()">
+                Trigger Scan
+              </button>
+</div>
+<div class="flex items-center justify-between mt-space-xs px-1 text-secondary font-label-mono-sm text-caption">
+<span>Optic Laser Ready: <strong class="text-on-surface font-semibold">Honeywell 1950G-SR</strong></span>
+<span class="bg-surface-container px-1.5 py-0.5 rounded text-[10px]">Enter ↵ commits</span>
+</div>
+</div>
+<!-- Live Scan Status Banner: Success -->
+<div class="bg-surface-container-low rounded-xl p-space-md flex items-start gap-space-md" id="success-banner">
+<div class="w-8 h-8 rounded-lg bg-tertiary text-on-tertiary flex items-center justify-center shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[18px]">verified</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between gap-space-xs">
+<span class="font-label-mono-bold text-body-dense text-on-surface font-bold tracking-tight">CN-98418-DXB Verified &amp; Added</span>
+<span class="font-label-mono-sm text-[10px] text-tertiary bg-secondary-fixed px-1.5 py-0.5 rounded">T-02s ago</span>
+</div>
+<p class="font-body-dense text-body-dense text-secondary mt-0.5">
+                Physical weight: <span class="font-semibold text-on-surface">0.82 kg</span> • Dimension: Standard Satchel • Bay Allocation: <span class="font-semibold text-primary">Zone 4 (AUH-S)</span>
+</p>
+</div>
+</div>
+<!-- Live Scan Status Banner: Exception Divert Alert -->
+<div class="bg-error-container text-on-error-container rounded-xl p-space-md flex items-start gap-space-md" id="exception-banner">
+<div class="w-8 h-8 rounded-lg bg-error text-on-error flex items-center justify-center shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[18px]">error</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between gap-space-xs">
+<span class="font-label-mono-bold text-body-dense font-bold tracking-wide uppercase">Diverted: Wrong Destination Hub</span>
+<span class="font-label-mono-bold text-caption bg-surface-container-lowest text-error px-2 py-0.5 rounded shadow-xs uppercase">Hold Unit</span>
+</div>
+<p class="font-body-dense text-body-dense mt-1 text-on-error-container/90">
+<strong class="font-label-mono-bold">CN-98102-SHJ</strong> manifests for Sharjah Regional Hub, but routed to Abu Dhabi South Line-haul.
+              </p>
+<div class="mt-space-sm flex items-center gap-space-sm">
+<span class="inline-flex items-center gap-1 font-label-mono-bold text-caption bg-surface-container-lowest text-on-surface px-2 py-1 rounded">
+<span class="material-symbols-outlined text-primary text-[14px]">fork_right</span> Diverted → Quarantine Bay 3
+                </span>
+<button class="font-label-mono-bold text-caption underline hover:opacity-80">Print Exception Tag</button>
+</div>
+</div>
+</div>
+<!-- Rapid Scan History Mini Stream -->
+<div class="space-y-space-xs pt-space-xs">
+<div class="flex items-center justify-between text-secondary px-1">
+<span class="font-label-mono-sm text-caption uppercase tracking-wider">Recent Ingestion Stream</span>
+<span class="font-label-mono-sm text-caption">Total Session: 114</span>
+</div>
+<div class="bg-surface-container-low rounded-lg divide-y divide-surface-container-high overflow-hidden">
+<div class="p-space-sm px-space-md flex items-center justify-between font-label-mono-sm text-caption hover:bg-surface-container transition-colors">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-tertiary text-[14px]">done</span>
+<span class="font-bold text-on-surface">CN-98418-DXB</span>
+<span class="text-secondary">0.82kg</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-secondary">14:22:04</span>
+<span class="px-1.5 py-0.2 rounded bg-surface-container-highest text-on-surface text-[10px]">Bay 4</span>
+</div>
+</div>
+<div class="p-space-sm px-space-md flex items-center justify-between font-label-mono-sm text-caption bg-error-container/40">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-error text-[14px]">warning</span>
+<span class="font-bold text-error">CN-98102-SHJ</span>
+<span class="text-on-surface-variant font-semibold">MISROUTE</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-secondary">14:21:49</span>
+<span class="px-1.5 py-0.2 rounded bg-error text-on-error text-[10px]">Hold-03</span>
+</div>
+</div>
+<div class="p-space-sm px-space-md flex items-center justify-between font-label-mono-sm text-caption hover:bg-surface-container transition-colors">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-tertiary text-[14px]">done</span>
+<span class="font-bold text-on-surface">CN-98417-DXB</span>
+<span class="text-secondary">4.15kg</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-secondary">14:21:12</span>
+<span class="px-1.5 py-0.2 rounded bg-surface-container-highest text-on-surface text-[10px]">Bay 4</span>
+</div>
+</div>
+<div class="p-space-sm px-space-md flex items-center justify-between font-label-mono-sm text-caption hover:bg-surface-container transition-colors">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-tertiary text-[14px]">done</span>
+<span class="font-bold text-on-surface">CN-98416-DXB</span>
+<span class="text-secondary">12.00kg</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-secondary">14:20:55</span>
+<span class="px-1.5 py-0.2 rounded bg-surface-container-highest text-on-surface text-[10px]">Pallet B</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Ingestion Visualizer & Lane Distribution Card -->
+<div class="bg-surface-container-lowest rounded-xl p-space-xl shadow-sm space-y-space-md">
+<div class="flex items-center justify-between">
+<span class="font-title-md text-title-md text-on-surface font-semibold tracking-tight">Hub Weight &amp; Sorter Distribution</span>
+<span class="font-label-mono-sm text-caption text-secondary">DXB → AUH Line</span>
+</div>
+<!-- Micro SVG Lane Throughput Graph -->
+<div class="pt-space-xs">
+<div class="flex items-end justify-between gap-1.5 h-20 w-full px-2 py-1 bg-surface-container-low rounded-lg">
+<div class="flex-1 bg-surface-container-high hover:bg-primary rounded-t transition-all h-[45%]" title="Lane 01 (Heavy): 45 pkgs"></div>
+<div class="flex-1 bg-surface-container-high hover:bg-primary rounded-t transition-all h-[70%]" title="Lane 02 (Bulk): 70 pkgs"></div>
+<div class="flex-1 bg-primary rounded-t transition-all h-[95%]" title="Lane 03 (AUH Express): 95 pkgs"></div>
+<div class="flex-1 bg-surface-container-high hover:bg-primary rounded-t transition-all h-[60%]" title="Lane 04 (Standard): 60 pkgs"></div>
+<div class="flex-1 bg-surface-container-high hover:bg-primary rounded-t transition-all h-[80%]" title="Lane 05 (Secured/High-Value): 80 pkgs"></div>
+<div class="flex-1 bg-error rounded-t transition-all h-[15%]" title="Lane 06 (Quarantine / Divert): 2 pkgs"></div>
+</div>
+<div class="flex justify-between text-secondary font-label-mono-sm text-[10px] mt-1 px-1">
+<span>L-01 Heavy</span>
+<span>L-02 Bulk</span>
+<span class="text-primary font-bold">L-03 AUH Exp</span>
+<span>L-04 Std</span>
+<span>L-05 Sec</span>
+<span class="text-error font-bold">Divert</span>
+</div>
+</div>
+<div class="flex items-center justify-between text-secondary font-body-dense text-body-dense pt-space-xs">
+<span>Seal Tag Hash: <code class="font-label-mono-bold text-on-surface bg-surface-container px-1 py-0.5 rounded text-[11px]">SHA256:7B88A01C</code></span>
+<span class="text-tertiary font-semibold flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span> Verified</span>
+</div>
+</div>
+</div>
+<!-- RIGHT COLUMN: Live Manifest Reconciliation Engine (7 Cols) -->
+<div class="xl:col-span-7 space-y-space-md">
+<!-- Filter Bar & Segmented Control -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-space-md">
+<!-- Segment Tabs -->
+<div class="flex items-center gap-1 p-1 bg-surface-container rounded-lg overflow-x-auto">
+<button class="px-3 py-1.5 rounded font-label-mono-bold text-caption bg-surface-container-lowest text-primary shadow-xs transition-all flex items-center gap-1.5 whitespace-nowrap" id="tab-all" onclick="setTab('all')">
+<span>All Manifested</span>
+<span class="bg-surface-container text-on-surface px-1.5 py-0.2 rounded text-[10px]">120</span>
+</button>
+<button class="px-3 py-1.5 rounded font-label-mono-bold text-caption text-secondary hover:text-on-surface transition-all flex items-center gap-1.5 whitespace-nowrap" id="tab-scanned" onclick="setTab('scanned')">
+<span>Scanned OK</span>
+<span class="bg-surface-container text-tertiary px-1.5 py-0.2 rounded text-[10px] font-bold">114</span>
+</button>
+<button class="px-3 py-1.5 rounded font-label-mono-bold text-caption text-secondary hover:text-on-surface transition-all flex items-center gap-1.5 whitespace-nowrap" id="tab-missing" onclick="setTab('missing')">
+<span>Missing / Unscanned</span>
+<span class="bg-surface-container text-primary px-1.5 py-0.2 rounded text-[10px]">4</span>
+</button>
+<button class="px-3 py-1.5 rounded font-label-mono-bold text-caption text-secondary hover:text-on-surface transition-all flex items-center gap-1.5 whitespace-nowrap" id="tab-divert" onclick="setTab('divert')">
+<span>Discrepancy</span>
+<span class="bg-error text-on-error px-1.5 py-0.2 rounded text-[10px] font-bold">2</span>
+</button>
+</div>
+<!-- Quick search filter inside manifest table -->
+<div class="relative w-full md:w-56 shrink-0">
+<span class="material-symbols-outlined text-secondary absolute left-2.5 top-2 text-[16px]">filter_list</span>
+<input class="w-full h-8 pl-8 pr-3 bg-surface-container-low rounded font-label-mono-sm text-caption text-on-surface placeholder:text-secondary focus:outline-none focus:bg-surface-container-lowest transition-all" placeholder="Filter current list..." type="text"/>
+</div>
+</div>
+<!-- Reconciliation Table Surface -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden flex flex-col">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low text-secondary font-label-mono-sm text-caption uppercase tracking-wider">
+<th class="py-2.5 px-space-md w-12 text-center">Status</th>
+<th class="py-2.5 px-space-md font-bold text-on-surface">CN Tracking #</th>
+<th class="py-2.5 px-space-md">Consignee</th>
+<th class="py-2.5 px-space-md">Dest Hub</th>
+<th class="py-2.5 px-space-md text-right">Weight</th>
+<th class="py-2.5 px-space-md text-center">Scan Time</th>
+<th class="py-2.5 px-space-md">Operator</th>
+<th class="py-2.5 px-space-md w-10 text-center">Action</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container-high font-body-default text-body-dense text-on-surface">
+<!-- Row 1: Normal Scanned -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="py-2 px-space-md text-center">
+<span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-secondary-fixed text-tertiary">
+<span class="material-symbols-outlined text-[14px]">check</span>
+</span>
+</td>
+<td class="py-2 px-space-md">
+<div class="flex items-center gap-1.5 font-label-mono-bold text-body-dense text-on-surface">
+<span>CN-98418-DXB</span>
+<button class="opacity-0 group-hover:opacity-100 text-secondary hover:text-primary transition-opacity" title="Copy AWB">
+<span class="material-symbols-outlined text-[13px]">content_copy</span>
+</button>
+</div>
+</td>
+<td class="py-2 px-space-md">
+<div class="truncate max-w-[140px] font-semibold">Al-Futtaim Logistics Ltd</div>
+<div class="font-label-mono-sm text-[10px] text-secondary">Acc: 00921-VIP</div>
+</td>
+<td class="py-2 px-space-md font-label-mono-bold text-caption">AUH-South</td>
+<td class="py-2 px-space-md font-label-mono-sm text-right">0.82 kg</td>
+<td class="py-2 px-space-md font-label-mono-sm text-caption text-center text-secondary">14:22:04</td>
+<td class="py-2 px-space-md">
+<span class="inline-flex items-center px-1.5 py-0.5 rounded bg-surface-container text-secondary font-label-mono-sm text-[10px]">
+                      H. Rashid
+                    </span>
+</td>
+<td class="py-2 px-space-md text-center">
+<button class="text-secondary hover:text-primary p-1"><span class="material-symbols-outlined text-[16px]">more_vert</span></button>
+</td>
+</tr>
+<!-- Row 2: Discrepancy / Misroute Row -->
+<tr class="bg-error-container/20 hover:bg-error-container/30 transition-colors group">
+<td class="py-2 px-space-md text-center">
+<span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-error text-on-error">
+<span class="material-symbols-outlined text-[14px]">close</span>
+</span>
+</td>
+<td class="py-2 px-space-md">
+<div class="flex items-center gap-1.5 font-label-mono-bold text-body-dense text-error">
+<span>CN-98102-SHJ</span>
+<span class="bg-error text-on-error px-1 py-0.2 rounded text-[9px] font-bold">MISROUTE</span>
+</div>
+</td>
+<td class="py-2 px-space-md">
+<div class="truncate max-w-[140px] font-semibold text-error">Emirates Medical Corp</div>
+<div class="font-label-mono-sm text-[10px] text-error">Cold-Chain Tier 2</div>
+</td>
+<td class="py-2 px-space-md font-label-mono-bold text-caption text-error">SHJ-Central</td>
+<td class="py-2 px-space-md font-label-mono-sm text-right text-error font-semibold">3.40 kg</td>
+<td class="py-2 px-space-md font-label-mono-sm text-caption text-center text-error font-semibold">14:21:49</td>
+<td class="py-2 px-space-md">
+<span class="inline-flex items-center px-1.5 py-0.5 rounded bg-error/20 text-error font-label-mono-sm text-[10px] font-bold">
+                      H. Rashid
+                    </span>
+</td>
+<td class="py-2 px-space-md text-center">
+<button class="text-error hover:text-on-error-container p-1" title="Resolve Alert"><span class="material-symbols-outlined text-[16px]">priority_high</span></button>
+</td>
+</tr>
+<!-- Row 3: Scanned Normal -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="py-2 px-space-md text-center">
+<span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-secondary-fixed text-tertiary">
+<span class="material-symbols-outlined text-[14px]">check</span>
+</span>
+</td>
+<td class="py-2 px-space-md">
+<div class="flex items-center gap-1.5 font-label-mono-bold text-body-dense text-on-surface">
+<span>CN-98417-DXB</span>
+<button class="opacity-0 group-hover:opacity-100 text-secondary hover:text-primary transition-opacity" title="Copy AWB">
+<span class="material-symbols-outlined text-[13px]">content_copy</span>
+</button>
+</div>
+</td>
+<td class="py-2 px-space-md">
+<div class="truncate max-w-[140px] font-semibold">Noor Electronics LLC</div>
+<div class="font-label-mono-sm text-[10px] text-secondary">Acc: 00418-GEN</div>
+</td>
+<td class="py-2 px-space-md font-label-mono-bold text-caption">AUH-South</td>
+<td class="py-2 px-space-md font-label-mono-sm text-right">4.15 kg</td>
+<td class="py-2 px-space-md font-label-mono-sm text-caption text-center text-secondary">14:21:12</td>
+<td class="py-2 px-space-md">
+<span class="inline-flex items-center px-1.5 py-0.5 rounded bg-surface-container text-secondary font-label-mono-sm text-[10px]">
+                      M. Tariq
+                    </span>
+</td>
+<td class="py-2 px-space-md text-center">
+<button class="text-secondary hover:text-primary p-1"><span class="material-symbols-outlined text-[16px]">more_vert</span></button>
+</td>
+</tr>
+<!-- Row 4: Scanned Normal -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="py-2 px-space-md text-center">
+<span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-secondary-fixed text-tertiary">
+<span class="material-symbols-outlined text-[14px]">check</span>
+</span>
+</td>
+<td class="py-2 px-space-md">
+<div class="flex items-center gap-1.5 font-label-mono-bold text-body-dense text-on-surface">
+<span>CN-98416-DXB</span>
+<button class="opacity-0 group-hover:opacity-100 text-secondary hover:text-primary transition-opacity" title="Copy AWB">
+<span class="material-symbols-outlined text-[13px]">content_copy</span>
+</button>
+</div>
+</td>
+<td class="py-2 px-space-md">
+<div class="truncate max-w-[140px] font-semibold">Gulf Automotive Spares</div>
+<div class="font-label-mono-sm text-[10px] text-secondary">Acc: 00119-BULK</div>
+</td>
+<td class="py-2 px-space-md font-label-mono-bold text-caption">AUH-South</td>
+<td class="py-2 px-space-md font-label-mono-sm text-right">12.00 kg</td>
+<td class="py-2 px-space-md font-label-mono-sm text-caption text-center text-secondary">14:20:55</td>
+<td class="py-2 px-space-md">
+<span class="inline-flex items-center px-1.5 py-0.5 rounded bg-surface-container text-secondary font-label-mono-sm text-[10px]">
+                      H. Rashid
+                    </span>
+</td>
+<td class="py-2 px-space-md text-center">
+<button class="text-secondary hover:text-primary p-1"><span class="material-symbols-outlined text-[16px]">more_vert</span></button>
+</td>
+</tr>
+<!-- Row 5: Missing / Pending Scan -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="py-2 px-space-md text-center">
+<span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-surface-container text-secondary">
+<span class="material-symbols-outlined text-[14px]">hourglass_empty</span>
+</span>
+</td>
+<td class="py-2 px-space-md">
+<div class="flex items-center gap-1.5 font-label-mono-bold text-body-dense text-secondary">
+<span>CN-98415-DXB</span>
+<span class="bg-surface-container text-secondary px-1 py-0.2 rounded text-[9px] font-semibold">PENDING</span>
+</div>
+</td>
+<td class="py-2 px-space-md">
+<div class="truncate max-w-[140px] font-semibold text-secondary">Zayed University Dept</div>
+<div class="font-label-mono-sm text-[10px] text-secondary">Documents / Urgent</div>
+</td>
+<td class="py-2 px-space-md font-label-mono-bold text-caption text-secondary">AUH-South</td>
+<td class="py-2 px-space-md font-label-mono-sm text-right text-secondary">0.40 kg</td>
+<td class="py-2 px-space-md font-label-mono-sm text-caption text-center text-secondary/60">—</td>
+<td class="py-2 px-space-md">
+<span class="text-secondary/60 font-label-mono-sm text-[11px]">Unassigned</span>
+</td>
+<td class="py-2 px-space-md text-center">
+<button class="text-secondary hover:text-primary p-1" title="Manual Force Ingest"><span class="material-symbols-outlined text-[16px]">edit_note</span></button>
+</td>
+</tr>
+<!-- Row 6: Missing / Pending Scan -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="py-2 px-space-md text-center">
+<span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-surface-container text-secondary">
+<span class="material-symbols-outlined text-[14px]">hourglass_empty</span>
+</span>
+</td>
+<td class="py-2 px-space-md">
+<div class="flex items-center gap-1.5 font-label-mono-bold text-body-dense text-secondary">
+<span>CN-98414-DXB</span>
+<span class="bg-surface-container text-secondary px-1 py-0.2 rounded text-[9px] font-semibold">PENDING</span>
+</div>
+</td>
+<td class="py-2 px-space-md">
+<div class="truncate max-w-[140px] font-semibold text-secondary">Baraka Fashion HQ</div>
+<div class="font-label-mono-sm text-[10px] text-secondary">Apparel Box 4x</div>
+</td>
+<td class="py-2 px-space-md font-label-mono-bold text-caption text-secondary">AUH-South</td>
+<td class="py-2 px-space-md font-label-mono-sm text-right text-secondary">8.20 kg</td>
+<td class="py-2 px-space-md font-label-mono-sm text-caption text-center text-secondary/60">—</td>
+<td class="py-2 px-space-md">
+<span class="text-secondary/60 font-label-mono-sm text-[11px]">Unassigned</span>
+</td>
+<td class="py-2 px-space-md text-center">
+<button class="text-secondary hover:text-primary p-1" title="Manual Force Ingest"><span class="material-symbols-outlined text-[16px]">edit_note</span></button>
+</td>
+</tr>
+<!-- Row 7: Excess Scan (Not in manifest) -->
+<tr class="bg-primary-fixed/20 hover:bg-primary-fixed/30 transition-colors group">
+<td class="py-2 px-space-md text-center">
+<span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary text-on-primary">
+<span class="material-symbols-outlined text-[14px]">add</span>
+</span>
+</td>
+<td class="py-2 px-space-md">
+<div class="flex items-center gap-1.5 font-label-mono-bold text-body-dense text-primary">
+<span>CN-98001-AUH</span>
+<span class="bg-primary-container text-on-primary-container px-1 py-0.2 rounded text-[9px] font-bold">UNLISTED</span>
+</div>
+</td>
+<td class="py-2 px-space-md">
+<div class="truncate max-w-[140px] font-semibold text-primary">Direct Walk-In Cargo</div>
+<div class="font-label-mono-sm text-[10px] text-secondary">Late Intake Entry</div>
+</td>
+<td class="py-2 px-space-md font-label-mono-bold text-caption text-primary">AUH-South</td>
+<td class="py-2 px-space-md font-label-mono-sm text-right text-primary font-semibold">1.90 kg</td>
+<td class="py-2 px-space-md font-label-mono-sm text-caption text-center text-primary font-semibold">14:18:22</td>
+<td class="py-2 px-space-md">
+<span class="inline-flex items-center px-1.5 py-0.5 rounded bg-primary-fixed text-on-primary-fixed font-label-mono-sm text-[10px] font-bold">
+                      H. Rashid
+                    </span>
+</td>
+<td class="py-2 px-space-md text-center">
+<button class="text-primary hover:text-on-primary-container p-1" title="Attach to Manifest"><span class="material-symbols-outlined text-[16px]">link</span></button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Table Footer Pagination / Summary -->
+<div class="p-space-md bg-surface-container-low flex flex-col sm:flex-row items-center justify-between gap-space-sm text-secondary font-label-mono-sm text-caption">
+<div class="flex items-center gap-space-md">
+<span>Showing 7 of 120 consignment entries</span>
+<span>•</span>
+<span class="text-on-surface">Auto-Refresh: <strong class="text-tertiary">Realtime</strong></span>
+</div>
+<div class="flex items-center gap-1">
+<button class="px-2 py-1 bg-surface-container-lowest rounded text-secondary hover:text-on-surface disabled:opacity-40">Previous</button>
+<button class="px-2 py-1 bg-primary text-on-primary rounded font-bold">1</button>
+<button class="px-2 py-1 bg-surface-container-lowest rounded text-secondary hover:text-on-surface">2</button>
+<button class="px-2 py-1 bg-surface-container-lowest rounded text-secondary hover:text-on-surface">3</button>
+<button class="px-2 py-1 bg-surface-container-lowest rounded text-secondary hover:text-on-surface">Next</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Sticky Bottom Dispatch Actions Bar -->
+<div class="sticky bottom-3 z-30 bg-surface-container-lowest/95 backdrop-blur-md rounded-xl p-space-md shadow-xl flex flex-col md:flex-row items-center justify-between gap-space-md">
+<div class="flex items-center gap-space-md w-full md:w-auto">
+<div class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center shrink-0 text-primary">
+<span class="material-symbols-outlined text-[22px]">lock</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-title-md text-caption text-on-surface font-semibold uppercase tracking-wider">Digital Security Seal:</span>
+<span class="font-label-mono-bold text-caption bg-secondary-fixed text-on-secondary-fixed px-2 py-0.5 rounded font-bold">#SL-88419</span>
+</div>
+<span class="font-label-mono-sm text-[11px] text-secondary truncate block">Required for dispatch handoff • 6 items pending final physical count</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm w-full md:w-auto justify-end flex-wrap">
+<!-- Download Manifest PDF -->
+<button class="px-3 py-2 bg-surface-container-low text-on-surface font-title-md text-caption rounded-lg hover:bg-surface-container transition-colors flex items-center gap-1.5 shadow-xs" onclick="downloadManifest()">
+<span class="material-symbols-outlined text-[16px] text-secondary">picture_as_pdf</span>
+<span>Download Manifest PDF</span>
+</button>
+<!-- Report Discrepancy Button -->
+<button class="px-3 py-2 bg-error-container text-on-error-container font-title-md text-caption rounded-lg hover:bg-error-container/80 transition-colors flex items-center gap-1.5 shadow-xs font-semibold" onclick="reportDiscrepancy()">
+<span class="material-symbols-outlined text-[16px]">report_problem</span>
+<span>Report Discrepancy (2)</span>
+</button>
+<!-- Primary Dispatch Button -->
+<button class="px-4 py-2 bg-primary text-on-primary font-title-md text-caption rounded-lg hover:bg-primary-container transition-all flex items-center gap-2 shadow-md hover:shadow-lg font-bold" onclick="completeDispatch()">
+<span class="material-symbols-outlined text-[18px]">verified_user</span>
+<span>Complete Dispatch &amp; Close Seal #SL-88419</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<script>
+  let chimeActive = true;
+  let hapticsActive = false;
+
+  function toggleAudio() {
+    chimeActive = !chimeActive;
+    const btn = document.getElementById('audio-toggle');
+    const icon = document.getElementById('audio-icon');
+    const status = document.getElementById('audio-status');
+    if (chimeActive) {
+      btn.className = "flex items-center gap-1.5 px-2.5 py-1.5 rounded font-semibold bg-surface-container-lowest text-primary shadow-xs transition-all";
+      icon.textContent = "volume_up";
+      status.textContent = "Chime On";
+    } else {
+      btn.className = "flex items-center gap-1.5 px-2.5 py-1.5 rounded text-secondary hover:text-on-surface transition-all";
+      icon.textContent = "volume_off";
+      status.textContent = "Muted";
+    }
+  }
+
+  function toggleHaptic() {
+    hapticsActive = !hapticsActive;
+    const btn = document.getElementById('haptic-toggle');
+    if (hapticsActive) {
+      btn.className = "flex items-center gap-1.5 px-2.5 py-1.5 rounded font-semibold bg-surface-container-lowest text-primary shadow-xs transition-all";
+      if (navigator.vibrate) navigator.vibrate(50);
+    } else {
+      btn.className = "flex items-center gap-1.5 px-2.5 py-1.5 rounded text-secondary hover:text-on-surface transition-all";
+    }
+  }
+
+  function handleScanInput(e) {
+    if (e.key === 'Enter') {
+      executeScanAction(e.target.value.trim());
+      e.target.value = '';
+    }
+  }
+
+  function simulateScan() {
+    const input = document.getElementById('barcode-input');
+    const samples = ['CN-98419-DXB', 'CN-98420-DXB', 'CN-98990-DXB', 'CN-98103-SHJ'];
+    const randomPick = samples[Math.floor(Math.random() * samples.length)];
+    executeScanAction(randomPick);
+    input.focus();
+  }
+
+  function executeScanAction(val) {
+    if (!val) return;
+    const banner = document.getElementById('success-banner');
+    banner.classList.add('scale-105');
+    setTimeout(() => banner.classList.remove('scale-105'), 200);
+    if (hapticsActive && navigator.vibrate) navigator.vibrate([30, 20, 30]);
+  }
+
+  function setTab(tabName) {
+    const tabs = ['all', 'scanned', 'missing', 'divert'];
+    tabs.forEach(t => {
+      const btn = document.getElementById('tab-' + t);
+      if (t === tabName) {
+        btn.className = "px-3 py-1.5 rounded font-label-mono-bold text-caption bg-surface-container-lowest text-primary shadow-xs transition-all flex items-center gap-1.5 whitespace-nowrap";
+      } else {
+        btn.className = "px-3 py-1.5 rounded font-label-mono-bold text-caption text-secondary hover:text-on-surface transition-all flex items-center gap-1.5 whitespace-nowrap";
+      }
+    });
+  }
+
+  function downloadManifest() {
+    alert("Compiling Manifest PDF for DXB-AUH Linehaul [MNF-2025-0841]...");
+  }
+
+  function reportDiscrepancy() {
+    alert("Opening Incident Divert Modal for Consignment CN-98102-SHJ.");
+  }
+
+  function completeDispatch() {
+    alert("Closing Seal #SL-88419: Generating line-haul gate pass for TRK-9921-AE.");
+  }
+</script></main></div></body></html>

@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=JetBrains+Mono:wght@100..900&display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100vw;margin:0;padding:0;}body{overscroll-behavior:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "on-tertiary-fixed-variant": "#004b73", "on-secondary-fixed-variant": "#3f465c", "on-tertiary": "#ffffff", "error": "#ba1a1a", "surface-container-highest": "#d3e4fe", "on-error-container": "#93000a", "on-secondary": "#ffffff", "error-container": "#ffdad6", "secondary-container": "#dae2fd", "on-tertiary-fixed": "#001d31", "surface": "#f8f9ff", "primary": "#a33900", "surface-container": "#e5eeff", "on-primary-fixed": "#370e00", "on-secondary-container": "#5c647a", "tertiary-container": "#007bb9", "inverse-primary": "#ffb599", "on-primary-fixed-variant": "#7f2b00", "on-secondary-fixed": "#131b2e", "on-surface": "#0b1c30", "secondary-fixed-dim": "#bec6e0", "surface-container-lowest": "#ffffff", "surface-container-high": "#dce9ff", "surface-dim": "#cbdbf5", "on-background": "#0b1c30", "on-error": "#ffffff", "on-tertiary-container": "#fdfcff", "outline-variant": "#e2bfb2", "surface-tint": "#a73a00", "secondary": "#565e74", "primary-fixed-dim": "#ffb599", "surface-container-low": "#eff4ff", "secondary-fixed": "#dae2fd", "tertiary": "#006194", "tertiary-fixed-dim": "#93ccff", "outline": "#8e7166", "tertiary-fixed": "#cce5ff", "on-surface-variant": "#5a4138", "inverse-surface": "#213145", "surface-variant": "#d3e4fe", "primary-fixed": "#ffdbce", "on-primary": "#ffffff", "background": "#f8f9ff", "inverse-on-surface": "#eaf1ff", "on-primary-container": "#fffbff", "surface-bright": "#f8f9ff", "primary-container": "#cc4900" }, "borderRadius": { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" }, "spacing": { "space-xl": "1rem", "space-md": "0.5rem", "space-2xl": "1.5rem", "gutter-lg": "1rem", "space-sm": "0.375rem", "gutter": "0.75rem", "space-2xs": "0.125rem", "space-xs": "0.25rem", "margin-lg": "1.5rem", "space-lg": "0.75rem", "margin": "1rem" }, "fontFamily": { "body-dense": ["Inter"], "label-mono-sm": ["JetBrains Mono"], "headline-sm": ["Inter"], "headline-lg": ["Inter"], "display": ["Inter"], "body-default": ["Inter"], "label-mono-bold": ["JetBrains Mono"], "caption": ["Inter"], "title-md": ["Inter"] }, "fontSize": { "body-dense": ["12px", { "lineHeight": "16px", "letterSpacing": "0em", "fontWeight": "400" }], "label-mono-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.02em", "fontWeight": "500" }], "headline-sm": ["18px", { "lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600" }], "display": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "body-default": ["13px", { "lineHeight": "18px", "letterSpacing": "0em", "fontWeight": "400" }], "label-mono-bold": ["12px", { "lineHeight": "16px", "letterSpacing": "0.04em", "fontWeight": "700" }], "caption": ["11px", { "lineHeight": "14px", "letterSpacing": "0.01em", "fontWeight": "500" }], "title-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "600" }] } } } };</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface font-body-default text-body-default text-on-surface flex flex-col min-h-screen"><header class="fixed top-0 w-full z-50 bg-surface/85 backdrop-blur-xl pt-safe shadow-[0_1px_8px_rgba(11,28,48,0.05)]"><div class="h-16 px-gutter flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-sm min-w-0"><img alt="SwiftLog Courier Brand Logo" class="h-8 w-auto object-contain flex-shrink-0" src="https://lh3.googleusercontent.com/aida/AEtjO1XHRNdw7WrWsb9fREtr_T2bEhBOKnjXCH9IZ9tMZavj1_ogMhXlyoTmDpyWYh--sOZQqrxn2KWNpIbYurh_Dgu0Wz30hGciiZMKfgYO0ebesmhs2YUret8c9tT6I-WFEI8urMWoZkS2SOnbx5X97HlQAyDx1-B3NJ24uhr3vxxioMSpc_PsGmVGyhKC8SYbLc_IEuvbU8maAvVJx4Thr0KjuH0Y7Z_S8yNC56KP0yu8hgZb9vmTSm8XiLfq"/><div class="flex flex-col min-w-0"><div class="flex items-center gap-space-xs"><span class="w-2 h-2 rounded-full bg-primary animate-pulse flex-shrink-0"></span><span class="font-label-mono-bold text-label-mono-bold text-on-surface truncate uppercase">Central Hub DXB-01</span></div><span class="font-caption text-caption text-secondary truncate">Shipments</span></div></div><div class="flex items-center gap-space-xs flex-shrink-0"><button class="min-w-[44px] min-h-[44px] w-11 h-11 flex items-center justify-center rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface transition-colors" type="button"><span class="material-symbols-outlined text-[20px]">barcode_scanner</span></button><button class="relative min-w-[44px] min-h-[44px] w-11 h-11 flex items-center justify-center rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface transition-colors" type="button"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-2 right-2 w-4 h-4 rounded-full bg-primary text-on-primary font-label-mono-sm text-[10px] flex items-center justify-center leading-none">3</span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="flex-1 flex flex-col relative w-full pt-16 pb-20 bg-surface"><div class="flex flex-col w-full">
+<!-- Search & Barcode Scan Bar -->
+<section class="px-gutter pt-space-md pb-space-xs flex flex-col gap-space-sm bg-surface">
+<div class="relative flex items-center w-full shadow-sm rounded-lg bg-surface-container-lowest">
+<span class="material-symbols-outlined absolute left-space-md text-secondary text-[20px]">search</span>
+<input class="w-full pl-9 pr-12 py-2 text-body-default font-body-default bg-transparent text-on-surface placeholder:text-secondary focus:outline-none" id="cn-search-input" placeholder="Enter CN barcode (e.g. CN-90234), phone, receiver" type="text"/>
+<button aria-label="Scan barcode camera" class="absolute right-1 w-9 h-9 flex items-center justify-center rounded-lg bg-surface-container hover:bg-surface-container-high text-primary transition-colors" id="scan-trigger-btn" type="button">
+<span class="material-symbols-outlined text-[20px]">photo_camera</span>
+</button>
+</div>
+<!-- Status Tabs Horizontal Pill Carousel -->
+<div class="flex items-center gap-space-xs overflow-x-auto pb-space-2xs no-scrollbar -mx-gutter px-gutter">
+<button class="status-pill active-tab flex-shrink-0 px-3 py-1 rounded-full bg-primary text-on-primary font-label-mono-bold text-label-mono-sm transition-all" data-status="all">
+        ALL (4,892)
+      </button>
+<button class="status-pill flex-shrink-0 px-3 py-1 rounded-full bg-surface-container-low text-on-surface hover:bg-surface-container font-label-mono-bold text-label-mono-sm transition-all" data-status="transit">
+        IN TRANSIT (1,840)
+      </button>
+<button class="status-pill flex-shrink-0 px-3 py-1 rounded-full bg-surface-container-low text-on-surface hover:bg-surface-container font-label-mono-bold text-label-mono-sm transition-all" data-status="ofd">
+        OUT FOR DELIVERY (1,420)
+      </button>
+<button class="status-pill flex-shrink-0 px-3 py-1 rounded-full bg-surface-container-low text-error hover:bg-error-container font-label-mono-bold text-label-mono-sm transition-all" data-status="failed">
+        FAILED (48)
+      </button>
+<button class="status-pill flex-shrink-0 px-3 py-1 rounded-full bg-surface-container-low text-tertiary hover:bg-secondary-container font-label-mono-bold text-label-mono-sm transition-all" data-status="delivered">
+        DELIVERED (890)
+      </button>
+<button class="status-pill flex-shrink-0 px-3 py-1 rounded-full bg-surface-container-low text-on-surface-variant hover:bg-surface-container font-label-mono-bold text-label-mono-sm transition-all" data-status="rto">
+        RTO / RETURN (62)
+      </button>
+</div>
+<!-- Quick Meta Filters Scrollable Row -->
+<div class="flex items-center gap-space-xs overflow-x-auto pb-space-2xs no-scrollbar -mx-gutter px-gutter text-caption font-caption text-secondary">
+<div class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface-container flex-shrink-0 text-on-surface">
+<span class="material-symbols-outlined text-[14px]">storefront</span>
+<span>Branch: <strong class="font-body-default font-semibold">All</strong></span>
+<span class="material-symbols-outlined text-[14px] ml-0.5">expand_more</span>
+</div>
+<div class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-secondary-container flex-shrink-0 text-on-secondary-fixed">
+<span class="material-symbols-outlined text-[14px] text-primary">payments</span>
+<span>Payment: <strong class="font-body-default font-semibold">COD Only</strong></span>
+<span class="material-symbols-outlined text-[14px] ml-0.5">close</span>
+</div>
+<div class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface-container flex-shrink-0 text-on-surface">
+<span class="material-symbols-outlined text-[14px]">calendar_today</span>
+<span>Date: <strong class="font-body-default font-semibold">Today</strong></span>
+</div>
+<div class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface-container flex-shrink-0 text-on-surface">
+<span class="material-symbols-outlined text-[14px]">sort</span>
+<span>Sort: <strong class="font-body-default font-semibold">Latest</strong></span>
+</div>
+</div>
+</section>
+<!-- Sticky Operational Batch Action Bar -->
+<section class="sticky top-16 z-30 bg-surface-container-high px-gutter py-2 shadow-sm flex items-center justify-between text-caption font-caption">
+<div class="flex items-center gap-space-xs">
+<input class="w-4 h-4 rounded text-primary accent-primary cursor-pointer" id="select-all-cns" type="checkbox"/>
+<label class="text-on-surface font-label-mono-bold text-label-mono-sm cursor-pointer select-none" for="select-all-cns">
+<span id="selected-count">0</span> / 4,892 Selected
+      </label>
+</div>
+<div class="flex items-center gap-space-xs">
+<button class="px-2 py-1 rounded bg-surface-container-lowest text-on-surface hover:bg-surface text-caption font-caption shadow-sm flex items-center gap-1 transition-colors">
+<span class="material-symbols-outlined text-[14px] text-tertiary">person_add</span>
+<span>Rider</span>
+</button>
+<button class="px-2 py-1 rounded bg-surface-container-lowest text-on-surface hover:bg-surface text-caption font-caption shadow-sm flex items-center gap-1 transition-colors">
+<span class="material-symbols-outlined text-[14px]">post_add</span>
+<span>Manifest</span>
+</button>
+<button class="px-2 py-1 rounded bg-surface-container-lowest text-on-surface hover:bg-surface text-caption font-caption shadow-sm flex items-center gap-1 transition-colors">
+<span class="material-symbols-outlined text-[14px]">print</span>
+<span>Labels</span>
+</button>
+</div>
+</section>
+<!-- Visual Hub Status Micro-Banner -->
+<div class="px-gutter pt-space-sm pb-space-2xs">
+<div class="w-full rounded-xl bg-surface-container-lowest shadow-sm p-space-sm flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="w-10 h-10 rounded-lg bg-surface-container-highest flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-primary text-[22px]">speed</span>
+</div>
+<div class="flex flex-col">
+<span class="font-title-md text-title-md text-on-surface font-semibold">Active Dispatch Window</span>
+<span class="font-caption text-caption text-secondary">Wave 2 • Line-haul DXB to AUH departure in 42m</span>
+</div>
+</div>
+<div class="flex items-center gap-1 px-2 py-1 rounded bg-surface-container text-on-surface font-label-mono-bold text-label-mono-sm">
+<span class="w-2 h-2 rounded-full bg-tertiary-container animate-pulse"></span>
+<span>98.4% SLA</span>
+</div>
+</div>
+</div>
+<!-- Consignment Cards Master List -->
+<div class="px-gutter py-space-sm flex flex-col gap-space-md">
+<!-- Card 1: Out For Delivery -->
+<article class="cn-card w-full rounded-xl bg-surface-container-lowest p-space-md shadow-sm flex flex-col gap-space-sm hover:shadow-md transition-shadow relative overflow-hidden">
+<div class="flex items-start justify-between gap-space-xs">
+<div class="flex items-center gap-space-xs min-w-0">
+<input class="cn-checkbox w-4 h-4 rounded accent-primary cursor-pointer flex-shrink-0" type="checkbox"/>
+<span class="font-label-mono-bold text-label-mono-bold text-on-surface tracking-wider">CN-98420-DXB</span>
+<button class="copy-cn text-secondary hover:text-primary transition-colors" data-cn="CN-98420-DXB" title="Copy CN" type="button">
+<span class="material-symbols-outlined text-[15px]">content_copy</span>
+</button>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-high text-on-secondary-container font-caption text-[10px] uppercase font-semibold">Express Parcel</span>
+</div>
+<!-- Status Badge -->
+<div class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-fixed font-label-mono-sm text-[10px] uppercase font-bold flex-shrink-0">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary animate-ping"></span>
+<span>OUT FOR DELIVERY</span>
+</div>
+</div>
+<!-- Route Diagram Flow -->
+<div class="rounded-lg bg-surface-container-low p-2.5 flex items-center justify-between text-body-dense font-body-dense text-on-surface">
+<div class="flex flex-col min-w-0 flex-1">
+<span class="text-caption font-caption text-secondary">Origin</span>
+<span class="font-semibold truncate">Dubai Hub (DXB)</span>
+</div>
+<div class="flex items-center justify-center px-2 text-primary">
+<span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</div>
+<div class="flex flex-col min-w-0 flex-1 text-right">
+<span class="text-caption font-caption text-secondary">Destination</span>
+<span class="font-semibold truncate text-on-surface">Downtown Dubai, Apt 402</span>
+</div>
+</div>
+<!-- Receiver & Package Key Specs -->
+<div class="grid grid-cols-2 gap-space-xs text-body-dense font-body-dense">
+<div class="flex flex-col">
+<span class="font-caption text-caption text-secondary">Consignee</span>
+<span class="font-semibold text-on-surface truncate">Ahmed Mansoor</span>
+<span class="font-label-mono-sm text-caption text-secondary">+971 50 *** 4912</span>
+</div>
+<div class="flex flex-col items-end text-right">
+<span class="font-caption text-caption text-secondary">Settlement & Spec</span>
+<span class="font-label-mono-bold text-label-mono-sm text-primary font-bold">COD: AED 285.00</span>
+<span class="font-caption text-caption text-secondary">Pending Cash • 1.4 kg</span>
+</div>
+</div>
+<!-- Rider Info Pill Card -->
+<div class="rounded-lg bg-surface-container flex items-center justify-between p-2">
+<div class="flex items-center gap-2 min-w-0">
+<div class="w-7 h-7 rounded-full bg-primary-fixed flex items-center justify-center text-on-primary-fixed">
+<span class="material-symbols-outlined text-[16px]">delivery_dining</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-body-default font-semibold text-on-surface truncate">Rashid Khan (Van #04)</span>
+<span class="font-caption text-caption text-primary flex items-center gap-1 font-medium">
+<span class="material-symbols-outlined text-[13px]">location_on</span> 6 stops away (~18 min)
+            </span>
+</div>
+</div>
+<div class="flex items-center gap-1">
+<a class="w-8 h-8 rounded-full bg-surface-container-lowest hover:bg-surface flex items-center justify-center text-primary shadow-sm transition-colors" href="tel:+97150000000">
+<span class="material-symbols-outlined text-[16px]">call</span>
+</a>
+</div>
+</div>
+<!-- Action Row -->
+<div class="flex items-center justify-between pt-1 gap-2">
+<button class="flex-1 py-1.5 px-3 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-title-md text-caption font-semibold flex items-center justify-center gap-1 transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">history</span>
+<span>View Timeline</span>
+</button>
+<button class="flex-1 py-1.5 px-3 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-title-md text-caption font-semibold flex items-center justify-center gap-1 transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">swap_horiz</span>
+<span>Reassign</span>
+</button>
+<button class="w-8 h-8 rounded-lg bg-surface-container hover:bg-surface-container-high text-secondary flex items-center justify-center transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</article>
+<!-- Card 2: Attempt Failed -->
+<article class="cn-card w-full rounded-xl bg-surface-container-lowest p-space-md shadow-sm flex flex-col gap-space-sm hover:shadow-md transition-shadow relative overflow-hidden">
+<div class="flex items-start justify-between gap-space-xs">
+<div class="flex items-center gap-space-xs min-w-0">
+<input class="cn-checkbox w-4 h-4 rounded accent-primary cursor-pointer flex-shrink-0" type="checkbox"/>
+<span class="font-label-mono-bold text-label-mono-bold text-on-surface tracking-wider">CN-98399-DXB</span>
+<button class="copy-cn text-secondary hover:text-primary transition-colors" data-cn="CN-98399-DXB" title="Copy CN" type="button">
+<span class="material-symbols-outlined text-[15px]">content_copy</span>
+</button>
+<span class="px-1.5 py-0.5 rounded bg-surface-container text-on-secondary-container font-caption text-[10px] uppercase font-semibold">Standard Service</span>
+</div>
+<!-- Status Badge -->
+<div class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-error-container text-on-error-container font-label-mono-sm text-[10px] uppercase font-bold flex-shrink-0">
+<span class="material-symbols-outlined text-[12px] text-error">error</span>
+<span>ATTEMPT FAILED</span>
+</div>
+</div>
+<!-- Critical Failure Callout Banner -->
+<div class="rounded-lg bg-error-container/60 p-2 flex items-start gap-2 text-on-error-container text-body-dense font-body-dense">
+<span class="material-symbols-outlined text-[16px] text-error flex-shrink-0 mt-0.5">phone_disabled</span>
+<div class="flex flex-col">
+<span class="font-semibold text-caption text-error uppercase tracking-wider">Exception Note</span>
+<span class="text-caption">Attempt #2: Customer phone switched off (14:20 PM)</span>
+</div>
+</div>
+<!-- Route -->
+<div class="rounded-lg bg-surface-container-low p-2.5 flex items-center justify-between text-body-dense font-body-dense text-on-surface">
+<div class="flex flex-col min-w-0 flex-1">
+<span class="text-caption font-caption text-secondary">Origin</span>
+<span class="font-semibold truncate">Sharjah Hub</span>
+</div>
+<div class="flex items-center justify-center px-2 text-secondary">
+<span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</div>
+<div class="flex flex-col min-w-0 flex-1 text-right">
+<span class="text-caption font-caption text-secondary">Destination</span>
+<span class="font-semibold truncate">Business Bay, Tower B</span>
+</div>
+</div>
+<!-- Consignee Details & Financial -->
+<div class="grid grid-cols-2 gap-space-xs text-body-dense font-body-dense">
+<div class="flex flex-col">
+<span class="font-caption text-caption text-secondary">Receiver</span>
+<span class="font-semibold text-on-surface truncate">Elena Rostova</span>
+<span class="font-caption text-caption text-secondary">Rider: Zubair Ahmed</span>
+</div>
+<div class="flex flex-col items-end text-right">
+<span class="font-caption text-caption text-secondary">Payment Method</span>
+<span class="font-label-mono-bold text-label-mono-sm text-tertiary font-bold">Prepaid (Card)</span>
+<span class="font-caption text-caption text-secondary">Gross: 0.8 kg</span>
+</div>
+</div>
+<!-- Direct Quick Action CTAs -->
+<div class="flex items-center gap-2 pt-1">
+<button class="flex-1 py-2 px-3 rounded-lg bg-primary hover:bg-primary-container text-on-primary font-title-md text-caption font-semibold flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-all" type="button">
+<span class="material-symbols-outlined text-[16px]">event_repeat</span>
+<span>Schedule Re-attempt</span>
+</button>
+<button class="px-3 py-2 rounded-lg bg-surface-container hover:bg-surface-container-high text-error font-title-md text-caption font-semibold flex items-center justify-center gap-1 transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">keyboard_return</span>
+<span>Initiate RTO</span>
+</button>
+</div>
+</article>
+<!-- Card 3: In Transit Cold Chain -->
+<article class="cn-card w-full rounded-xl bg-surface-container-lowest p-space-md shadow-sm flex flex-col gap-space-sm hover:shadow-md transition-shadow relative overflow-hidden">
+<div class="flex items-start justify-between gap-space-xs">
+<div class="flex items-center gap-space-xs min-w-0">
+<input class="cn-checkbox w-4 h-4 rounded accent-primary cursor-pointer flex-shrink-0" type="checkbox"/>
+<span class="font-label-mono-bold text-label-mono-bold text-on-surface tracking-wider">CN-98380-DXB</span>
+<button class="copy-cn text-secondary hover:text-primary transition-colors" data-cn="CN-98380-DXB" title="Copy CN" type="button">
+<span class="material-symbols-outlined text-[15px]">content_copy</span>
+</button>
+<span class="px-1.5 py-0.5 rounded bg-tertiary-fixed text-on-tertiary-fixed font-caption text-[10px] uppercase font-bold flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[12px]">ac_unit</span>
+            Cold Chain
+          </span>
+</div>
+<!-- Status Badge -->
+<div class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed-variant font-label-mono-sm text-[10px] uppercase font-bold flex-shrink-0">
+<span class="material-symbols-outlined text-[12px]">local_shipping</span>
+<span>IN TRANSIT</span>
+</div>
+</div>
+<!-- Route & Manifest Specs -->
+<div class="rounded-lg bg-surface-container-low p-2.5 flex items-center justify-between text-body-dense font-body-dense text-on-surface">
+<div class="flex flex-col min-w-0 flex-1">
+<span class="text-caption font-caption text-secondary">Origin Hub</span>
+<span class="font-semibold truncate">Jebel Ali Central</span>
+</div>
+<div class="flex items-center justify-center px-2 text-tertiary">
+<span class="material-symbols-outlined text-[18px]">sync_alt</span>
+</div>
+<div class="flex flex-col min-w-0 flex-1 text-right">
+<span class="text-caption font-caption text-secondary">Destination Hub</span>
+<span class="font-semibold truncate">Dubai South DC</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-space-xs text-body-dense font-body-dense">
+<div class="flex flex-col">
+<span class="font-caption text-caption text-secondary">Receiver Account</span>
+<span class="font-semibold text-on-surface truncate">Mediclinic Pharmacy Hub</span>
+<span class="font-label-mono-sm text-caption text-tertiary">MNF-2024-8841</span>
+</div>
+<div class="flex flex-col items-end text-right">
+<span class="font-caption text-caption text-secondary">Account Billing</span>
+<span class="font-label-mono-bold text-label-mono-sm text-on-surface">On Account ($0.00)</span>
+<span class="font-caption text-caption text-secondary">Heavy: 6.2 kg (2-8°C)</span>
+</div>
+</div>
+<!-- Actions -->
+<div class="flex items-center justify-between pt-1 gap-2">
+<button class="flex-1 py-1.5 px-3 rounded-lg bg-surface-container hover:bg-surface-container-high text-tertiary font-title-md text-caption font-semibold flex items-center justify-center gap-1 transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">radar</span>
+<span>Track Vehicle</span>
+</button>
+<button class="flex-1 py-1.5 px-3 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-title-md text-caption font-semibold flex items-center justify-center gap-1 transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">receipt_long</span>
+<span>Manifest Details</span>
+</button>
+</div>
+</article>
+<!-- Card 4: Delivered -->
+<article class="cn-card w-full rounded-xl bg-surface-container-lowest p-space-md shadow-sm flex flex-col gap-space-sm hover:shadow-md transition-shadow relative overflow-hidden">
+<div class="flex items-start justify-between gap-space-xs">
+<div class="flex items-center gap-space-xs min-w-0">
+<input class="cn-checkbox w-4 h-4 rounded accent-primary cursor-pointer flex-shrink-0" type="checkbox"/>
+<span class="font-label-mono-bold text-label-mono-bold text-on-surface tracking-wider">CN-98312-DXB</span>
+<button class="copy-cn text-secondary hover:text-primary transition-colors" data-cn="CN-98312-DXB" title="Copy CN" type="button">
+<span class="material-symbols-outlined text-[15px]">content_copy</span>
+</button>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-high text-on-secondary-container font-caption text-[10px] uppercase font-semibold">Documents</span>
+</div>
+<!-- Status Badge -->
+<div class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-container text-tertiary font-label-mono-sm text-[10px] uppercase font-bold flex-shrink-0">
+<span class="material-symbols-outlined text-[12px] text-tertiary">check_circle</span>
+<span>DELIVERED</span>
+</div>
+</div>
+<!-- Proof of Delivery Banner -->
+<div class="rounded-lg bg-surface-container-low p-2.5 flex flex-col gap-1 text-body-dense font-body-dense">
+<div class="flex items-center justify-between text-caption font-caption text-secondary">
+<span class="flex items-center gap-1 text-tertiary font-semibold">
+<span class="material-symbols-outlined text-[14px]">verified</span> Delivered today at 13:45
+          </span>
+<span class="font-label-mono-sm text-on-surface">OTP Verified (#7721)</span>
+</div>
+<div class="flex items-center justify-between text-body-dense">
+<span class="text-on-surface">Signee: <strong class="font-semibold">Fatima K.</strong></span>
+<span class="font-label-mono-bold text-label-mono-sm text-tertiary font-bold">COD: AED 150.00 Collected</span>
+</div>
+</div>
+<!-- Action Row -->
+<div class="flex items-center justify-between pt-1 gap-2">
+<button class="flex-1 py-1.5 px-3 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-title-md text-caption font-semibold flex items-center justify-center gap-1 transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px] text-primary">picture_as_pdf</span>
+<span>POD Certificate (PDF)</span>
+</button>
+<button class="py-1.5 px-3 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-title-md text-caption font-semibold flex items-center justify-center gap-1 transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">receipt</span>
+<span>Receipt</span>
+</button>
+</div>
+</article>
+</div>
+<!-- End of Feed Tactile Indicator -->
+<div class="px-gutter py-space-md flex flex-col items-center justify-center gap-1 text-secondary pb-24">
+<div class="w-8 h-1 rounded-full bg-surface-container-highest"></div>
+<span class="font-caption text-caption text-secondary">Showing 4 of 4,892 active consignments</span>
+<button class="mt-1 px-4 py-1.5 rounded-full bg-surface-container text-on-surface hover:bg-surface-container-high font-caption text-caption font-semibold transition-colors">
+      Load 50 More
+    </button>
+</div>
+<!-- Floating Sticky Action Trigger (+ New CN Booking) -->
+<div class="fixed bottom-20 right-4 z-40">
+<button class="flex items-center gap-2 px-4 py-3 rounded-full bg-primary text-on-primary font-title-md text-title-md shadow-xl hover:bg-primary-container active:scale-95 transition-all" id="new-cn-fab" type="button">
+<span class="material-symbols-outlined text-[20px]">add_box</span>
+<span class="font-semibold">+ New CN Booking</span>
+</button>
+</div>
+<!-- Toast Notification Container for Micro-delight -->
+<div class="fixed top-20 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-opacity duration-200 px-3 py-1.5 rounded-full bg-inverse-surface text-inverse-on-surface font-label-mono-sm text-caption shadow-md flex items-center gap-1.5" id="toast-pill">
+<span class="material-symbols-outlined text-[16px] text-inverse-primary">check_circle</span>
+<span id="toast-text">Copied to clipboard</span>
+</div>
+</div>
+<script>
+  (function initShipmentInteractions() {
+    // Copy CN Micro-interaction
+    const toast = document.getElementById('toast-pill');
+    const toastText = document.getElementById('toast-text');
+    let toastTimeout;
+
+    function showToast(message) {
+      if (!toast) return;
+      toastText.textContent = message;
+      toast.classList.remove('opacity-0');
+      toast.classList.add('opacity-100');
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.classList.remove('opacity-100');
+        toast.classList.add('opacity-0');
+      }, 1800);
+    }
+
+    document.querySelectorAll('.copy-cn').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const cn = btn.getAttribute('data-cn') || 'CN';
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(cn).then(() => {
+            showToast(`${cn} copied!`);
+          }).catch(() => {
+            showToast(`${cn} copied!`);
+          });
+        } else {
+          showToast(`${cn} copied!`);
+        }
+      });
+    });
+
+    // Checkbox bulk selector count logic
+    const selectAll = document.getElementById('select-all-cns');
+    const checkboxes = document.querySelectorAll('.cn-checkbox');
+    const counter = document.getElementById('selected-count');
+
+    function updateCount() {
+      const checkedBoxes = document.querySelectorAll('.cn-checkbox:checked');
+      if (counter) {
+        counter.textContent = checkedBoxes.length;
+      }
+      if (selectAll) {
+        selectAll.checked = checkedBoxes.length === checkboxes.length && checkboxes.length > 0;
+      }
+    }
+
+    if (selectAll) {
+      selectAll.addEventListener('change', () => {
+        checkboxes.forEach((cb) => {
+          cb.checked = selectAll.checked;
+        });
+        updateCount();
+      });
+    }
+
+    checkboxes.forEach((cb) => {
+      cb.addEventListener('change', updateCount);
+    });
+
+    // Status Tab toggle micro-interaction
+    const statusTabs = document.querySelectorAll('.status-pill');
+    statusTabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        statusTabs.forEach((t) => {
+          t.classList.remove('bg-primary', 'text-on-primary');
+          t.classList.add('bg-surface-container-low', 'text-on-surface');
+        });
+        tab.classList.remove('bg-surface-container-low', 'text-on-surface');
+        tab.classList.add('bg-primary', 'text-on-primary');
+      });
+    });
+
+    // Barcode Scan quick feedback
+    const scanBtn = document.getElementById('scan-trigger-btn');
+    if (scanBtn) {
+      scanBtn.addEventListener('click', () => {
+        showToast('Optical scanner activated');
+      });
+    }
+
+    // New Booking FAB feedback
+    const fabBtn = document.getElementById('new-cn-fab');
+    if (fabBtn) {
+      fabBtn.addEventListener('click', () => {
+        showToast('Opening Rapid CN Booking Drawer...');
+      });
+    }
+  })();
+</script></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface/90 backdrop-blur-xl shadow-[0_-2px_12px_rgba(11,28,48,0.06)]" data-active-classes="text-primary"><div class="h-16 px-space-xs flex items-center justify-between relative"><a class="flex-1 min-h-[44px] flex flex-col items-center justify-center gap-space-2xs text-secondary hover:text-on-surface transition-colors" data-path="dashboard" href="#"><span class="material-symbols-outlined text-[22px]">dashboard</span><span class="font-caption text-caption">Dashboard</span></a><a aria-current="page" class="flex-1 min-h-[44px] flex flex-col items-center justify-center gap-space-2xs transition-colors text-primary" data-path="shipments" href="#"><span class="material-symbols-outlined text-[22px]">inventory_2</span><span class="font-caption text-caption">Shipments</span></a><div class="flex-1 flex items-center justify-center -mt-5"><a class="min-w-[50px] min-h-[50px] w-12 h-12 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-[0_4px_12px_rgba(163,57,0,0.35)] hover:bg-primary-container transition-transform active:scale-95" data-path="quick-scan" href="#"><span class="material-symbols-outlined text-[26px]">qr_code_scanner</span></a></div><a class="flex-1 min-h-[44px] flex flex-col items-center justify-center gap-space-2xs text-secondary hover:text-on-surface transition-colors" data-path="dispatch-manifests" href="#"><span class="material-symbols-outlined text-[22px]">local_shipping</span><span class="font-caption text-caption">Dispatch</span></a><a class="flex-1 min-h-[44px] flex flex-col items-center justify-center gap-space-2xs text-secondary hover:text-on-surface transition-colors" data-path="more-settings" href="#"><span class="material-symbols-outlined text-[22px]">menu</span><span class="font-caption text-caption">More</span></a></div></nav></body></html>
