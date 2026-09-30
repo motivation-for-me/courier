@@ -1,5 +1,5 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { ConsignmentStatus, PickupStatus } from '@prisma/client';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConsignmentStatus, PickupStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../../infrastructure/prisma/prisma.service';
 import { AuthenticatedUser } from '../../common/auth.types';
 
@@ -7,12 +7,17 @@ import { AuthenticatedUser } from '../../common/auth.types';
 export class PickupsService {
   constructor(private readonly prisma: PrismaService) {}
 
+  assigned(actor: AuthenticatedUser) {
+    if (!actor.permissions.includes('pickup:view')) throw new ForbiddenException('Pickup permission missing');
+    return this.prisma.pickup.findMany({ where: { organizationId: actor.organizationId, ...(actor.roles.includes('RIDER') ? { assignedToId: actor.id } : {}), status: { in: [PickupStatus.ASSIGNED, PickupStatus.IN_PROGRESS] } }, orderBy: { requestedAt: 'asc' }, include: { consignment: { include: { parties: true, addresses: true, packages: true, items: true } } } });
+  }
+
   async request(consignmentId: string, actor: AuthenticatedUser) {
     this.require(actor, 'pickup:create');
     return this.prisma.$transaction(async (tx) => {
       const consignment = await tx.consignment.findFirst({ where: { id: consignmentId, organizationId: actor.organizationId } });
       if (!consignment) throw new NotFoundException('Consignment not found');
-      if (consignment.status !== ConsignmentStatus.BOOKED && consignment.status !== ConsignmentStatus.VERIFIED) throw new BadRequestException('Consignment is not eligible for pickup');
+      if (consignment.status !== ConsignmentStatus.CONFIRMED && consignment.status !== ConsignmentStatus.ASSIGNED_TO_RIDER) throw new BadRequestException('Shipment is not eligible for pickup');
       const existing = await tx.pickup.findUnique({ where: { consignmentId } });
       if (existing) return existing;
       const pickup = await tx.pickup.create({ data: { organizationId: actor.organizationId, consignmentId, requestedById: actor.id } });
@@ -50,12 +55,15 @@ export class PickupsService {
     const pickup = await this.getAssigned(pickupId, actor);
     if (pickup.status !== PickupStatus.ASSIGNED && pickup.status !== PickupStatus.IN_PROGRESS) throw new BadRequestException('Pickup is not ready for completion');
     return this.prisma.$transaction(async (tx) => {
-      const updated = await tx.pickup.update({ where: { id: pickupId }, data: { status: PickupStatus.COMPLETED, completedAt: new Date() } });
-      await tx.consignment.update({ where: { id: pickup.consignmentId }, data: { status: ConsignmentStatus.VERIFIED, currentStatusAt: new Date() } });
-      await tx.trackingEvent.create({ data: { consignmentId: pickup.consignmentId, eventType: ConsignmentStatus.VERIFIED, performedById: actor.id, remarks: remarks ?? 'Pickup completed' } });
-      await tx.auditLog.create({ data: { organizationId: actor.organizationId, actorId: actor.id, action: 'pickup.completed', entityType: 'pickup', entityId: pickupId, newValues: { status: updated.status, remarks } } });
+      const pickupChanged = await tx.pickup.updateMany({ where: { id: pickupId, status: pickup.status }, data: { status: PickupStatus.COMPLETED, completedAt: new Date() } });
+      if (pickupChanged.count !== 1) throw new ConflictException('Pickup was already updated by another request.');
+      const shipmentChanged = await tx.consignment.updateMany({ where: { id: pickup.consignmentId, status: { in: [ConsignmentStatus.CONFIRMED, ConsignmentStatus.ASSIGNED_TO_RIDER] } }, data: { status: ConsignmentStatus.DISPATCHED, currentStatusAt: new Date() } });
+      if (shipmentChanged.count !== 1) throw new ConflictException('Shipment changed while pickup was being completed. Reload and try again.');
+      const updated = await tx.pickup.findUniqueOrThrow({ where: { id: pickupId } });
+      await tx.trackingEvent.create({ data: { consignmentId: pickup.consignmentId, eventType: ConsignmentStatus.DISPATCHED, riderId: actor.riderId, performedById: actor.id, remarks: remarks ?? 'Parcel picked up and dispatched' } });
+      await tx.auditLog.create({ data: { organizationId: actor.organizationId, actorId: actor.id, action: 'pickup.completed', entityType: 'pickup', entityId: pickupId, newValues: { status: updated.status, remarks, verificationMethod: 'authenticated_assignment' } } });
       return updated;
-    });
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
   }
 
   async fail(pickupId: string, actor: AuthenticatedUser, reason: string) {

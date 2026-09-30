@@ -1,19 +1,34 @@
 # Courier Management System
 
-Foundation implementation for the Courier & Logistics Management System.
+Courier operations platform implemented as an npm-workspace monorepo. The NestJS API owns business rules and PostgreSQL access; the Next.js client communicates only with that API.
 
-## Boundaries
+## Quick start
 
-- `apps/api`: NestJS REST API and domain/application services.
-- `apps/web`: Next.js operations and rider-friendly frontend boundary.
-- `prisma`: Supabase PostgreSQL persistence contract and migrations.
-- `ui`: Stitch visual references; preserved as source material.
-- `docs`: architecture, domain, security, permissions, API, and assumptions.
+From the repository root:
 
-## Local prerequisites
+```powershell
+copy .env.example .env
+# Set DATABASE_URL, DIRECT_URL, and JWT_SECRET in .env.
+npm install
+npm run db:generate
+npm run db:migrate
+npm run dev --workspace @courier/api
+# In a second terminal:
+npm run dev --workspace @courier/web
+```
 
-Node.js 22+ and npm 11+ are required. Supabase PostgreSQL is the only application database. Set `DATABASE_URL` to the Supabase pooled runtime URL and `DIRECT_URL` to the Supabase direct connection URL in environment secrets or a local ignored `.env` file. Run `npm run db:generate`, `npm run db:validate`, and `npm run db:migrate` after those values are available.
+Open `http://localhost:3000`; the API health endpoint is `http://localhost:3001/api/v1/health`.
 
-Docker Compose provides only non-database local dependencies such as Redis and MinIO. It does not create or run a local PostgreSQL database.
+Do not run Prisma commands from `apps/api` or `apps/web`; they must run from the repository root because the schema and migrations are in `prisma/`.
 
-The API and web workflows are intentionally not implemented yet. This foundation establishes the boundaries and persistence contract before Part 2 feature work.
+## Project layout
+
+- `apps/api` — NestJS REST API, controllers, domain services, and Prisma integration.
+- `apps/web` — Next.js operations frontend.
+- `prisma` — database schema and migration history.
+- `docs` — architecture, security, deployment, and operational documentation.
+- `ui` — Stitch visual references only; it is not runtime application code.
+
+See [INFO.md](INFO.md) for the full folder map, command reference, environment rules, database workflow, and production deployment checklist.
+
+For the courier business roles, shipment route, lifecycle, permissions, and operational story, see [Business Model](docs/business-model.md).

@@ -3,8 +3,9 @@ import { AuthGuard } from '../auth/auth.guard';
 import { CurrentUser } from '../../common/current-user.decorator';
 import { AuthenticatedUser } from '../../common/auth.types';
 import { RequirePermission } from '../../common/permissions.decorator';
-import { AssignRiderDto, CompleteDeliveryDto, CreateOtpDto, FailedDeliveryDto, VerifyOtpDto } from './dto/delivery.dto';
+import { AssignRiderDto, CompleteDeliveryDto, FailedDeliveryDto, RiderScanDto, RiderStatusDto } from './dto/delivery.dto';
 import { DeliveryService } from './delivery.service';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller('delivery')
 @UseGuards(AuthGuard)
@@ -13,23 +14,23 @@ export class DeliveryController {
 
   @Post('scan')
   @RequirePermission('delivery:scan')
-  scan(@Body('cnNumber') cnNumber: string, @CurrentUser() actor: AuthenticatedUser) { return this.delivery.scan(cnNumber, actor); }
+  @Throttle({ default: { limit: 5, ttl: 300_000 } })
+  scan(@Body() input: RiderScanDto, @CurrentUser() actor: AuthenticatedUser) { return this.delivery.scan(input.cnNumber, actor); }
+
+  @Post(':id/status')
+  @RequirePermission('delivery:update')
+  @Throttle({ default: { limit: 10, ttl: 300_000 } })
+  updateStatus(@Param('id') id: string, @Body() input: RiderStatusDto, @CurrentUser() actor: AuthenticatedUser) {
+    return this.delivery.updateRiderStatus(id, input.status, actor, input.remarks);
+  }
 
   @Post(':id/assign')
   @RequirePermission('delivery:assign')
   assign(@Param('id') id: string, @Body() input: AssignRiderDto, @CurrentUser() actor: AuthenticatedUser) { return this.delivery.assign(id, input.riderId, actor, input.reason); }
 
-  @Post(':id/otp')
-  @RequirePermission('delivery:update')
-  createOtp(@Param('id') id: string, @Body() input: CreateOtpDto, @CurrentUser() actor: AuthenticatedUser) { return this.delivery.createOtp(id, actor, input.purpose); }
-
-  @Post(':id/otp/verify')
-  @RequirePermission('delivery:update')
-  verifyOtp(@Param('id') id: string, @Body() input: VerifyOtpDto, @CurrentUser() actor: AuthenticatedUser) { return this.delivery.verifyOtp(id, actor, input.code); }
-
   @Post(':id/complete')
   @RequirePermission('delivery:complete')
-  complete(@Param('id') id: string, @Body() input: CompleteDeliveryDto, @Headers('idempotency-key') idempotencyKey: string | undefined, @CurrentUser() actor: AuthenticatedUser) { return this.delivery.complete(id, actor, input.otp, input.collectedAmount, input.remarks, idempotencyKey); }
+  complete(@Param('id') id: string, @Body() input: CompleteDeliveryDto, @Headers('idempotency-key') idempotencyKey: string | undefined, @CurrentUser() actor: AuthenticatedUser) { return this.delivery.complete(id, actor, input.collectedAmount, input.remarks, idempotencyKey); }
 
   @Post(':id/failed')
   @RequirePermission('delivery:update')

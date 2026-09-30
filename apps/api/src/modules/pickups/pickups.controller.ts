@@ -1,4 +1,4 @@
-import { Body, Controller, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '../auth/auth.guard';
 import { CurrentUser } from '../../common/current-user.decorator';
 import { AuthenticatedUser } from '../../common/auth.types';
@@ -10,6 +10,10 @@ import { PickupsService } from './pickups.service';
 @UseGuards(AuthGuard)
 export class PickupsController {
   constructor(private readonly pickups: PickupsService) {}
+
+  @Get('assigned')
+  @RequirePermission('pickup:view')
+  assigned(@CurrentUser() actor: AuthenticatedUser) { return this.pickups.assigned(actor); }
 
   @Post('consignments/:consignmentId')
   @RequirePermission('pickup:create')
@@ -25,7 +29,7 @@ export class PickupsController {
 
   @Post(':id/complete')
   @RequirePermission('pickup:update')
-  complete(@Param('id') id: string, @CurrentUser() actor: AuthenticatedUser) { return this.pickups.complete(id, actor); }
+  complete(@Param('id') id: string, @Body('remarks') remarks: string | undefined, @CurrentUser() actor: AuthenticatedUser) { return this.pickups.complete(id, actor, remarks); }
 
   @Post(':id/fail')
   @RequirePermission('pickup:update')

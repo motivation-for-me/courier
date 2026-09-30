@@ -14,10 +14,13 @@ export class AuthService {
   ) {}
 
   async login(input: LoginDto) {
-    const user = await this.prisma.user.findFirst({
+    const matches = await this.prisma.user.findMany({
       where: { email: input.email.toLowerCase(), isActive: true },
       include: { roles: { include: { role: { include: { permissions: { include: { permission: true } } } } } }, rider: true },
+      take: 2,
     });
+    if (matches.length > 1) throw new UnauthorizedException('This email belongs to more than one company. Contact support to select your company.');
+    const user = matches[0];
     if (!user || !(await bcrypt.compare(input.password, user.passwordHash))) {
       throw new UnauthorizedException('Invalid credentials');
     }
@@ -46,7 +49,12 @@ export class AuthService {
     });
     if (!user) throw new UnauthorizedException('Invalid refresh session');
     const authenticated = this.toAuthenticatedUser(user);
-    return { accessToken: await this.jwt.signAsync(authenticated, { expiresIn: '15m' }), user: authenticated };
+    const nextRefreshToken = randomBytes(48).toString('base64url');
+    await this.prisma.$transaction([
+      this.prisma.authSession.update({ where: { id: session.id }, data: { revokedAt: new Date() } }),
+      this.prisma.authSession.create({ data: { userId: user.id, refreshHash: this.hash(nextRefreshToken), expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) } }),
+    ]);
+    return { accessToken: await this.jwt.signAsync(authenticated, { expiresIn: '15m' }), refreshToken: nextRefreshToken, user: authenticated };
   }
 
   async logout(refreshToken: string) {
@@ -57,7 +65,7 @@ export class AuthService {
   private toAuthenticatedUser(user: any): AuthenticatedUser {
     const roles = user.roles.map((assignment: any) => assignment.role.name);
     const permissions = user.roles.flatMap((assignment: any) => assignment.role.permissions.map((item: any) => item.permission.code));
-    return { id: user.id, organizationId: user.organizationId, branchId: user.branchId ?? undefined, hubId: user.hubId ?? undefined, riderId: user.rider?.id, roles, permissions };
+    return { id: user.id, displayName: user.displayName, organizationId: user.organizationId, customerId: user.customerId ?? undefined, branchId: user.branchId ?? undefined, hubId: user.hubId ?? undefined, riderId: user.rider?.id, roles, permissions };
   }
 
   private hash(value: string) {

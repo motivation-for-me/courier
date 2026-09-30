@@ -1,5 +1,5 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { ConsignmentStatus, ReturnStatus } from '@prisma/client';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConsignmentStatus, Prisma, ReturnStatus } from '@prisma/client';
 import { randomBytes } from 'node:crypto';
 import { PrismaService } from '../../infrastructure/prisma/prisma.service';
 import { AuthenticatedUser } from '../../common/auth.types';
@@ -16,10 +16,11 @@ export class ReturnsService {
       if (shipment.status !== ConsignmentStatus.DELIVERY_ATTEMPT_FAILED && shipment.status !== ConsignmentStatus.HELD) throw new BadRequestException('Shipment is not eligible for RTO');
       const returnNumber = `RTO-${new Date().toISOString().slice(0, 10).replaceAll('-', '')}-${randomBytes(3).toString('hex').toUpperCase()}`;
       const record = await transaction.returnRecord.create({ data: { consignmentId, returnNumber, reason, status: ReturnStatus.REQUESTED, attempts: { create: shipment.attempts.map((attempt) => ({ reason: attempt.reason, outcome: attempt.outcome, createdById: actor.id })) }, events: { create: { eventType: ReturnStatus.REQUESTED, remarks: reason } } } });
-      await transaction.consignment.update({ where: { id: consignmentId }, data: { status: ConsignmentStatus.RETURNED, currentStatusAt: new Date() } });
+      const changed = await transaction.consignment.updateMany({ where: { id: consignmentId, status: shipment.status }, data: { status: ConsignmentStatus.RETURNED, currentStatusAt: new Date() } });
+      if (changed.count !== 1) throw new ConflictException('Shipment changed while the return was being created. Reload and try again.');
       await transaction.trackingEvent.create({ data: { consignmentId, eventType: ConsignmentStatus.RETURNED, performedById: actor.id, remarks: `RTO ${returnNumber}: ${reason}` } });
       await transaction.auditLog.create({ data: { organizationId: actor.organizationId, actorId: actor.id, action: 'return.created', entityType: 'consignment', entityId: consignmentId, newValues: { returnNumber, reason } } });
       return record;
-    });
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
   }
 }

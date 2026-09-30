@@ -6,7 +6,10 @@
     "dev": "nest start --watch",
     "build": "nest build",
     "start": "node dist/main.js",
-    "typecheck": "tsc --noEmit"
+    "bootstrap:admin": "node dist/scripts/bootstrap-admin.js",
+    "sync:permissions": "node dist/scripts/sync-admin-permissions.js",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test --require ts-node/register test/*.test.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.0",
@@ -20,6 +23,7 @@
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
     "pdfkit": "^0.20.2",
+    "qrcode": "^1.5.4",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
     "swagger-ui-express": "^5.0.1"
@@ -32,6 +36,7 @@
     "@types/express": "^5.0.0",
     "@types/node": "^22.0.0",
     "@types/pdfkit": "^0.17.6",
+    "@types/qrcode": "^1.5.6",
     "prisma": "^6.0.0",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",

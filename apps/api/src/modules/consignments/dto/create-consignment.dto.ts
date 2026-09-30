@@ -1,5 +1,6 @@
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { IsArray, IsEmail, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, Matches, Min, ValidateNested } from 'class-validator';
+import { normalizePakistanPhone, pakistanPhonePattern } from '../../../common/phone';
 
 class PartyDto {
   @IsIn(['SENDER', 'RECEIVER'])
@@ -10,7 +11,8 @@ class PartyDto {
   name!: string;
 
   @IsOptional()
-  @Matches(/^\+?[1-9]\d{7,14}$/)
+  @Transform(({ value }) => normalizePakistanPhone(value))
+  @Matches(pakistanPhonePattern, { message: 'phone must be a valid Pakistan mobile number' })
   phone?: string;
 
   @IsOptional()
@@ -73,6 +75,24 @@ class PackageDto {
   heightCm!: number;
 }
 
+class DispatchItemDto {
+  @IsString()
+  @IsNotEmpty()
+  description!: string;
+
+  @IsOptional()
+  @IsString()
+  sku?: string;
+
+  @IsNumber()
+  @Min(1)
+  quantity!: number;
+
+  @IsString()
+  @IsNotEmpty()
+  unit!: string;
+}
+
 export class CreateConsignmentDto {
   @IsString()
   @IsNotEmpty()
@@ -88,10 +108,21 @@ export class CreateConsignmentDto {
   @Type(() => AddressDto)
   addresses!: AddressDto[];
 
+  @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => PackageDto)
-  packages!: PackageDto[];
+  packages?: PackageDto[];
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => DispatchItemDto)
+  items?: DispatchItemDto[];
+
+  @IsOptional()
+  @IsString()
+  customerId?: string;
 
   @IsOptional()
   @IsNumber()
