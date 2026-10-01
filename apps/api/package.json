@@ -4,10 +4,13 @@
   "version": "0.1.0",
   "scripts": {
     "dev": "nest start --watch",
+    "generate": "prisma generate --schema ../../prisma/schema.prisma",
+    "prebuild": "npm run generate",
     "build": "nest build",
     "start": "node dist/main.js",
     "bootstrap:admin": "node dist/scripts/bootstrap-admin.js",
     "sync:permissions": "node dist/scripts/sync-admin-permissions.js",
+    "pretypecheck": "npm run generate",
     "typecheck": "tsc --noEmit",
     "test": "node --test --require ts-node/register test/*.test.ts"
   },
