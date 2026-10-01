@@ -11,7 +11,9 @@ export type AuthSession = {
   user: { id: string; displayName: string; organizationId: string; riderId?: string; roles: string[]; permissions: string[] };
 };
 
-const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
+// Same-origin by default. In Vercel, the Next route handler forwards this path
+// to the internal Nest service through the runtime-only API_INTERNAL_URL binding.
+const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL ?? '/api/v1';
 const sessionKey = 'courier.auth-session';
 export const sessionExpiredEvent = 'courier:session-expired';
 export const dataChangedEvent = 'courier:data-changed';
