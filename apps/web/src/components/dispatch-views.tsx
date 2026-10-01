@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
+import Image from 'next/image';
 import { assignDispatchRider, correctDispatchStatus, enableMyRiderAccess, getConsignments, getRiderRecommendations, getSession, openDispatchDocument, trackDispatch, type ApiError, type DispatchSummary, type RiderRecommendation, type TrackingResult } from '../lib/api';
 import { SpotlightCard } from './animated-ui';
 
@@ -12,7 +13,7 @@ const riderAssignableStatuses = ['CONFIRMED', 'ASSIGNED_TO_RIDER', 'DISPATCHED',
 
 function Metric({ title, value }: { title: string; value: number }) { return <SpotlightCard className="metric-card"><div className="metric-top"><span>{title}</span><span className="metric-pulse" /></div><strong>{value}</strong><small><i /> Live API data</small></SpotlightCard>; }
 function Icon({ name }: { name: string }) { return <span aria-hidden="true" className="material-symbols-outlined icon">{name}</span>; }
-function BikeLoader({ label = 'Loading data' }: { label?: string }) { return <div className="data-bike-loader" aria-label={label} aria-live="polite"><div className="data-loader-inner"><img className="rider-bike-image" src="/assets/logo.jpg" alt="Delivery rider" /><div className="skeleton-stack" aria-hidden="true"><i /><i /><i /></div></div></div>; }
+function BikeLoader({ label = 'Loading data' }: { label?: string }) { return <div className="data-bike-loader" aria-label={label} aria-live="polite"><div className="data-loader-inner"><Image className="rider-bike-image" src="/assets/logo.jpg" alt="Delivery rider" width={1365} height={768} sizes="240px" /><div className="skeleton-stack" aria-hidden="true"><i /><i /><i /></div></div></div>; }
 
 export function DispatchDashboard({ onCreate, onViewAll }: { onCreate: () => void; onViewAll: () => void }) {
   const [rows, setRows] = useState<DispatchSummary[]>([]); const [error, setError] = useState('');

@@ -244,6 +244,29 @@ th { padding:10px 12px; }
 .rider-directory-row { gap:12px; border-radius:10px; padding:12px; }
 .state-panel { min-height:120px; padding:20px 14px; }
 
+/* Content safety and compact information density across every viewport. */
+.main-column,.page-content,.rider-page,.surface-panel,.metric-card,
+.page-header>div,.panel-heading>div,.table-cell,.field,.directory-overview,
+.management-workspace,.access-editor { min-width:0; }
+.page-header h2,.panel-heading h3,.surface-panel h3,.metric-top span,
+.table-cell strong,.table-cell small,.state-panel h3,.state-panel p,
+.notification-list strong,.notification-list small,.directory-overview dd {
+  max-width:100%;
+  overflow-wrap:anywhere;
+  word-break:break-word;
+}
+.mono { overflow-wrap:anywhere; word-break:break-word; }
+img,svg,video,canvas { max-width:100%; }
+.page-content,.rider-page { padding:clamp(16px,1.75vw,26px); }
+.page-header { margin-bottom:16px; }
+.page-header h2 { font-size:clamp(23px,1.8vw,30px); }
+.page-header p { font-size:12px; line-height:1.45; }
+.metric-grid,.rider-metrics { gap:8px; margin-bottom:10px; }
+.metric-card { min-height:96px; padding:12px; }
+.metric-card strong { font-size:25px; }
+.surface-panel { padding:15px; }
+.state-panel { min-height:104px; padding:16px 12px; }
+
 .sidebar-collapsed .sidebar { width:68px; flex-basis:68px; padding-inline:8px; }
 .sidebar-collapsed .main-column { width:calc(100% - 68px); }
 .sidebar-collapsed .brand-lockup { min-height:30px; padding:0 0 10px; }
@@ -264,11 +287,15 @@ th { padding:10px 12px; }
 }
 
 @media (max-width:760px) {
+  html,body { width:100%; overflow-x:hidden; }
+  .app-shell,.app-shell.sidebar-collapsed { width:100%; min-width:0; }
+  .main-column,.sidebar-collapsed .main-column { width:100%; max-width:100%; min-width:0; }
   .sidebar-toggle { display:none; }
   .topbar { height:60px; padding:0 12px; }
   .topbar-leading { gap:0; }
   .topbar-title h1 { max-width:62vw; font-size:16px; }
   .page-content,.rider-page { padding:17px 12px; }
+  .page-content { width:100%; max-width:none; margin:0; }
   .page-header { gap:12px; margin-bottom:16px; }
   .page-header h2 { font-size:25px; margin-bottom:4px; }
   .metric-grid,.rider-metrics { gap:8px; }
@@ -287,10 +314,16 @@ th { padding:10px 12px; }
 }
 
 @media (max-width:420px) {
+  .page-content,.rider-page { padding-inline:10px; }
+  .page-header { gap:10px; }
+  .page-header h2 { font-size:23px; line-height:1.04; }
+  .page-header p { font-size:12px; line-height:1.45; }
+  .page-header>.button { min-height:42px; }
   .metric-grid,.rider-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); }
-  .metric-card { min-height:90px; }
+  .metric-card { min-height:86px; padding:10px; }
   .metric-card .metric-top { font-size:8px; }
-  .metric-card strong { font-size:23px; }
+  .metric-card strong { font-size:22px; }
+  .surface-panel { padding:12px; }
 }
 /* Rider animation: login intro and compact authentication loader */
 .rider-intro {
