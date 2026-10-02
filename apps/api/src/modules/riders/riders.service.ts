@@ -29,6 +29,29 @@ export class RidersService {
     }));
   }
 
+  async myFinance(actor: AuthenticatedUser) {
+    if (!actor.riderId) throw new ForbiddenException('Rider profile required');
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const month = new Date(now.getFullYear(), now.getMonth(), 1);
+    const [rider, grouped, completedToday, completedThisMonth, recent] = await Promise.all([
+      this.prisma.rider.findFirst({ where: { id: actor.riderId, organizationId: actor.organizationId, isActive: true }, select: { deliveryFee: true } }),
+      this.prisma.riderEarning.groupBy({ by: ['status', 'currencyCode'], where: { riderId: actor.riderId, organizationId: actor.organizationId }, _count: { _all: true }, _sum: { amount: true } }),
+      this.prisma.riderEarning.count({ where: { riderId: actor.riderId, organizationId: actor.organizationId, createdAt: { gte: today } } }),
+      this.prisma.riderEarning.count({ where: { riderId: actor.riderId, organizationId: actor.organizationId, createdAt: { gte: month } } }),
+      this.prisma.riderEarning.findMany({ where: { riderId: actor.riderId, organizationId: actor.organizationId }, orderBy: { createdAt: 'desc' }, take: 10, select: { id: true, amount: true, currencyCode: true, status: true, paidAt: true, createdAt: true, consignment: { select: { cnNumber: true } } } }),
+    ]);
+    if (!rider) throw new NotFoundException('Active rider profile not found');
+    const totals = grouped.reduce((summary, row) => {
+      const amount = Number(row._sum.amount ?? 0);
+      summary.completed += row._count._all;
+      if (row.status === 'PENDING') summary.pending += amount;
+      if (row.status === 'PAID') summary.paid += amount;
+      return summary;
+    }, { completed: 0, pending: 0, paid: 0 });
+    return { ...totals, completedToday, completedThisMonth, deliveryFee: rider.deliveryFee, currencyCode: recent[0]?.currencyCode ?? grouped[0]?.currencyCode ?? 'PKR', recent };
+  }
+
   async enableCurrentAdmin(employeeCode: string, actor: AuthenticatedUser) {
     this.requireAdmin(actor);
     return this.prisma.$transaction(async (transaction) => {

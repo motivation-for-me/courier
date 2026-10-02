@@ -219,6 +219,8 @@ export type PickupAssignment = { id: string; status: string; consignment: Dispat
 export type RiderDeliveryAssignment = { id: string; status: 'ACTIVE' | 'ENDED'; assignedAt: string; endedAt?: string | null; allowedStatuses: RiderStatus[]; consignment: DispatchSummary & { addresses: Array<{ kind: string; addressLine: string; city?: string | null; landmark?: string | null; deliveryNote?: string | null }> } };
 export function getAssignedPickups() { return apiRequest<PickupAssignment[]>('/pickups/assigned'); }
 export function getMyRiderAssignments() { return apiRequest<RiderDeliveryAssignment[]>('/riders/me/assignments'); }
+export type RiderFinanceSummary = { completed: number; completedToday: number; completedThisMonth: number; pending: number; paid: number; deliveryFee: string | number; currencyCode: string; recent: Array<{ id: string; amount: string | number; currencyCode: string; status: string; paidAt?: string | null; createdAt: string; consignment: { cnNumber: string } }> };
+export function getMyRiderFinance() { return apiRequest<RiderFinanceSummary>('/riders/me/finance'); }
 export function startPickup(id: string) { return apiRequest(`/pickups/${id}/start`, { method: 'POST', body: '{}' }); }
 export function completePickup(id: string, remarks?: string) { return apiRequest(`/pickups/${id}/complete`, { method: 'POST', body: JSON.stringify({ remarks }) }); }
 export function failPickup(id: string, reason: string) { return apiRequest(`/pickups/${id}/fail`, { method: 'POST', body: JSON.stringify({ reason }) }); }

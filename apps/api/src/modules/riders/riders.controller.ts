@@ -21,6 +21,10 @@ export class RidersController {
   @RequirePermission('delivery:view')
   myAssignments(@CurrentUser() actor: AuthenticatedUser) { return this.riders.myAssignments(actor); }
 
+  @Get('me/finance')
+  @RequirePermission('delivery:view')
+  myFinance(@CurrentUser() actor: AuthenticatedUser) { return this.riders.myFinance(actor); }
+
   @Post('me')
   enableMe(@Body() input: EnableMyRiderAccessDto, @CurrentUser() actor: AuthenticatedUser) { return this.riders.enableCurrentAdmin(input.employeeCode, actor); }
 

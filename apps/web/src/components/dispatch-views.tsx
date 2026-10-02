@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import Image from 'next/image';
 import { assignDispatchRider, correctDispatchStatus, enableMyRiderAccess, getConsignments, getRiderRecommendations, getSession, openDispatchDocument, trackDispatch, type ApiError, type DispatchSummary, type RiderRecommendation, type TrackingResult } from '../lib/api';
 import { SpotlightCard } from './animated-ui';
 
@@ -13,7 +12,7 @@ const riderAssignableStatuses = ['CONFIRMED', 'ASSIGNED_TO_RIDER', 'DISPATCHED',
 
 function Metric({ title, value }: { title: string; value: number }) { return <SpotlightCard className="metric-card"><div className="metric-top"><span>{title}</span><span className="metric-pulse" /></div><strong>{value}</strong><small><i /> Live API data</small></SpotlightCard>; }
 function Icon({ name }: { name: string }) { return <span aria-hidden="true" className="material-symbols-outlined icon">{name}</span>; }
-function BikeLoader({ label = 'Loading data' }: { label?: string }) { return <div className="data-bike-loader" aria-label={label} aria-live="polite"><div className="data-loader-inner"><Image className="rider-bike-image" src="/assets/logo.jpg" alt="Delivery rider" width={1365} height={768} sizes="240px" /><div className="skeleton-stack" aria-hidden="true"><i /><i /><i /></div></div></div>; }
+function BikeLoader({ label = 'Loading data' }: { label?: string }) { return <div className="data-skeleton-loader" aria-label={label} aria-live="polite"><div className="table-skeleton" aria-hidden="true">{Array.from({ length: 5 }, (_, index) => <div key={index}><i /><i /><i /><i /></div>)}</div></div>; }
 
 export function DispatchDashboard({ onCreate, onViewAll }: { onCreate: () => void; onViewAll: () => void }) {
   const [rows, setRows] = useState<DispatchSummary[]>([]); const [error, setError] = useState('');
@@ -24,7 +23,7 @@ export function DispatchDashboard({ onCreate, onViewAll }: { onCreate: () => voi
 
 export function DispatchList({ onCreate }: { onCreate: () => void }) {
   const [rows, setRows] = useState<DispatchSummary[]>([]); const [search, setSearch] = useState(''); const [status, setStatus] = useState('ALL'); const [loading, setLoading] = useState(true); const [message, setMessage] = useState('');
-  useEffect(() => { const timer = window.setTimeout(() => { setLoading(true); getConsignments(search ? `?search=${encodeURIComponent(search)}` : '').then((data) => { setRows(data); setLoading(false); }).catch((e: ApiError) => { setMessage(e.message); setLoading(false); }); }, 250); return () => clearTimeout(timer); }, [search]);
+  useEffect(() => { const timer = window.setTimeout(() => { setLoading(true); getConsignments(search ? `?search=${encodeURIComponent(search)}` : '').then((data) => { setRows(data); setLoading(false); }).catch((e: ApiError) => { setMessage(e.message); setLoading(false); }); }, search ? 250 : 0); return () => clearTimeout(timer); }, [search]);
   const visible = status === 'ALL' ? rows : rows.filter((row) => row.status === status);
   return <div className="page-content"><div className="page-header"><div><span className="eyebrow">DISPATCHES</span><h2>All dispatches</h2><p>Search permanent CN records and monitor delivery state.</p></div><button className="button primary" onClick={onCreate}>+ Create dispatch</button></div><div className="filter-bar"><label className="filter-search"><span>⌕</span><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search CN, customer, receiver…" /></label><select value={status} onChange={(e) => setStatus(e.target.value)}><option value="ALL">All statuses</option><option value="DRAFT">Draft</option><option value="CONFIRMED">Confirmed</option><option value="DISPATCHED">Dispatched</option><option value="OUT_FOR_DELIVERY">Out for delivery</option><option value="DELIVERED">Delivered</option><option value="DELIVERY_FAILED">Failed</option><option value="RETURNED">Returned</option></select></div>{message && <div className="error-callout">{message}</div>}<div className="surface-panel table-panel">{loading ? <BikeLoader label="Loading dispatches" /> : <DispatchTable rows={visible} />}</div></div>;
 }

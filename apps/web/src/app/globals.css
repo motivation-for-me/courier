@@ -613,6 +613,22 @@ img,svg,video,canvas { max-width:100%; }
 .data-loader-inner { display:grid; justify-items:center; width:min(320px,80vw); }
 .data-loader-inner .skeleton-stack { width:100%; margin-top:6px; }
 
+.auth-skeleton { display:grid; width:min(360px,calc(100vw - 40px)); gap:12px; padding:22px; border:1px solid var(--line); border-radius:14px; background:var(--surface); box-shadow:0 20px 55px rgba(13,31,54,.12); }
+.auth-skeleton i,.table-skeleton i { display:block; border-radius:7px; background:linear-gradient(90deg,var(--surface-low) 20%,var(--surface-mid) 48%,var(--surface-low) 76%); background-size:220% 100%; animation:notification-shimmer 1.05s linear infinite; }
+.auth-skeleton i { height:42px; }
+.auth-skeleton i:first-child { width:52%; height:24px; }
+.data-skeleton-loader { width:100%; padding:10px 14px 14px; }
+.table-skeleton { display:grid; width:100%; gap:0; }
+.table-skeleton>div { display:grid; grid-template-columns:1.2fr 1fr 1fr .65fr; gap:14px; padding:14px 0; border-bottom:1px solid var(--line); }
+.table-skeleton>div:last-child { border-bottom:0; }
+.table-skeleton i { height:13px; }
+@media (max-width:720px) {
+  .data-skeleton-loader { padding:6px; }
+  .table-skeleton { gap:9px; }
+  .table-skeleton>div { grid-template-columns:1fr .7fr; gap:10px; padding:13px; border:1px solid var(--line); border-radius:10px; }
+  .table-skeleton>div i:nth-child(n+3) { grid-column:1/-1; }
+}
+
 .notification-inbox { position:relative; }
 .notification-panel { position:absolute; z-index:1100; top:calc(100% + 10px); right:0; width:min(360px,calc(100vw - 24px)); overflow:hidden; border:1px solid var(--line); border-radius:12px; background:var(--surface); box-shadow:0 20px 55px rgba(13,31,54,.18); }
 .notification-panel>header { display:flex; align-items:center; justify-content:space-between; padding:13px 14px; border-bottom:1px solid var(--line); }
@@ -655,6 +671,16 @@ img,svg,video,canvas { max-width:100%; }
 .rider-action-list article small { color:var(--muted); font:700 9px var(--font-mono),monospace; }
 .rider-order-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:7px; }
 .rider-order-actions .button { min-height:36px; padding:8px 11px; }
+.rider-finance-summary { margin-bottom:14px; }
+.rider-finance-summary>.panel-heading>small { color:var(--muted); font:700 9px var(--font-mono),monospace; text-align:right; }
+.rider-finance-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; }
+.rider-finance-grid .metric-card { min-height:88px; box-shadow:none; }
+.rider-earning-list { display:grid; margin-top:12px; border-top:1px solid var(--line); }
+.rider-earning-list>div { display:flex; min-width:0; align-items:center; justify-content:space-between; gap:12px; padding:10px 2px; border-bottom:1px solid var(--line); }
+.rider-earning-list>div>span { display:grid; min-width:0; gap:3px; }
+.rider-earning-list>div>span:last-child { justify-items:end; }
+.rider-earning-list strong,.rider-earning-list b { overflow-wrap:anywhere; }
+.rider-earning-list small:not(.status-badge) { color:var(--muted); font-size:9px; }
 .rider-waiting-step { align-self:center; color:var(--muted); font-size:10px; }
 .button.danger { color:var(--rose); border-color:color-mix(in srgb,var(--rose) 28%,var(--line)); background:color-mix(in srgb,var(--rose) 8%,var(--surface)); }
 .rider-action-backdrop { position:fixed; z-index:1300; inset:0; display:grid; place-items:center; padding:16px; background:rgba(6,17,33,.68); backdrop-filter:blur(8px); }
@@ -678,6 +704,8 @@ img,svg,video,canvas { max-width:100%; }
 .qr-camera-view>span { position:absolute; right:0; bottom:18px; left:0; color:#fff; font-size:11px; font-weight:700; text-align:center; }
 
 @media (max-width:720px) {
+  .rider-finance-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .rider-finance-summary>.panel-heading { align-items:flex-start; }
   .rider-action-list article { grid-template-columns:minmax(0,1fr) auto; }
   .rider-order-actions { grid-column:1/-1; justify-content:stretch; }
   .rider-order-actions .button { flex:1 1 140px; }

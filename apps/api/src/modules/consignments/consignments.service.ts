@@ -78,7 +78,7 @@ export class ConsignmentsService {
       where: { organizationId: actor.organizationId, deletedAt: null, ...(actor.roles.includes('SHOP_MANAGER') ? { customerId: actor.customerId } : {}), ...(search ? { OR: [{ cnNumber: { contains: search, mode: 'insensitive' } }, { parties: { some: { name: { contains: search, mode: 'insensitive' } } } }] } : {}) },
       orderBy: { createdAt: 'desc' },
       take: 50,
-      select: { id: true, cnNumber: true, status: true, serviceType: true, currentStatusAt: true, createdAt: true, customer: { select: { id: true, name: true } }, project: { select: { id: true, name: true, siteName: true, addressLine: true } }, parties: true, addresses: true, items: true, packages: true, payments: true, assignments: { where: { status: 'ACTIVE' }, select: { riderId: true, rider: { select: { employeeCode: true, user: { select: { displayName: true, phone: true } } } } } } },
+      select: { id: true, cnNumber: true, status: true, serviceType: true, currentStatusAt: true, createdAt: true, customer: { select: { id: true, name: true } }, parties: { select: { kind: true, name: true, phone: true } }, items: { select: { id: true, description: true, quantity: true, unit: true } }, assignments: { where: { status: 'ACTIVE' }, select: { riderId: true, rider: { select: { employeeCode: true, user: { select: { displayName: true, phone: true } } } } } } },
     });
     return consignments.map((consignment) => ({ ...consignment, publicTrackingKey: createPublicTrackingToken(consignment.id) }));
   }
