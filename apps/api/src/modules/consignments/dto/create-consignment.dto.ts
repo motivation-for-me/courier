@@ -128,4 +128,9 @@ export class CreateConsignmentDto {
   @IsNumber()
   @Min(0)
   codAmount?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  deliveryFee?: number;
 }

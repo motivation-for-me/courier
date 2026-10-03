@@ -23,13 +23,6 @@ export class DocumentsController {
     response.send(document.buffer);
   }
 
-  @Get('consignments/:id/label.pdf')
-  async label(@Param('id') id: string, @Query('download') download: string, @CurrentUser() actor: AuthenticatedUser, @Res() response: Response) {
-    const document = await this.documents.labelPdf(id, actor);
-    response.set({ 'Content-Type': 'application/pdf', 'Content-Disposition': `${download === '1' ? 'attachment' : 'inline'}; filename="${document.filename}"`, 'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff' });
-    response.send(document.buffer);
-  }
-
   // Keep the generic ID route after the PDF routes so Express does not
   // interpret "<uuid>.pdf" as the value of :id.
   @Get('consignments/:id')

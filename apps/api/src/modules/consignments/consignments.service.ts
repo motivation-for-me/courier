@@ -61,7 +61,8 @@ export class ConsignmentsService {
       if (pricing && resolvedCustomerId) {
         const codFee = new Prisma.Decimal(pricing.codFeeFixed).plus(new Prisma.Decimal(input.codAmount ?? 0).mul(pricing.codFeePercent).div(100));
         const entries: Prisma.ShipmentFinancialEntryCreateManyInput[] = [];
-        if (!new Prisma.Decimal(pricing.shipmentCharge).isZero()) entries.push({ organizationId: actor.organizationId, customerId: resolvedCustomerId, consignmentId: consignment.id, category: 'REVENUE', type: 'SHIPPING_CHARGE', amount: pricing.shipmentCharge, currencyCode: pricing.currencyCode, deductFromShop: pricing.deductChargesFromCod, pricingAgreementId: pricing.id, reason: 'Shop pricing agreement snapshot', createdById: actor.id });
+        const shipmentCharge = input.deliveryFee === undefined ? pricing.shipmentCharge : input.deliveryFee;
+        if (!new Prisma.Decimal(shipmentCharge).isZero()) entries.push({ organizationId: actor.organizationId, customerId: resolvedCustomerId, consignmentId: consignment.id, category: 'REVENUE', type: 'SHIPPING_CHARGE', amount: shipmentCharge, currencyCode: pricing.currencyCode, deductFromShop: pricing.deductChargesFromCod, pricingAgreementId: pricing.id, reason: input.deliveryFee === undefined ? 'Shop pricing agreement snapshot' : 'Shipment delivery fee override', createdById: actor.id });
         if (!codFee.isZero()) entries.push({ organizationId: actor.organizationId, customerId: resolvedCustomerId, consignmentId: consignment.id, category: 'REVENUE', type: 'COD_FEE', amount: codFee, currencyCode: pricing.currencyCode, deductFromShop: pricing.deductChargesFromCod, pricingAgreementId: pricing.id, reason: 'Shop pricing agreement snapshot', createdById: actor.id });
         if (entries.length) await transaction.shipmentFinancialEntry.createMany({ data: entries });
       }
@@ -72,12 +73,17 @@ export class ConsignmentsService {
     });
   }
 
-  async list(actor: AuthenticatedUser, search?: string) {
+  async list(actor: AuthenticatedUser, filters: { search?: string; status?: string; from?: string; to?: string; customerId?: string; riderId?: string } = {}) {
     if (!actor.permissions.includes('shipment:view')) throw new ForbiddenException('Shipment view permission missing');
+    const status = filters.status && filters.status !== 'ALL' ? filters.status as ConsignmentStatus : undefined;
+    if (status && !Object.values(ConsignmentStatus).includes(status)) throw new BadRequestException('Invalid shipment status filter');
+    const from = filters.from ? new Date(filters.from) : undefined;
+    const to = filters.to ? new Date(filters.to) : undefined;
+    if ((from && Number.isNaN(from.getTime())) || (to && Number.isNaN(to.getTime())) || (from && to && from > to)) throw new BadRequestException('Invalid shipment history date range');
     const consignments = await this.prisma.consignment.findMany({
-      where: { organizationId: actor.organizationId, deletedAt: null, ...(actor.roles.includes('SHOP_MANAGER') ? { customerId: actor.customerId } : {}), ...(search ? { OR: [{ cnNumber: { contains: search, mode: 'insensitive' } }, { parties: { some: { name: { contains: search, mode: 'insensitive' } } } }] } : {}) },
+      where: { organizationId: actor.organizationId, deletedAt: null, ...(actor.roles.includes('SHOP_MANAGER') ? { customerId: actor.customerId } : filters.customerId ? { customerId: filters.customerId } : {}), ...(status ? { status } : {}), ...(from || to ? { createdAt: { ...(from ? { gte: from } : {}), ...(to ? { lte: to } : {}) } } : {}), ...(filters.riderId ? { assignments: { some: { riderId: filters.riderId } } } : {}), ...(filters.search ? { OR: [{ cnNumber: { contains: filters.search, mode: 'insensitive' } }, { customer: { name: { contains: filters.search, mode: 'insensitive' } } }, { parties: { some: { OR: [{ name: { contains: filters.search, mode: 'insensitive' } }, { phone: { contains: filters.search } }] } } }] } : {}) },
       orderBy: { createdAt: 'desc' },
-      take: 50,
+      take: 500,
       select: { id: true, cnNumber: true, status: true, serviceType: true, currentStatusAt: true, createdAt: true, customer: { select: { id: true, name: true } }, parties: { select: { kind: true, name: true, phone: true } }, items: { select: { id: true, description: true, quantity: true, unit: true } }, assignments: { where: { status: 'ACTIVE' }, select: { riderId: true, rider: { select: { employeeCode: true, user: { select: { displayName: true, phone: true } } } } } } },
     });
     return consignments.map((consignment) => ({ ...consignment, publicTrackingKey: createPublicTrackingToken(consignment.id) }));

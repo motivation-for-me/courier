@@ -19,7 +19,7 @@ const navigation: NavGroup[] = [
   {
     label: 'Dispatches',
     items: [
-      { label: 'All Dispatches', icon: 'inventory_2', view: 'consignments', permission: 'shipment:view' },
+      { label: 'Shipment History', icon: 'history', view: 'consignments', permission: 'shipment:view' },
       { label: 'Create Dispatch', icon: 'add_box', view: 'booking', permission: 'shipment:create' },
       { label: 'Track / Scan CN', icon: 'qr_code_scanner', view: 'tracking', permission: 'shipment:view' },
     ],
@@ -105,7 +105,7 @@ function NotificationInbox() {
 }
 
 function Header({ view, onNavigate, collapsed, onToggleSidebar, onLogout, riderOnly = false }: { view: View; onNavigate: (view: View) => void; collapsed: boolean; onToggleSidebar: () => void; onLogout: () => void; riderOnly?: boolean }) {
-  const title = view === 'dashboard' ? 'Courier dashboard' : view === 'consignments' ? 'All shipments' : view === 'booking' ? 'Create shipment' : view === 'rider' ? 'Rider workspace' : view === 'riders' ? 'Management' : view === 'settings' ? 'Settings' : 'Track shipment';
+  const title = view === 'dashboard' ? 'Courier dashboard' : view === 'consignments' ? 'Shipment history' : view === 'booking' ? 'Create shipment' : view === 'rider' ? 'Rider workspace' : view === 'riders' ? 'Management' : view === 'settings' ? 'Settings' : 'Track shipment';
   return <header className="topbar"><div className="topbar-leading"><button aria-label={collapsed ? 'Open sidebar' : 'Close sidebar'} aria-expanded={!collapsed} className="icon-button sidebar-toggle" onClick={onToggleSidebar} type="button"><Icon name={collapsed ? 'dock_to_right' : 'dock_to_left'} /></button><div className="topbar-title"><span className="eyebrow">OPERATIONS</span><h1>{title}</h1></div></div><div className="topbar-actions">{!riderOnly && <label className="global-search"><Icon name="search" /><input aria-label="Search consignments" placeholder="Search CN or rider" /><kbd>CTRL K</kbd></label>}<button aria-label="Scan QR code" className="icon-button scanner" onClick={() => onNavigate(riderOnly ? 'rider' : 'tracking')} type="button"><Icon name="qr_code_scanner" /></button><NotificationInbox /><button aria-label="Log out" className="icon-button logout-button" title="Log out" onClick={onLogout} type="button"><Icon name="logout" /></button></div></header>;
 }
 
@@ -146,7 +146,7 @@ function LoginScreen({ onAuthenticated }: { onAuthenticated: (session: AuthSessi
     }
   }
   if (showIntro) return <main className="rider-intro" aria-label="SwiftLog introduction"><div className="rider-intro-stage"><Image className="rider-bike-image" src="/assets/logo.jpg" alt="Delivery rider" width={1365} height={768} priority sizes="(max-width: 760px) 92vw, 620px" /><div className="intro-wordmark">Swift<span>Log</span></div><div className="intro-progress" aria-hidden="true"><i /></div><button className="intro-skip" onClick={() => setShowIntro(false)} type="button">Sign in <Icon name="arrow_forward" /></button></div></main>;
-  return <main className="login-page"><form className="login-card" onSubmit={submit}><div className="login-wordmark">Swift<span>Log</span></div><h1>Sign in</h1><label className="field"><span>Email</span><input name="email" type="email" autoComplete="email" required /></label><label className="field"><span>Password</span><input name="password" type="password" autoComplete="current-password" minLength={8} required /></label>{state === 'error' && <div className="error-callout"><Icon name="error" /><span>{message}</span></div>}<button className="button primary login-submit" disabled={state === 'submitting'} type="submit">{state === 'submitting' ? 'Signing in' : 'Sign in'} <Icon name="arrow_forward" /></button>{state === 'submitting' && <div className="login-loading-overlay" aria-label="Signing in" aria-live="polite"><div className="auth-skeleton" aria-hidden="true"><i /><i /><i /><i /></div></div>}</form></main>;
+  return <main className="login-page"><form className="login-card" onSubmit={submit}><div className="login-wordmark">Swift<span>Log</span></div><h1>Sign in</h1><label className="field"><span>Email</span><input name="email" type="email" autoComplete="email" required /></label><label className="field"><span>Password</span><input name="password" type="password" autoComplete="current-password" minLength={8} required /></label>{state === 'error' && <div className="error-callout"><Icon name="error" /><span>{message}</span></div>}<button className="button primary login-submit" disabled={state === 'submitting'} type="submit">{state === 'submitting' ? 'Signing in' : 'Sign in'} <Icon name="arrow_forward" /></button></form></main>;
 }
 
 function Dashboard({ onNavigate }: { onNavigate: (view: View) => void }) {
@@ -231,7 +231,7 @@ function RiderHome({ initialCn = '' }: { initialCn?: string }) {
 
   async function viewCustomerPdf(consignmentId: string) {
     setMessage('');
-    try { await openDispatchDocument(consignmentId, 'dispatch', 'view'); }
+    try { await openDispatchDocument(consignmentId, 'view'); }
     catch (error) { setMessage((error as ApiError).message ?? 'Customer PDF could not be opened.'); }
   }
 

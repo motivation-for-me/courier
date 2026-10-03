@@ -22,8 +22,16 @@ export class ConsignmentsController {
 
   @Get()
   @RequirePermission('shipment:view')
-  list(@CurrentUser() actor: AuthenticatedUser, @Query('search') search?: string) {
-    return this.consignments.list(actor, search);
+  list(
+    @CurrentUser() actor: AuthenticatedUser,
+    @Query('search') search?: string,
+    @Query('status') status?: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+    @Query('customerId') customerId?: string,
+    @Query('riderId') riderId?: string,
+  ) {
+    return this.consignments.list(actor, { search, status, from, to, customerId, riderId });
   }
 
   @Get(':id')

@@ -139,12 +139,11 @@ export function trackDispatch(cnNumber: string, key?: string) {
   return apiRequest<TrackingResult>(`/tracking/public/${encodeURIComponent(cnNumber.trim())}${query}`);
 }
 
-export async function openDispatchDocument(id: string, kind: 'dispatch' | 'label', mode: 'view' | 'download') {
+export async function openDispatchDocument(id: string, mode: 'view' | 'download') {
   const accessToken = getSession()?.accessToken;
-  const suffix = kind === 'label' ? '/label.pdf' : '.pdf';
   const preview = mode === 'view' ? window.open('about:blank', '_blank') : null;
   if (preview) { preview.opener = null; preview.document.title = 'Preparing PDF'; preview.document.body.textContent = 'Preparing secure PDF preview...'; }
-  const response = await fetch(`${apiBaseUrl}/documents/consignments/${id}${suffix}?download=${mode === 'download' ? '1' : '0'}`, { headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {} });
+  const response = await fetch(`${apiBaseUrl}/documents/consignments/${id}.pdf?download=${mode === 'download' ? '1' : '0'}`, { headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {} });
   if (!response.ok) {
     preview?.close();
     if (response.status === 401 && accessToken) {
@@ -152,10 +151,10 @@ export async function openDispatchDocument(id: string, kind: 'dispatch' | 'label
       window.dispatchEvent(new CustomEvent(sessionExpiredEvent));
     }
     const body = await response.json().catch(() => null) as { message?: string } | null;
-    throw new ApiError(response.status, body?.message ?? `Unable to open ${kind} PDF`);
+    throw new ApiError(response.status, body?.message ?? 'Unable to open dispatch PDF');
   }
   const disposition = response.headers.get('content-disposition') ?? '';
-  const filename = disposition.match(/filename="([^"]+)"/)?.[1] ?? `swiftlog-${kind}.pdf`;
+  const filename = disposition.match(/filename="([^"]+)"/)?.[1] ?? 'swiftlog-dispatch.pdf';
   const url = URL.createObjectURL(await response.blob());
   if (mode === 'view') {
     if (preview) preview.location.href = url;

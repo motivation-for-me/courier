@@ -5,6 +5,8 @@ import {
   createConsignment,
   createCustomer,
   createShopBranch,
+  getShopPricing,
+  saveShopPricing,
   getCustomers,
   type ApiError,
   type CustomerOption,
@@ -18,6 +20,7 @@ export function DispatchCreate({ onDone, onCancel }: { onDone: (cn: string) => v
   const [shopId, setShopId] = useState('');
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
+  const [shopDeliveryFee, setShopDeliveryFee] = useState('0');
 
   useEffect(() => {
     getCustomers()
@@ -30,6 +33,13 @@ export function DispatchCreate({ onDone, onCancel }: { onDone: (cn: string) => v
   const addingShop = shopId === NEW_SHOP;
   const addingBranch = addingShop || Boolean(selectedShop && shopBranches.length === 0);
 
+  useEffect(() => {
+    if (!selectedShop) { setShopDeliveryFee('0'); return; }
+    getShopPricing(selectedShop.id)
+      .then((agreements) => setShopDeliveryFee(agreements.find((item) => !item.effectiveTo)?.shipmentCharge ?? agreements[0]?.shipmentCharge ?? '0'))
+      .catch(() => setShopDeliveryFee('0'));
+  }, [selectedShop]);
+
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setBusy(true);
@@ -37,7 +47,10 @@ export function DispatchCreate({ onDone, onCancel }: { onDone: (cn: string) => v
     const form = new FormData(event.currentTarget);
     try {
       let shop: CustomerOption | undefined = selectedShop;
-      if (addingShop) shop = await createCustomer({ name: String(form.get('shopName') ?? '').trim() });
+      if (addingShop) {
+        shop = await createCustomer({ name: String(form.get('shopName') ?? '').trim() });
+        await saveShopPricing(shop.id, { currencyCode: 'PKR', shipmentCharge: Number(form.get('deliveryFee') || 0), codFeeFixed: 0, codFeePercent: 0, returnCharge: 0, deductChargesFromCod: true });
+      }
       if (!shop) throw new Error('Select a shop or add a new shop.');
 
       let pickupBranch: ShopBranchOption | undefined = shopBranches[0];
@@ -64,6 +77,7 @@ export function DispatchCreate({ onDone, onCancel }: { onDone: (cn: string) => v
         packages: [{ packageNumber: 1, physicalWeight: Number(form.get('weight')), lengthCm: Number(form.get('length') || 0), widthCm: Number(form.get('width') || 0), heightCm: Number(form.get('height') || 0) }],
         items: [{ description: String(form.get('contents')), quantity: Number(form.get('quantity') || 1), unit: 'PARCEL' }],
         codAmount: String(form.get('codAmount') || '') ? Number(form.get('codAmount')) : undefined,
+        deliveryFee: Number(form.get('deliveryFee') || 0),
       });
       onDone(result.cnNumber);
     } catch (error) {
@@ -82,6 +96,7 @@ export function DispatchCreate({ onDone, onCancel }: { onDone: (cn: string) => v
         {addingShop && <label className="field"><span>New shop name</span><input name="shopName" required /></label>}
         {!addingShop && shopBranches[0] && <div className="shop-pickup-preview"><span>Pickup automatically selected</span><strong>{shopBranches[0].label || selectedShop?.name}</strong><small>{shopBranches[0].addressLine}{shopBranches[0].city ? `, ${shopBranches[0].city}` : ''}</small></div>}
         {addingBranch && <><label className="field"><span>Branch name</span><input name="shopBranchName" placeholder="Main shop, Gulberg, Warehouse…" required /></label><label className="field wide"><span>Pickup address</span><input name="shopBranchAddress" required /></label><label className="field"><span>Pickup city</span><input name="shopBranchCity" /></label></>}
+        <label className="field"><span>Delivery fee (PKR)</span><input min="0" name="deliveryFee" onChange={(event) => setShopDeliveryFee(event.target.value)} step="0.01" type="number" value={shopDeliveryFee} /></label>
       </div>
 
       <div className="section-heading"><span>02</span><h3>Receiver and delivery</h3></div>
