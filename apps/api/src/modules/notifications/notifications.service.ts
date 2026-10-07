@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../infrastructure/prisma/prisma.service';
 import { AuthenticatedUser } from '../../common/auth.types';
 
@@ -12,6 +12,14 @@ export class NotificationsService {
       orderBy: { createdAt: 'desc' },
       take: 50,
     });
+  }
+
+  async riderMessage(message: string, actor: AuthenticatedUser) {
+    if (!actor.roles.includes('RIDER') || !actor.riderId) throw new ForbiddenException('Rider access is required');
+    const admins = await this.prisma.user.findMany({ where: { organizationId: actor.organizationId, isActive: true, roles: { some: { role: { name: 'ADMIN' } } } }, select: { id: true } });
+    if (!admins.length) throw new NotFoundException('No active administrator is available');
+    await this.prisma.notification.createMany({ data: admins.map((admin) => ({ organizationId: actor.organizationId, recipientId: admin.id, channel: 'IN_APP', template: 'RIDER_MESSAGE', status: 'UNREAD', payload: { title: `Message from ${actor.displayName}`, message: message.trim(), riderId: actor.riderId } })) });
+    return { success: true, recipients: admins.length };
   }
 
   async read(id: string, actor: AuthenticatedUser) {

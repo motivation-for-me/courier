@@ -20,11 +20,10 @@ import { CustomersModule } from './modules/customers/customers.module';
 import { AuthGuard } from './modules/auth/auth.guard';
 import { RidersModule } from './modules/riders/riders.module';
 import { BranchesModule } from './modules/branches/branches.module';
-import { StaffModule } from './modules/staff/staff.module';
 import { ShopFinancialsModule } from './modules/shop-financials/shop-financials.module';
 
 @Module({
-  imports: [ThrottlerModule.forRoot([{ ttl: 60_000, limit: 120 }]), PrismaModule, HealthModule, AuthModule, BranchesModule, StaffModule, CustomersModule, ShopFinancialsModule, RidersModule, ConsignmentsModule, ManifestsModule, DeliveryModule, PaymentsModule, TrackingModule, ReturnsModule, DocumentsModule, PickupsModule, TransitModule, NotificationsModule],
+  imports: [ThrottlerModule.forRoot([{ ttl: 60_000, limit: 120 }]), PrismaModule, HealthModule, AuthModule, BranchesModule, CustomersModule, ShopFinancialsModule, RidersModule, ConsignmentsModule, ManifestsModule, DeliveryModule, PaymentsModule, TrackingModule, ReturnsModule, DocumentsModule, PickupsModule, TransitModule, NotificationsModule],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: AuthGuard },

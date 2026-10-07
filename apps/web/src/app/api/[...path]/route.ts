@@ -8,7 +8,8 @@ const excludedResponseHeaders = new Set(['connection', 'content-length', 'transf
 
 async function proxy(request: NextRequest, context: { params: Promise<{ path: string[] }> }) {
   const { path } = await context.params;
-  const internalBaseUrl = process.env.API_INTERNAL_URL ?? process.env.API_ORIGIN ?? 'http://localhost:3001';
+  const configuredBaseUrl = process.env.API_INTERNAL_URL ?? process.env.API_ORIGIN;
+  const internalBaseUrl = (configuredBaseUrl ?? 'http://localhost:3001').replace(/\/api\/v1\/?$/, '');
   const target = new URL(`/api/${path.map(encodeURIComponent).join('/')}${request.nextUrl.search}`, internalBaseUrl);
   const headers = new Headers();
   request.headers.forEach((value, key) => { if (!excludedRequestHeaders.has(key.toLowerCase())) headers.set(key, value); });

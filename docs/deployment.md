@@ -17,7 +17,6 @@ Supabase PostgreSQL is the only application database. `DATABASE_URL` is the runt
 - `JWT_SECRET`
 - `WEB_ORIGIN`
 - `API_PORT`
-- `NEXT_PUBLIC_API_URL`
 
 ## Vercel Services
 
@@ -30,8 +29,11 @@ service through the runtime-only `API_INTERNAL_URL` service binding. Do not set
 
 Set the Vercel project framework to **Services**. Configure `DATABASE_URL`,
 `DIRECT_URL`, `JWT_SECRET`, and other secrets in Vercel project environment
-variables. `NEXT_PUBLIC_API_URL` should be omitted in Vercel so the browser uses
-the same-origin proxy.
+variables. The web service must receive `API_INTERNAL_URL` from the Vercel
+service binding. If that binding is unavailable in the selected Vercel plan,
+set `API_ORIGIN` on the web service to the deployed API origin, for example
+`https://courier-api.example.com` without `/api/v1`. Browser requests always
+use the same-origin `/api/v1` proxy; do not configure `NEXT_PUBLIC_API_URL`.
 - Object-storage credentials and bucket settings
 - Redis settings when background jobs are enabled
 

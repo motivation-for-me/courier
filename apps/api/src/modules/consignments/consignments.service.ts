@@ -19,15 +19,15 @@ export class ConsignmentsService {
 
   async create(input: CreateConsignmentDto, actor: AuthenticatedUser, idempotencyKey?: string) {
     if (!actor.permissions.includes('shipment:create')) throw new ForbiddenException('Booking permission missing');
-    if (actor.roles.includes('SHOP_MANAGER') && !actor.customerId) throw new ForbiddenException('Shop account is not linked to a shop');
+    if (actor.roles.includes('SHOP') && !actor.customerId) throw new ForbiddenException('Shop account is not linked to a shop');
     const parties = this.requireKinds(input.parties, ['SENDER', 'RECEIVER']);
     const addresses = this.requireKinds(input.addresses, ['ORIGIN', 'DESTINATION']);
     if (!input.items?.length) throw new BadRequestException('At least one parcel content item is required');
 
     const requestHash = createHash('sha256').update(JSON.stringify(input)).digest('hex');
     return this.prisma.$transaction(async (transaction) => {
-      let resolvedCustomerId = actor.roles.includes('SHOP_MANAGER') ? actor.customerId : input.customerId;
-      if (actor.roles.includes('SHOP_MANAGER') && input.customerId && input.customerId !== actor.customerId) throw new ForbiddenException('You can create shipments only for your own shop');
+      let resolvedCustomerId = actor.roles.includes('SHOP') ? actor.customerId : input.customerId;
+      if (actor.roles.includes('SHOP') && input.customerId && input.customerId !== actor.customerId) throw new ForbiddenException('You can create shipments only for your own shop');
       if (input.customerId) {
         const customer = await transaction.customer.findFirst({ where: { id: input.customerId, organizationId: actor.organizationId }, select: { id: true } });
         if (!customer) throw new BadRequestException('Customer is not available in your company');
@@ -58,12 +58,14 @@ export class ConsignmentsService {
         },
         include: { parties: true, addresses: true, packages: true, items: true, payments: true, codTransactions: true },
       });
-      if (pricing && resolvedCustomerId) {
-        const codFee = new Prisma.Decimal(pricing.codFeeFixed).plus(new Prisma.Decimal(input.codAmount ?? 0).mul(pricing.codFeePercent).div(100));
+      if (resolvedCustomerId && (pricing || input.deliveryFee !== undefined)) {
+        const shipmentCurrency = pricing?.currencyCode ?? organization.currencyCode;
+        const shipmentDeductsFromCod = pricing?.deductChargesFromCod ?? false;
+        const codFee = pricing ? new Prisma.Decimal(pricing.codFeeFixed).plus(new Prisma.Decimal(input.codAmount ?? 0).mul(pricing.codFeePercent).div(100)) : new Prisma.Decimal(0);
         const entries: Prisma.ShipmentFinancialEntryCreateManyInput[] = [];
-        const shipmentCharge = input.deliveryFee === undefined ? pricing.shipmentCharge : input.deliveryFee;
-        if (!new Prisma.Decimal(shipmentCharge).isZero()) entries.push({ organizationId: actor.organizationId, customerId: resolvedCustomerId, consignmentId: consignment.id, category: 'REVENUE', type: 'SHIPPING_CHARGE', amount: shipmentCharge, currencyCode: pricing.currencyCode, deductFromShop: pricing.deductChargesFromCod, pricingAgreementId: pricing.id, reason: input.deliveryFee === undefined ? 'Shop pricing agreement snapshot' : 'Shipment delivery fee override', createdById: actor.id });
-        if (!codFee.isZero()) entries.push({ organizationId: actor.organizationId, customerId: resolvedCustomerId, consignmentId: consignment.id, category: 'REVENUE', type: 'COD_FEE', amount: codFee, currencyCode: pricing.currencyCode, deductFromShop: pricing.deductChargesFromCod, pricingAgreementId: pricing.id, reason: 'Shop pricing agreement snapshot', createdById: actor.id });
+        const shipmentCharge = input.deliveryFee === undefined ? pricing?.shipmentCharge ?? 0 : input.deliveryFee;
+        if (!new Prisma.Decimal(shipmentCharge).isZero()) entries.push({ organizationId: actor.organizationId, customerId: resolvedCustomerId, consignmentId: consignment.id, category: 'REVENUE', type: 'SHIPPING_CHARGE', amount: shipmentCharge, currencyCode: shipmentCurrency, deductFromShop: shipmentDeductsFromCod, pricingAgreementId: pricing?.id, reason: input.deliveryFee === undefined ? 'Shop pricing agreement snapshot' : 'Shipment delivery fee override', createdById: actor.id });
+        if (!codFee.isZero()) entries.push({ organizationId: actor.organizationId, customerId: resolvedCustomerId, consignmentId: consignment.id, category: 'REVENUE', type: 'COD_FEE', amount: codFee, currencyCode: shipmentCurrency, deductFromShop: shipmentDeductsFromCod, pricingAgreementId: pricing?.id, reason: 'Shop pricing agreement snapshot', createdById: actor.id });
         if (entries.length) await transaction.shipmentFinancialEntry.createMany({ data: entries });
       }
       await transaction.trackingEvent.create({ data: { consignmentId: consignment.id, eventType: ConsignmentStatus.DRAFT, performedById: actor.id, remarks: 'Dispatch created' } });
@@ -81,7 +83,7 @@ export class ConsignmentsService {
     const to = filters.to ? new Date(filters.to) : undefined;
     if ((from && Number.isNaN(from.getTime())) || (to && Number.isNaN(to.getTime())) || (from && to && from > to)) throw new BadRequestException('Invalid shipment history date range');
     const consignments = await this.prisma.consignment.findMany({
-      where: { organizationId: actor.organizationId, deletedAt: null, ...(actor.roles.includes('SHOP_MANAGER') ? { customerId: actor.customerId } : filters.customerId ? { customerId: filters.customerId } : {}), ...(status ? { status } : {}), ...(from || to ? { createdAt: { ...(from ? { gte: from } : {}), ...(to ? { lte: to } : {}) } } : {}), ...(filters.riderId ? { assignments: { some: { riderId: filters.riderId } } } : {}), ...(filters.search ? { OR: [{ cnNumber: { contains: filters.search, mode: 'insensitive' } }, { customer: { name: { contains: filters.search, mode: 'insensitive' } } }, { parties: { some: { OR: [{ name: { contains: filters.search, mode: 'insensitive' } }, { phone: { contains: filters.search } }] } } }] } : {}) },
+      where: { organizationId: actor.organizationId, deletedAt: null, ...(actor.roles.includes('SHOP') ? { customerId: actor.customerId } : filters.customerId ? { customerId: filters.customerId } : {}), ...(status ? { status } : {}), ...(from || to ? { createdAt: { ...(from ? { gte: from } : {}), ...(to ? { lte: to } : {}) } } : {}), ...(filters.riderId ? { assignments: { some: { riderId: filters.riderId } } } : {}), ...(filters.search ? { OR: [{ cnNumber: { contains: filters.search, mode: 'insensitive' } }, { customer: { name: { contains: filters.search, mode: 'insensitive' } } }, { parties: { some: { OR: [{ name: { contains: filters.search, mode: 'insensitive' } }, { phone: { contains: filters.search } }] } } }] } : {}) },
       orderBy: { createdAt: 'desc' },
       take: 500,
       select: { id: true, cnNumber: true, status: true, serviceType: true, currentStatusAt: true, createdAt: true, customer: { select: { id: true, name: true } }, parties: { select: { kind: true, name: true, phone: true } }, items: { select: { id: true, description: true, quantity: true, unit: true } }, assignments: { where: { status: 'ACTIVE' }, select: { riderId: true, rider: { select: { employeeCode: true, user: { select: { displayName: true, phone: true } } } } } } },
@@ -89,8 +91,54 @@ export class ConsignmentsService {
     return consignments.map((consignment) => ({ ...consignment, publicTrackingKey: createPublicTrackingToken(consignment.id) }));
   }
 
+  async page(actor: AuthenticatedUser, filters: { search?: string; status?: string; from?: string; to?: string; customerId?: string; riderId?: string; page?: string; limit?: string } = {}) {
+    if (!actor.permissions.includes('shipment:view')) throw new ForbiddenException('Shipment view permission missing');
+    const page = this.positiveInteger(filters.page, 1, 10_000, 'page');
+    const pageSize = this.positiveInteger(filters.limit, 25, 100, 'limit');
+    const where = this.listWhere(actor, filters);
+    const [total, items] = await this.prisma.$transaction([
+      this.prisma.consignment.count({ where }),
+      this.prisma.consignment.findMany({
+        where,
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        select: { id: true, cnNumber: true, status: true, serviceType: true, currentStatusAt: true, createdAt: true, customer: { select: { id: true, name: true } }, parties: { select: { kind: true, name: true, phone: true } }, items: { select: { id: true, description: true, quantity: true, unit: true } }, assignments: { where: { status: 'ACTIVE' }, select: { riderId: true, rider: { select: { employeeCode: true, user: { select: { displayName: true, phone: true } } } } } } },
+      }),
+    ]);
+    return { items: items.map((consignment) => ({ ...consignment, publicTrackingKey: createPublicTrackingToken(consignment.id) })), total, page, pageSize, pages: Math.max(1, Math.ceil(total / pageSize)) };
+  }
+
+  async summary(actor: AuthenticatedUser) {
+    if (!actor.permissions.includes('shipment:view')) throw new ForbiddenException('Shipment view permission missing');
+    const scope = { organizationId: actor.organizationId, deletedAt: null, ...(actor.roles.includes('SHOP') ? { customerId: actor.customerId } : {}) };
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const [todayCount, grouped, recent] = await Promise.all([
+      this.prisma.consignment.count({ where: { ...scope, createdAt: { gte: today } } }),
+      this.prisma.consignment.groupBy({ by: ['status'], where: scope, _count: { _all: true } }),
+      this.prisma.consignment.findMany({
+        where: scope,
+        orderBy: { createdAt: 'desc' },
+        take: 8,
+        select: { id: true, cnNumber: true, status: true, serviceType: true, currentStatusAt: true, createdAt: true, customer: { select: { id: true, name: true } }, parties: { select: { kind: true, name: true, phone: true } }, items: { select: { id: true, description: true, quantity: true, unit: true } }, assignments: { where: { status: 'ACTIVE' }, select: { riderId: true, rider: { select: { employeeCode: true, user: { select: { displayName: true, phone: true } } } } } } },
+      }),
+    ]);
+    const count = (statuses: ConsignmentStatus[]) => grouped.filter((row) => statuses.includes(row.status)).reduce((total, row) => total + row._count._all, 0);
+    return {
+      counts: {
+        today: todayCount,
+        pending: count([ConsignmentStatus.DRAFT, ConsignmentStatus.CONFIRMED]),
+        active: count([ConsignmentStatus.ASSIGNED_TO_RIDER, ConsignmentStatus.DISPATCHED, ConsignmentStatus.OUT_FOR_DELIVERY]),
+        delivered: count([ConsignmentStatus.DELIVERED]),
+        total: grouped.reduce((total, row) => total + row._count._all, 0),
+      },
+      recent: recent.map((consignment) => ({ ...consignment, publicTrackingKey: createPublicTrackingToken(consignment.id) })),
+    };
+  }
+
   async get(id: string, actor: AuthenticatedUser) {
-    const consignment = await this.prisma.consignment.findFirst({ where: { id, organizationId: actor.organizationId, deletedAt: null, ...(actor.roles.includes('SHOP_MANAGER') ? { customerId: actor.customerId } : {}) }, include: { customer: true, project: true, parties: true, addresses: true, items: true, packages: true, payments: true, events: { orderBy: { eventTime: 'asc' } }, attempts: { orderBy: { attemptNumber: 'asc' } }, assignments: { where: { status: 'ACTIVE' }, include: { rider: { include: { user: { select: { displayName: true, phone: true } } } } } }, documents: true } });
+    const consignment = await this.prisma.consignment.findFirst({ where: { id, organizationId: actor.organizationId, deletedAt: null, ...(actor.roles.includes('SHOP') ? { customerId: actor.customerId } : {}) }, include: { customer: true, project: true, parties: true, addresses: true, items: true, packages: true, payments: true, events: { orderBy: { eventTime: 'asc' } }, attempts: { orderBy: { attemptNumber: 'asc' } }, assignments: { where: { status: 'ACTIVE' }, include: { rider: { include: { user: { select: { displayName: true, phone: true } } } } } }, documents: true } });
     if (!consignment) throw new NotFoundException('Consignment not found');
     if (!actor.permissions.includes('shipment:view') && consignment.bookedById !== actor.id) throw new ForbiddenException('Shipment access denied');
     return consignment;
@@ -175,14 +223,38 @@ export class ConsignmentsService {
 
   async remove(id: string, actor: AuthenticatedUser) {
     if (!actor.roles.includes('ADMIN')) throw new ForbiddenException('Only an administrator can delete shipments');
-    const shipment = await this.prisma.consignment.findFirst({ where: { id, organizationId: actor.organizationId, deletedAt: null }, select: { id: true, status: true } });
-    if (!shipment) throw new NotFoundException('Shipment not found');
-    await this.prisma.$transaction([this.prisma.consignment.update({ where: { id }, data: { deletedAt: new Date() } }), this.prisma.auditLog.create({ data: { organizationId: actor.organizationId, actorId: actor.id, action: 'dispatch.deleted', entityType: 'consignment', entityId: id, oldValues: { status: shipment.status } } })]);
+    await this.prisma.$transaction(async (transaction) => {
+      const shipment = await transaction.consignment.findFirst({ where: { id, organizationId: actor.organizationId, deletedAt: null }, select: { id: true, status: true } });
+      if (!shipment) throw new NotFoundException('Shipment not found');
+      const deletedAt = new Date();
+      const changed = await transaction.consignment.updateMany({ where: { id, organizationId: actor.organizationId, deletedAt: null }, data: { deletedAt } });
+      if (changed.count !== 1) throw new ConflictException('Shipment was already changed. Reload and try again.');
+      await transaction.riderAssignment.updateMany({ where: { consignmentId: id, status: 'ACTIVE' }, data: { status: 'ENDED', endedAt: deletedAt } });
+      await transaction.pickup.updateMany({ where: { consignmentId: id, status: { in: ['REQUESTED', 'ASSIGNED', 'IN_PROGRESS'] } }, data: { status: 'CANCELLED', failureReason: 'Shipment removed by administrator' } });
+      await transaction.auditLog.create({ data: { organizationId: actor.organizationId, actorId: actor.id, action: 'dispatch.deleted', entityType: 'consignment', entityId: id, oldValues: { status: shipment.status }, newValues: { deletedAt, activeAssignmentsEnded: true, activePickupCancelled: true } } });
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
     return { success: true };
   }
 
   private requireKinds<T extends { kind: string }>(records: T[], required: string[]) {
     for (const kind of required) if (!records.some((record) => record.kind === kind)) throw new BadRequestException(`${kind} record is required`);
     return records.map((record) => ({ ...record }));
+  }
+
+  private positiveInteger(value: string | undefined, fallback: number, maximum: number, name: string) {
+    if (value === undefined || value === '') return fallback;
+    const parsed = Number(value);
+    if (!Number.isInteger(parsed) || parsed < 1 || parsed > maximum) throw new BadRequestException(`${name} must be an integer between 1 and ${maximum}`);
+    return parsed;
+  }
+
+  private listWhere(actor: AuthenticatedUser, filters: { search?: string; status?: string; from?: string; to?: string; customerId?: string; riderId?: string }): Prisma.ConsignmentWhereInput {
+    const status = filters.status && filters.status !== 'ALL' ? filters.status as ConsignmentStatus : undefined;
+    if (status && !Object.values(ConsignmentStatus).includes(status)) throw new BadRequestException('Invalid shipment status filter');
+    const from = filters.from ? new Date(filters.from) : undefined;
+    const to = filters.to ? new Date(filters.to) : undefined;
+    if ((from && Number.isNaN(from.getTime())) || (to && Number.isNaN(to.getTime())) || (from && to && from > to)) throw new BadRequestException('Invalid shipment history date range');
+    const search = filters.search?.trim();
+    return { organizationId: actor.organizationId, deletedAt: null, ...(actor.roles.includes('SHOP') ? { customerId: actor.customerId ?? '__unlinked_shop__' } : filters.customerId ? { customerId: filters.customerId } : {}), ...(status ? { status } : {}), ...(from || to ? { createdAt: { ...(from ? { gte: from } : {}), ...(to ? { lte: to } : {}) } } : {}), ...(filters.riderId ? { assignments: { some: { riderId: filters.riderId } } } : {}), ...(search ? { OR: [{ cnNumber: { contains: search, mode: 'insensitive' } }, { customer: { name: { contains: search, mode: 'insensitive' } } }, { parties: { some: { OR: [{ name: { contains: search, mode: 'insensitive' } }, { phone: { contains: search } }] } } }] } : {}) };
   }
 }

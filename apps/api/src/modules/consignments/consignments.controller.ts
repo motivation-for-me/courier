@@ -34,6 +34,18 @@ export class ConsignmentsController {
     return this.consignments.list(actor, { search, status, from, to, customerId, riderId });
   }
 
+  @Get('summary')
+  @RequirePermission('shipment:view')
+  summary(@CurrentUser() actor: AuthenticatedUser) {
+    return this.consignments.summary(actor);
+  }
+
+  @Get('page')
+  @RequirePermission('shipment:view')
+  page(@CurrentUser() actor: AuthenticatedUser, @Query() query: Record<string, string | undefined>) {
+    return this.consignments.page(actor, query);
+  }
+
   @Get(':id')
   @RequirePermission('shipment:view')
   get(@Param('id') id: string, @CurrentUser() actor: AuthenticatedUser) {

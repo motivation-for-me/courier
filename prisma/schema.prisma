@@ -251,7 +251,6 @@ model User {
   collectedPayments  Payment[]           @relation("PaymentCollector")
   verifiedPayments   Payment[]           @relation("PaymentVerifier")
   sessions           AuthSession[]
-  otpChallenges      OtpChallenge[]      @relation("OtpCreatedBy")
   requestedPickups   Pickup[]            @relation("PickupRequester")
   assignedPickups    Pickup[]            @relation("PickupAssignee")
   createdAt          DateTime            @default(now())
@@ -265,30 +264,13 @@ model User {
 model AuthSession {
   id          String    @id @default(uuid())
   userId      String
-  refreshHash String
+  refreshHash String    @unique
   expiresAt   DateTime
   revokedAt   DateTime?
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt   DateTime  @default(now())
 
   @@index([userId, expiresAt])
-}
-
-model OtpChallenge {
-  id            String      @id @default(uuid())
-  consignmentId String
-  createdById   String?
-  purpose       String
-  codeHash      String
-  expiresAt     DateTime
-  attempts      Int         @default(0)
-  maxAttempts   Int         @default(5)
-  verifiedAt    DateTime?
-  consignment   Consignment @relation(fields: [consignmentId], references: [id], onDelete: Cascade)
-  createdBy     User?       @relation("OtpCreatedBy", fields: [createdById], references: [id])
-  createdAt     DateTime    @default(now())
-
-  @@index([consignmentId, purpose, expiresAt])
 }
 
 model IdempotencyRecord {
@@ -464,7 +446,6 @@ model Consignment {
   codTransactions   CodTransaction[]
   returns           ReturnRecord[]
   documents         Document[]
-  otpChallenges     OtpChallenge[]
   pickup            Pickup?
   financialEntries  ShipmentFinancialEntry[]
   settlementAllocations ShopSettlementAllocation[]
@@ -760,7 +741,7 @@ model CodTransaction {
 
 model CodSettlement {
   id               String         @id @default(uuid())
-  codTransactionId String
+  codTransactionId String @unique
   fromRiderId      String?
   toBranchId       String?
   amount           Decimal        @db.Decimal(14, 2)

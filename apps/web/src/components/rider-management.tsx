@@ -3,11 +3,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   correctDispatchStatus,
-  createBranchStaff,
   createCustomer,
   createRider,
   createShopUser,
-  deleteBranchStaff,
   deleteCustomer,
   deleteDispatch,
   deleteRider,
@@ -17,10 +15,8 @@ import {
   getShopUsers,
   getShopFinancialSummary,
   getShopPricing,
-  getStaff,
   saveShopBranch,
   saveShopPricing,
-  updateBranchStaff,
   updateCustomer,
   updateRider,
   type ApiError,
@@ -30,13 +26,11 @@ import {
   type ShopUserOption,
   type ShopFinancialSummary,
   type ShopPricingAgreement,
-  type StaffOption,
 } from '../lib/api';
 
-type Resource = 'shops' | 'staff' | 'riders' | 'shipments';
+type Resource = 'shops' | 'riders' | 'shipments';
 const resources: Array<{ id: Resource; icon: string; title: string; note: string }> = [
   { id: 'shops', icon: 'storefront', title: 'Shops', note: 'Sender and pickup address' },
-  { id: 'staff', icon: 'badge', title: 'Staff', note: 'Company operators' },
   { id: 'riders', icon: 'two_wheeler', title: 'Riders', note: 'Pickup and delivery team' },
   { id: 'shipments', icon: 'package_2', title: 'Shipments', note: 'Correct or remove records' },
 ];
@@ -55,7 +49,6 @@ export function RiderManagement() {
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
   const [shops, setShops] = useState<CustomerOption[]>([]);
-  const [staff, setStaff] = useState<StaffOption[]>([]);
   const [riders, setRiders] = useState<RiderOption[]>([]);
   const [shipments, setShipments] = useState<DispatchSummary[]>([]);
   const [shopUsers, setShopUsers] = useState<ShopUserOption[]>([]);
@@ -63,15 +56,14 @@ export function RiderManagement() {
 
   async function load() {
     try {
-      const [shopRows, staffRows, riderRows, shipmentRows] = await Promise.all([getCustomers(), getStaff(), getRiders(), getConsignments()]);
-      setShops(shopRows); setStaff(staffRows); setRiders(riderRows); setShipments(shipmentRows);
+      const [shopRows, riderRows, shipmentRows] = await Promise.all([getCustomers(), getRiders(), getConsignments()]);
+      setShops(shopRows); setRiders(riderRows); setShipments(shipmentRows);
     } catch (error) { setMessage((error as ApiError).message); }
   }
   useEffect(() => { void load(); }, []);
   useEffect(() => { setSelectedId(''); setSearch(''); setViewOnly(true); setShopSection('profile'); setDeleteArmed(''); setMessage(''); }, [active]);
 
   const selectedShop = useMemo(() => shops.find((item) => item.id === selectedId), [shops, selectedId]);
-  const selectedStaff = useMemo(() => staff.find((item) => item.id === selectedId), [staff, selectedId]);
   const selectedRider = useMemo(() => riders.find((item) => item.id === selectedId), [riders, selectedId]);
   const selectedShipment = useMemo(() => shipments.find((item) => item.id === selectedId), [shipments, selectedId]);
   useEffect(() => { if (selectedShop) { getShopUsers(selectedShop.id).then(setShopUsers).catch((error: ApiError) => setMessage(error.message)); getShopPricing(selectedShop.id).then((agreements) => setShopPricing(agreements.find((item) => !item.effectiveTo) ?? agreements[0] ?? null)).catch(() => setShopPricing(null)); } else { setShopUsers([]); setShopPricing(null); } }, [selectedShop]);
@@ -90,12 +82,6 @@ export function RiderManagement() {
       await saveShopBranch(shop.id, { label: field(form, 'branchLabel'), addressLine: field(form, 'addressLine'), city: field(form, 'city') || undefined });
       await saveShopPricing(shop.id, { currencyCode: shopPricing?.currencyCode ?? 'PKR', shipmentCharge: Number(field(form, 'deliveryFee') || 0), codFeeFixed: Number(shopPricing?.codFeeFixed ?? 0), codFeePercent: Number(shopPricing?.codFeePercent ?? 0), returnCharge: Number(shopPricing?.returnCharge ?? 0), deductChargesFromCod: shopPricing?.deductChargesFromCod ?? true });
     }, selectedShop ? 'Shop updated.' : 'Shop created.');
-  }
-
-  async function saveStaff(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault(); const form = new FormData(event.currentTarget);
-    const common = { displayName: field(form, 'displayName'), email: field(form, 'email'), phone: field(form, 'phone') || undefined };
-    await run(() => selectedStaff ? updateBranchStaff(selectedStaff.id, common) : createBranchStaff({ ...common, password: field(form, 'password') }), selectedStaff ? 'Staff member updated.' : 'Staff member created.');
   }
 
   async function saveShopUser(event: React.FormEvent<HTMLFormElement>) {
@@ -117,7 +103,6 @@ export function RiderManagement() {
 
   const lists: Record<Resource, Array<{ id: string; title: string; meta: string }>> = {
     shops: shops.map((shop) => ({ id: shop.id, title: shop.name, meta: shop.addresses[0] ? `${shop.addresses[0].label || 'Pickup'} · ${shop.addresses[0].addressLine}` : 'Pickup address missing' })),
-    staff: staff.map((person) => ({ id: person.id, title: person.displayName, meta: person.email })),
     riders: riders.map((rider) => ({ id: rider.id, title: rider.user.displayName, meta: `${rider.employeeCode} · ${rider.user.phone || rider.user.email}` })),
     shipments: shipments.map((shipment) => ({ id: shipment.id, title: shipment.cnNumber, meta: `${shipment.status.replaceAll('_', ' ')} · ${shipment.parties.find((party) => party.kind === 'RECEIVER')?.name || 'Receiver'}` })),
   };
@@ -138,10 +123,8 @@ export function RiderManagement() {
         {active === 'shops' && selectedShop && viewOnly && shopSection === 'access' && <div className="shop-access-page"><form className="shop-login-form" onSubmit={saveShopUser}><EditorHeader title="Create shop login" subtitle="Can create and view shipments for this shop only" /><div className="compact-form-grid"><Input name="displayName" label="Name" /><Input name="email" label="Email" type="email" /><Input name="phone" label="Phone" required={false} /><Input name="password" label="Temporary password" type="password" minLength={12} hint="Minimum 12 characters" /></div><EditorActions busy={busy} canDelete={false} armed={false} saveLabel="Create login" onDelete={() => undefined} /></form><div className="shop-user-list"><span className="eyebrow">ACTIVE SHOP LOGINS</span>{shopUsers.length ? shopUsers.map((user) => <div key={user.id}><strong>{user.displayName}</strong><small>{user.email}</small></div>) : <p>No shop logins created.</p>}</div></div>}
         {active === 'shops' && selectedShop && viewOnly && shopSection === 'financials' && <ShopFinancialPanel shopId={selectedShop.id} />}
         {active === 'shops' && (!selectedShop || !viewOnly) && <form key={`${selectedShop?.id || 'new-shop'}-${shopPricing?.id || 'none'}`} onSubmit={saveShop}><EditorHeader title={selectedShop ? 'Edit shop' : 'New shop'} /><div className="compact-form-grid"><Input name="name" label="Shop name" value={selectedShop?.name} /><Input name="branchLabel" label="Pickup label" value={selectedShop?.addresses[0]?.label || 'Main pickup'} /><Input name="addressLine" label="Pickup address" value={selectedShop?.addresses[0]?.addressLine} wide /><Input name="city" label="City" value={selectedShop?.addresses[0]?.city} /><Input name="deliveryFee" label="Delivery fee (PKR)" type="number" value={shopPricing?.shipmentCharge ?? '0'} hint="Used as the default for new shipments" /></div><EditorActions busy={busy} canDelete={Boolean(selectedShop)} armed={deleteArmed === selectedShop?.id} onDelete={() => selectedShop && armOrDelete(selectedShop.id, () => deleteCustomer(selectedShop.id), 'Shop removed.')} /></form>}
-        {active === 'staff' && selectedStaff && viewOnly && <DirectoryOverview icon="badge" title={selectedStaff.displayName} subtitle="Staff profile" rows={[["Email", selectedStaff.email], ['Phone', selectedStaff.phone || 'Not provided'], ['Rider access', selectedStaff.riderEnabled ? 'Enabled' : 'Not enabled'], ['Permissions', String(selectedStaff.permissions?.length ?? 0)]]} onEdit={() => setViewOnly(false)} />}
-        {active === 'staff' && (!selectedStaff || !viewOnly) && <form key={selectedStaff?.id || 'new-staff'} onSubmit={saveStaff}><EditorHeader title={selectedStaff ? 'Edit staff member' : 'New staff member'} /><div className="compact-form-grid"><Input name="displayName" label="Name" value={selectedStaff?.displayName} /><Input name="email" label="Email" type="email" value={selectedStaff?.email} /><Input name="phone" label="Phone" required={false} value={selectedStaff?.phone} />{!selectedStaff && <Input name="password" label="Temporary password" type="password" minLength={12} hint="Minimum 12 characters" />}</div><EditorActions busy={busy} canDelete={Boolean(selectedStaff)} armed={deleteArmed === selectedStaff?.id} onDelete={() => selectedStaff && armOrDelete(selectedStaff.id, () => deleteBranchStaff(selectedStaff.id), 'Staff access removed.')} /></form>}
         {active === 'riders' && selectedRider && viewOnly && <DirectoryOverview icon="two_wheeler" title={selectedRider.user.displayName} subtitle="Rider profile" rows={[['Employee code', selectedRider.employeeCode], ['Phone', selectedRider.user.phone || 'Not provided'], ['Email', selectedRider.user.email], ['Vehicle', selectedRider.vehicleDetails?.vehicleNumber || 'Not provided'], ['Service areas', selectedRider.serviceAreas.join(', ') || 'All Lahore'], ['Active parcels', String(selectedRider.assignments.length)], ['Daily capacity', String(selectedRider.dailyCapacity)], ['Pay per delivery', `PKR ${Number(selectedRider.deliveryFee || 0).toFixed(2)}`], ['Completed rides', String(selectedRider.earnings?.length ?? 0)], ['Pending rider pay', `PKR ${(selectedRider.earnings ?? []).filter((earning) => earning.status === 'PENDING').reduce((total, earning) => total + Number(earning.amount), 0).toFixed(2)}`], ['Availability', selectedRider.availability.replaceAll('_', ' ')]]} onEdit={() => setViewOnly(false)} />}
-        {active === 'riders' && (!selectedRider || !viewOnly) && <form key={selectedRider?.id || 'new-rider'} onSubmit={saveRider}><EditorHeader title={selectedRider ? 'Edit rider' : 'New rider'} /><div className="compact-form-grid"><Input name="displayName" label="Name" value={selectedRider?.user.displayName} /><Input name="employeeCode" label="Employee code" value={selectedRider?.employeeCode} /><Input name="email" label="Email" type="email" value={selectedRider?.user.email} /><Input name="phone" label="Phone" required={false} value={selectedRider?.user.phone} /><Input name="vehicleNumber" label="Vehicle number" required={false} value={selectedRider?.vehicleDetails?.vehicleNumber} /><Input name="serviceAreas" label="Lahore service areas (comma separated)" required={false} value={selectedRider?.serviceAreas.join(', ')} wide /><Input name="dailyCapacity" label="Daily parcel capacity" type="number" value={String(selectedRider?.dailyCapacity ?? 10)} /><Input name="deliveryFee" label="Pay per completed delivery (PKR)" type="number" value={String(selectedRider?.deliveryFee ?? 0)} /><label className="field"><span>Availability</span><select defaultValue={selectedRider?.availability ?? 'AVAILABLE'} name="availability"><option value="AVAILABLE">Available</option><option value="BUSY">Busy</option><option value="OFF_DUTY">Off duty</option></select></label>{!selectedRider && <Input name="password" label="Temporary password" type="password" minLength={8} hint="Minimum 8 characters" />}</div><EditorActions busy={busy} canDelete={Boolean(selectedRider)} armed={deleteArmed === selectedRider?.id} onDelete={() => selectedRider && armOrDelete(selectedRider.id, () => deleteRider(selectedRider.id), 'Rider access removed.')} /></form>}
+        {active === 'riders' && (!selectedRider || !viewOnly) && <form key={selectedRider?.id || 'new-rider'} onSubmit={saveRider}><EditorHeader title={selectedRider ? 'Edit rider' : 'New rider'} /><div className="compact-form-grid"><Input name="displayName" label="Name" value={selectedRider?.user.displayName} /><Input name="employeeCode" label="Employee code" value={selectedRider?.employeeCode} /><Input name="email" label="Email" type="email" value={selectedRider?.user.email} /><Input name="phone" label="Phone" required={false} value={selectedRider?.user.phone} /><Input name="vehicleNumber" label="Vehicle number" required={false} value={selectedRider?.vehicleDetails?.vehicleNumber} /><Input name="serviceAreas" label="Lahore service areas (comma separated)" required={false} value={selectedRider?.serviceAreas.join(', ')} wide /><Input name="dailyCapacity" label="Daily parcel capacity" type="number" value={String(selectedRider?.dailyCapacity ?? 10)} /><Input name="deliveryFee" label="Pay per completed delivery (PKR)" type="number" value={String(selectedRider?.deliveryFee ?? 0)} /><label className="field"><span>Availability</span><select defaultValue={selectedRider?.availability ?? 'AVAILABLE'} name="availability"><option value="AVAILABLE">Available</option><option value="BUSY">Busy</option><option value="OFF_DUTY">Off duty</option></select></label>{!selectedRider && <Input name="password" label="Temporary password" type="password" minLength={12} hint="Minimum 12 characters" />}</div><EditorActions busy={busy} canDelete={Boolean(selectedRider)} armed={deleteArmed === selectedRider?.id} onDelete={() => selectedRider && armOrDelete(selectedRider.id, () => deleteRider(selectedRider.id), 'Rider access removed.')} /></form>}
         {active === 'shipments' && selectedShipment && viewOnly && <DirectoryOverview icon="package_2" title={selectedShipment.cnNumber} subtitle="Shipment record" rows={[["Status", selectedShipment.status.replaceAll('_', ' ')], ['Sender', selectedShipment.parties.find((party) => party.kind === 'SENDER')?.name || 'Not provided'], ['Receiver', selectedShipment.parties.find((party) => party.kind === 'RECEIVER')?.name || 'Not provided'], ['Service', selectedShipment.serviceType.replaceAll('_', ' ')]]} onEdit={() => setViewOnly(false)} />}
         {active === 'shipments' && selectedShipment && !viewOnly && <form key={selectedShipment.id} onSubmit={(event) => { event.preventDefault(); const form = new FormData(event.currentTarget); void run(() => correctDispatchStatus(selectedShipment.id, field(form, 'status'), field(form, 'reason')), 'Shipment status corrected.'); }}><EditorHeader title="Correct shipment" subtitle={selectedShipment.cnNumber} /><div className="compact-form-grid"><label className="field"><span>Correct status</span><select name="status" defaultValue={selectedShipment.status}>{shipmentStatuses.map((status) => <option key={status}>{status}</option>)}</select></label><Input name="reason" label="Reason for correction" minLength={10} hint="Explain why this administrative correction is necessary" wide /></div><EditorActions busy={busy} canDelete armed={deleteArmed === selectedShipment.id} saveLabel="Save correction" onDelete={() => armOrDelete(selectedShipment.id, () => deleteDispatch(selectedShipment.id), 'Shipment removed from active records.')} /></form>}
       </section>

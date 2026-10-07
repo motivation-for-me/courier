@@ -55,7 +55,8 @@ Keep the real `.env` only at the repository root. It must never be committed. St
 | `JWT_SECRET` | API | token signing secret; required in production |
 | `API_PORT` | API | defaults to `3001` |
 | `WEB_ORIGIN` | API | allowed frontend origin |
-| `NEXT_PUBLIC_API_URL` | Web build | public API base URL |
+| `API_INTERNAL_URL` | Web runtime | Vercel-injected internal API service URL |
+| `API_ORIGIN` | Web runtime | local API proxy fallback (defaults to `http://localhost:3001`) |
 
 Reserved characters in database passwords must be URL-encoded. For example, `@` becomes `%40`. The API loads the root `.env` when started from either the repository root or `apps/api`; deployment platforms should provide variables directly rather than shipping a `.env` file.
 
@@ -104,7 +105,7 @@ The command is idempotent for roles and permissions but refuses to overwrite an 
 2. Install dependencies with `npm ci`.
 3. Run `npm run db:generate` and `npm run db:migrate` once for the release.
 4. Run `npm run build`.
-5. Deploy the API, then deploy the web app with `NEXT_PUBLIC_API_URL` pointing to the public API URL.
+5. Deploy the services together. Vercel injects `API_INTERNAL_URL` into the web service from the service binding.
 6. Verify `GET /api/v1/health` and API authentication after deployment.
 
 The database must permit outbound PostgreSQL connectivity from the API host. A frontend deployment cannot connect directly to PostgreSQL.

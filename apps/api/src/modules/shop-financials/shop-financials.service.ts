@@ -38,10 +38,13 @@ export class ShopFinancialsService {
 
   async settle(shopId: string, input: ShopSettlementDto, actor: AuthenticatedUser) {
     this.admin(actor); await this.shop(shopId, actor);
-    const allocationTotal = input.allocations.reduce((sum, allocation) => sum + allocation.amount, 0);
-    if (Math.abs(allocationTotal - input.amount) > 0.005) throw new BadRequestException('Settlement allocations must equal the settlement amount');
+    const allocationTotal = input.allocations.reduce((sum, allocation) => sum.plus(allocation.amount), new Prisma.Decimal(0));
+    if (!allocationTotal.equals(new Prisma.Decimal(input.amount))) throw new BadRequestException('Settlement allocations must equal the settlement amount');
     if (new Set(input.allocations.map((item) => item.consignmentId)).size !== input.allocations.length) throw new BadRequestException('A shipment can be allocated only once per settlement');
     return this.prisma.$transaction(async (transaction) => {
+      const organization = await transaction.organization.findUniqueOrThrow({ where: { id: actor.organizationId }, select: { currencyCode: true } });
+      const currencyCode = input.currencyCode.trim().toUpperCase();
+      if (currencyCode !== organization.currencyCode) throw new BadRequestException(`Settlement currency must be ${organization.currencyCode}`);
       const shipments = await transaction.consignment.findMany({ where: { id: { in: input.allocations.map((item) => item.consignmentId) }, customerId: shopId, organizationId: actor.organizationId, deletedAt: null }, include: { payments: { where: { method: 'CASH', status: 'VERIFIED' } }, financialEntries: true, settlementAllocations: { where: { settlement: { status: ShopSettlementStatus.PAID } } } } });
       if (shipments.length !== input.allocations.length) throw new BadRequestException('One or more settlement shipments do not belong to this shop');
       for (const allocation of input.allocations) {
@@ -53,7 +56,7 @@ export class ShopFinancialsService {
         const outstanding = collected.minus(deductions).plus(adjustments).minus(paid);
         if (new Prisma.Decimal(allocation.amount).greaterThan(outstanding)) throw new BadRequestException(`Allocation exceeds outstanding amount for ${shipment.cnNumber}`);
       }
-      const settlement = await transaction.shopSettlement.create({ data: { organizationId: actor.organizationId, customerId: shopId, amount: input.amount, currencyCode: input.currencyCode.trim().toUpperCase(), paidAt: new Date(input.paidAt), reference: input.reference?.trim() || null, remarks: input.remarks?.trim() || null, createdById: actor.id, allocations: { create: input.allocations } }, include: { allocations: true } });
+      const settlement = await transaction.shopSettlement.create({ data: { organizationId: actor.organizationId, customerId: shopId, amount: input.amount, currencyCode, paidAt: new Date(input.paidAt), reference: input.reference?.trim() || null, remarks: input.remarks?.trim() || null, createdById: actor.id, allocations: { create: input.allocations } }, include: { allocations: true } });
       await transaction.auditLog.create({ data: { organizationId: actor.organizationId, actorId: actor.id, action: 'shop.settlement.created', entityType: 'shop_settlement', entityId: settlement.id, newValues: { shopId, amount: input.amount, allocationCount: input.allocations.length, reference: input.reference } } });
       return settlement;
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });

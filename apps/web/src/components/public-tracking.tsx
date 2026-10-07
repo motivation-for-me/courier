@@ -37,15 +37,8 @@ export function PublicTracking() {
     return stages.findIndex((stage) => stage.status === shipment.status);
   }, [shipment]);
 
-  function search(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const nextCn = String(form.get('cnNumber') ?? '').trim().toUpperCase();
-    if (nextCn) router.push(`/track/${encodeURIComponent(nextCn)}`);
-  }
-
   return <main className="public-track-page">
-    <header className="public-track-nav"><a href="/" className="public-wordmark">Swift<span>Log</span></a><form onSubmit={search}><input aria-label="Consignment number" defaultValue={cnNumber} name="cnNumber" placeholder="Enter CN number" required /><button type="submit">Track</button></form></header>
+    <header className="public-track-nav"><a href="/" className="public-wordmark">Swift<span>Log</span></a><button className="track-back-button" onClick={() => router.push('/')} type="button">Back</button></header>
     <section className="track-hero"><div><span className="track-kicker">LIVE DELIVERY</span><h1>{loading ? 'Finding your parcel' : shipment ? shipment.status === 'DELIVERED' ? 'Delivered safely' : 'Your parcel is moving' : 'Shipment not found'}</h1><p>{shipment ? `Latest update from ${shipment.organization?.name || 'SwiftLog'}` : 'Enter the CN printed on your parcel label.'}</p></div>{shipment && <div className="track-reference"><span>Consignment number</span><strong>{shipment.cnNumber}</strong><small>Updated {new Date(shipment.currentStatusAt).toLocaleString()}</small></div>}</section>
 
     {loading && <section className="track-loading" aria-label="Loading tracking details"><i /><i /><i /></section>}
@@ -63,7 +56,6 @@ export function PublicTracking() {
         {shipment.status === 'OUT_FOR_DELIVERY' && <section className={`track-rider-card ${shipment.rider ? 'assigned' : ''}`}><span className="track-card-label">YOUR RIDER</span>{shipment.rider ? <><div className="rider-avatar">{shipment.rider.user.displayName.slice(0, 1).toUpperCase()}</div><h2>{shipment.rider.user.displayName}</h2><p>Courier rider · {shipment.rider.employeeCode}</p>{shipment.rider.vehicleDetails?.vehicleNumber && <small>Vehicle {shipment.rider.vehicleDetails.vehicleNumber}</small>}{shipment.rider.user.phone && <a className="rider-call" href={`tel:${shipment.rider.user.phone}`}>Call rider · {shipment.rider.user.phone}</a>}</> : <><div className="rider-avatar waiting">···</div><h2>Rider details unavailable</h2><p>The courier has not published rider contact details.</p></>}</section>}
       </div>
 
-      <section className="track-history"><div><span className="track-card-label">TRACKING HISTORY</span><h2>Parcel updates</h2></div><div>{shipment.events.slice().reverse().map((event, index) => <article key={`${event.eventTime}-${index}`}><i /><div><strong>{statusLabel(event.eventType)}</strong><p>{event.remarks || 'Shipment status updated'}</p><time>{new Date(event.eventTime).toLocaleString()}</time></div></article>)}</div></section>
     </>}
     <footer className="public-track-footer"><span>SwiftLog courier operations</span><span>Keep your CN for delivery support</span></footer>
   </main>;

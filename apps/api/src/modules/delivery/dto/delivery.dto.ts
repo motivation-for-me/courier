@@ -1,4 +1,4 @@
-import { IsIn, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { IsIn, IsNumber, IsOptional, IsString, Min, MinLength } from 'class-validator';
 
 export class RiderScanDto {
   @IsString()
@@ -37,6 +37,7 @@ export class CompleteDeliveryDto {
 
 export class FailedDeliveryDto {
   @IsString()
+  @MinLength(3)
   reason!: string;
 
   @IsOptional()

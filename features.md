@@ -8,7 +8,7 @@ SwiftLog is a responsive courier operations system for creating shipments, assig
 
 The application supports three primary user types:
 
-- **ADMIN** — manages courier operations, shops, staff, riders, shipments, permissions, documents, corrections, and financial records.
+- **ADMIN** — manages courier operations, shops, riders, shipments, documents, corrections, and financial records.
 - **SHOP** — a sender/shop account scoped to its own shipment activity and permitted operations.
 - **RIDER** — handles assigned pickups and deliveries, scans parcel QR codes, and records delivery progress.
 
@@ -23,8 +23,7 @@ An administrator or staff member can also be enabled as a rider. Rider capabilit
 - Automatic expired-session prompt followed by return to sign-in.
 - Organization-scoped data access.
 - Role and permission checks enforced by the API.
-- Configurable staff permissions.
-- Optional rider capability for an administrator or staff user.
+- Optional rider capability for an administrator.
 - Login throttling and global API request throttling.
 - Protected API routes; hiding a button is not treated as authorization.
 - Audit records for sensitive administrative and operational changes.
@@ -64,6 +63,7 @@ An administrator or staff member can also be enabled as a rider. Rider capabilit
 
 - Search shipments by CN, sender, or receiver.
 - Filter shipments by status.
+- Server-side shipment-history pagination, search, status filtering, and date filtering.
 - View sender, receiver, parcel, assigned rider, and current state.
 - Assign or change an eligible rider.
 - Rider recommendations based on availability, service area, capacity, and active workload.
@@ -127,16 +127,6 @@ Controlled exception states include delivery attempt failed, delivery failed, re
 - Use saved shop information during shipment creation.
 - Dedicated shop financial area.
 
-## Staff management
-
-- Create, view, update, search, and remove staff accounts.
-- Store name, email, and phone.
-- Set a temporary password when creating a user.
-- Assign granular operational permissions.
-- Enable or disable rider capability for a staff member.
-- Generate or set an employee code when rider capability is enabled.
-- Audit staff access changes.
-
 ## Rider management
 
 - Create, view, update, search, and remove riders.
@@ -165,7 +155,6 @@ Controlled exception states include delivery attempt failed, delivery failed, re
 ## Documents and labels
 
 - Generate a dispatch/shipment PDF.
-- Generate a parcel label PDF.
 - Preview documents in the browser.
 - Download documents.
 - CN and QR identification.
@@ -220,7 +209,7 @@ Controlled exception states include delivery attempt failed, delivery failed, re
 - Prisma transactions for multi-record business operations.
 - Serializable/controlled transaction handling in critical paths.
 - Idempotency records for retry-sensitive commands.
-- Unique constraints to prevent duplicate active relationships and duplicate command effects.
+- Database-enforced unique constraints prevent multiple active rider assignments per shipment, multiple current pricing agreements per shop, duplicate active refresh hashes, duplicate COD settlements, and duplicate command effects.
 - Append-oriented tracking history.
 - Audit log with actor, entity, action, and before/after information where applicable.
 - DTO allow-list validation and strict API input transformation.
@@ -250,8 +239,9 @@ Controlled exception states include delivery attempt failed, delivery failed, re
 - Touch-friendly buttons and forms.
 - Keyboard focus indicators and skip-to-content link.
 - Skeleton states for loading content.
-- Branded delivery-bike loading animation.
-- Three-second branded pre-login introduction.
+- Data skeletons for normal asynchronous loading; the bike visual is reserved for the pre-login introduction.
+
+`33rb- Three-second branded pre-login introduction.
 - Reduced-motion support.
 - Empty, success, error, offline, and expired-session states.
 

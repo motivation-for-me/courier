@@ -31,11 +31,13 @@ export class PickupsService {
     return this.prisma.$transaction(async (tx) => {
       const [pickup, assignee] = await Promise.all([
         tx.pickup.findFirst({ where: { id: pickupId, organizationId: actor.organizationId } }),
-        tx.user.findFirst({ where: { id: assigneeId, organizationId: actor.organizationId, isActive: true } }),
+        tx.user.findFirst({ where: { id: assigneeId, organizationId: actor.organizationId, isActive: true, rider: { is: { isActive: true } } } }),
       ]);
-      if (!pickup || !assignee) throw new NotFoundException('Pickup or active assignee not found');
+      if (!pickup || !assignee) throw new NotFoundException('Pickup or active rider not found');
       if (pickup.status !== PickupStatus.REQUESTED && pickup.status !== PickupStatus.ASSIGNED) throw new BadRequestException('Pickup is not assignable');
-      const updated = await tx.pickup.update({ where: { id: pickupId }, data: { assignedToId: assigneeId, assignedAt: new Date(), status: PickupStatus.ASSIGNED } });
+      const changed = await tx.pickup.updateMany({ where: { id: pickupId, status: pickup.status, assignedToId: pickup.assignedToId }, data: { assignedToId: assigneeId, assignedAt: new Date(), status: PickupStatus.ASSIGNED } });
+      if (changed.count !== 1) throw new ConflictException('Pickup was reassigned by another request. Reload and try again.');
+      const updated = await tx.pickup.findUniqueOrThrow({ where: { id: pickupId } });
       await tx.auditLog.create({ data: { organizationId: actor.organizationId, actorId: actor.id, action: 'pickup.assigned', entityType: 'pickup', entityId: pickupId, oldValues: { status: pickup.status }, newValues: { status: updated.status, assigneeId, remarks } } });
       return updated;
     });
@@ -45,7 +47,9 @@ export class PickupsService {
     const pickup = await this.getAssigned(pickupId, actor);
     if (pickup.status !== PickupStatus.ASSIGNED) throw new BadRequestException('Pickup must be assigned before starting');
     return this.prisma.$transaction(async (tx) => {
-      const updated = await tx.pickup.update({ where: { id: pickupId }, data: { status: PickupStatus.IN_PROGRESS, startedAt: new Date() } });
+      const changed = await tx.pickup.updateMany({ where: { id: pickupId, status: PickupStatus.ASSIGNED, assignedToId: pickup.assignedToId }, data: { status: PickupStatus.IN_PROGRESS, startedAt: new Date() } });
+      if (changed.count !== 1) throw new ConflictException('Pickup was already updated by another request.');
+      const updated = await tx.pickup.findUniqueOrThrow({ where: { id: pickupId } });
       await tx.auditLog.create({ data: { organizationId: actor.organizationId, actorId: actor.id, action: 'pickup.started', entityType: 'pickup', entityId: pickupId, newValues: { status: updated.status } } });
       return updated;
     });
@@ -70,7 +74,9 @@ export class PickupsService {
     const pickup = await this.getAssigned(pickupId, actor);
     if (pickup.status !== PickupStatus.ASSIGNED && pickup.status !== PickupStatus.IN_PROGRESS) throw new BadRequestException('Pickup is not active');
     return this.prisma.$transaction(async (tx) => {
-      const updated = await tx.pickup.update({ where: { id: pickupId }, data: { status: PickupStatus.FAILED, failureReason: reason } });
+      const changed = await tx.pickup.updateMany({ where: { id: pickupId, status: pickup.status, assignedToId: pickup.assignedToId }, data: { status: PickupStatus.FAILED, failureReason: reason } });
+      if (changed.count !== 1) throw new ConflictException('Pickup was already updated by another request.');
+      const updated = await tx.pickup.findUniqueOrThrow({ where: { id: pickupId } });
       await tx.auditLog.create({ data: { organizationId: actor.organizationId, actorId: actor.id, action: 'pickup.failed', entityType: 'pickup', entityId: pickupId, newValues: { status: updated.status, reason } } });
       return updated;
     });

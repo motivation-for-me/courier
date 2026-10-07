@@ -11,7 +11,8 @@
 - `JWT_SECRET`: required in production; never use the development fallback outside local development.
 - `API_PORT`: NestJS listen port.
 - `WEB_ORIGIN`: exact allowed browser origin for CORS.
-- `NEXT_PUBLIC_API_URL`: browser-visible API base URL; contains no secret.
+- `API_INTERNAL_URL`: injected by the Vercel service binding; do not set it manually.
+- `API_ORIGIN`: local fallback used by the Next.js server-side API proxy.
 
 ## Storage and jobs
 

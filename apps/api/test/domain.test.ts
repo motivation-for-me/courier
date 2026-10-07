@@ -3,6 +3,8 @@ import * as assert from 'node:assert/strict';
 import { ConsignmentStatus } from '@prisma/client';
 import { allowedRiderStatuses } from '../src/common/rider-status';
 import { createPublicTrackingToken, verifyPublicTrackingToken } from '../src/common/public-tracking-token';
+import { ForbiddenException } from '@nestjs/common';
+import { PermissionGuard } from '../src/common/permission.guard';
 
 test('rider lifecycle exposes only valid next actions', () => {
   assert.deepEqual(allowedRiderStatuses(ConsignmentStatus.ASSIGNED_TO_RIDER, false), []);
@@ -19,4 +21,22 @@ test('public tracking tokens are signed and consignment-specific', () => {
   assert.equal(verifyPublicTrackingToken('shipment-b', token), false);
   assert.equal(verifyPublicTrackingToken('shipment-a', `${token}x`), false);
   assert.equal(verifyPublicTrackingToken('shipment-a'), false);
+});
+
+test('global permission guard denies a role without the route permission', () => {
+  const request: any = { user: { id: 'user-1', organizationId: 'org-1', displayName: 'Shop', roles: ['SHOP'], permissions: ['shipment:view'] } };
+  const reflector: any = {
+    getAllAndOverride(key: string) {
+      if (key === 'isPublic') return false;
+      if (key === 'required_permission') return 'customer:create';
+      return undefined;
+    },
+  };
+  const context: any = {
+    getHandler: () => function handler() {},
+    getClass: () => class Controller {},
+    switchToHttp: () => ({ getRequest: () => request }),
+  };
+
+  assert.throws(() => new PermissionGuard(reflector).canActivate(context), ForbiddenException);
 });

@@ -11,15 +11,18 @@ export type AuthSession = {
   user: { id: string; displayName: string; organizationId: string; riderId?: string; roles: string[]; permissions: string[] };
 };
 
-// Same-origin by default. In Vercel, the Next route handler forwards this path
-// to the internal Nest service through the runtime-only API_INTERNAL_URL binding.
-const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL ?? '/api/v1';
+// Browser traffic always remains same-origin. In Vercel, the Next route handler
+// forwards this path through the private API_INTERNAL_URL service binding.
+// Keeping deployment URLs out of the client bundle also prevents a local or
+// stale NEXT_PUBLIC_API_URL from breaking production authentication.
+const apiBaseUrl = '/api/v1';
 const sessionKey = 'courier.auth-session';
 export const sessionExpiredEvent = 'courier:session-expired';
 export const dataChangedEvent = 'courier:data-changed';
 
 export type AppNotification = { id: string; status: string; template: string; payload?: { title?: string; message?: string; consignmentId?: string } | null; createdAt: string };
 export function getNotifications() { return apiRequest<AppNotification[]>('/notifications'); }
+export function sendRiderMessage(message: string) { return apiRequest<{ success: true; recipients: number }>('/notifications/rider-message', { method: 'POST', body: JSON.stringify({ message }) }); }
 export function readNotification(id: string) { return apiRequest<AppNotification>(`/notifications/${id}/read`, { method: 'PATCH', body: '{}' }); }
 export function readAllNotifications() { return apiRequest<{ success: true; count: number }>('/notifications/read-all', { method: 'PATCH', body: '{}' }); }
 
@@ -99,7 +102,7 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}): Pr
     });
   } catch (error) {
     if (controller.signal.aborted) throw new ApiError(0, 'The API did not respond within 20 seconds. Check the API and database connection, then try again.');
-    throw error;
+    throw new ApiError(0, typeof navigator !== 'undefined' && !navigator.onLine ? 'You are offline. Reconnect and try again.' : 'Unable to reach the courier API. Please wait a moment and try again.');
   } finally {
     window.clearTimeout(timeout);
   }
@@ -130,6 +133,12 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}): Pr
 export function getConsignments(query = '') {
   return apiRequest<DispatchSummary[]>(`/dispatches${query}`);
 }
+
+export type DispatchPage = { items: DispatchSummary[]; total: number; page: number; pageSize: number; pages: number };
+export function getConsignmentPage(query = '') { return apiRequest<DispatchPage>(`/dispatches/page${query}`); }
+
+export type DispatchDashboardSummary = { counts: { today: number; pending: number; active: number; delivered: number; total: number }; recent: DispatchSummary[] };
+export function getDispatchDashboardSummary() { return apiRequest<DispatchDashboardSummary>('/dispatches/summary'); }
 
 export type DispatchSummary = { id: string; cnNumber: string; status: string; serviceType: string; currentStatusAt: string; createdAt: string; publicTrackingKey?: string; customer?: { id: string; name: string } | null; project?: { id: string; name: string; siteName?: string | null; addressLine: string } | null; parties: Array<{ kind: string; name: string; phone?: string | null }>; items: Array<{ id: string; description: string; quantity: number; unit: string }>; payments: Array<{ amount: string | number; status: string; method: string }>; assignments: Array<{ riderId: string; rider: { employeeCode: string; user: { displayName: string; phone?: string | null } } }> };
 export type TrackingResult = { found: false } | { found: true; shipment: { cnNumber: string; status: string; serviceType: string; currentStatusAt: string; organization?: { name?: string | null } | null; receiver?: { name: string; phone?: string | null } | null; destination?: { addressLine: string; city?: string | null; landmark?: string | null; deliveryNote?: string | null } | null; rider?: { employeeCode: string; vehicleDetails?: { vehicleNumber?: string } | null; user: { displayName: string; phone?: string | null } } | null; events: Array<{ eventType: string; eventTime: string; remarks?: string | null }> } };
@@ -206,14 +215,6 @@ export function getBranches() { return apiRequest<BranchOption[]>('/branches'); 
 export function createBranch(payload: { name: string; code: string }) { return apiRequest<BranchOption>('/branches', { method: 'POST', body: JSON.stringify(payload) }); }
 export function updateBranch(id: string, payload: { name?: string; code?: string }) { return apiRequest<BranchOption>(`/branches/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }); }
 export function deleteBranch(id: string) { return apiRequest<{ success: true }>(`/branches/${id}`, { method: 'DELETE' }); }
-export type StaffOption = { id: string; displayName: string; email: string; phone?: string | null; isActive: boolean; branch?: BranchOption | null; permissions?: string[]; riderEnabled?: boolean; rider?: { id: string; employeeCode: string; isActive: boolean } | null };
-export function getStaff() { return apiRequest<StaffOption[]>('/staff'); }
-export type AccessOption = { code: string; description?: string | null };
-export function getStaffAccessOptions() { return apiRequest<AccessOption[]>('/staff/access-options'); }
-export function updateStaffAccess(id: string, payload: { permissions: string[]; riderEnabled: boolean; employeeCode?: string }) { return apiRequest<{ success: true }>(`/staff/${id}/access`, { method: 'PATCH', body: JSON.stringify(payload) }); }
-export function createBranchStaff(payload: { displayName: string; email: string; password: string; phone?: string }) { return apiRequest<StaffOption>('/staff', { method: 'POST', body: JSON.stringify(payload) }); }
-export function updateBranchStaff(id: string, payload: { displayName?: string; email?: string; phone?: string }) { return apiRequest<StaffOption>(`/staff/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }); }
-export function deleteBranchStaff(id: string) { return apiRequest<{ success: true }>(`/staff/${id}`, { method: 'DELETE' }); }
 export type PickupAssignment = { id: string; status: string; consignment: DispatchSummary & { addresses: Array<{ kind: string; addressLine: string; city?: string | null }> } };
 export type RiderDeliveryAssignment = { id: string; status: 'ACTIVE' | 'ENDED'; assignedAt: string; endedAt?: string | null; allowedStatuses: RiderStatus[]; consignment: DispatchSummary & { addresses: Array<{ kind: string; addressLine: string; city?: string | null; landmark?: string | null; deliveryNote?: string | null }> } };
 export function getAssignedPickups() { return apiRequest<PickupAssignment[]>('/pickups/assigned'); }

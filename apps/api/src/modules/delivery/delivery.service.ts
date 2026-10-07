@@ -31,6 +31,7 @@ export class DeliveryService {
       if (changed.count !== 1) throw new ConflictException('Shipment status changed. Refresh and try again.');
       const updated = await transaction.consignment.findUniqueOrThrow({ where: { id: consignment.id } });
       await transaction.trackingEvent.create({ data: { consignmentId, eventType: requested, riderId: actor.riderId, performedById: actor.id, remarks: remarks ?? 'Updated from rider scan page' } });
+      await this.notifyAdmins(transaction, actor.organizationId, actor.id, 'DELIVERY_OUT_FOR_DELIVERY', 'Parcel out for delivery', `${updated.cnNumber} is now out for delivery.`, consignmentId);
       await transaction.auditLog.create({ data: { organizationId: actor.organizationId, actorId: actor.id, action: 'delivery.rider_status_updated', entityType: 'consignment', entityId: consignmentId, oldValues: { status: consignment.status }, newValues: { status: requested } } });
       return { id: updated.id, cnNumber: updated.cnNumber, status: updated.status, allowedStatuses: allowedRiderStatuses(updated.status, pendingCod) };
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
@@ -98,6 +99,7 @@ export class DeliveryService {
       const updated = await transaction.consignment.findUniqueOrThrow({ where: { id: consignmentId } });
       await transaction.riderAssignment.updateMany({ where: { consignmentId, riderId: actor.riderId, status: 'ACTIVE' }, data: { status: 'ENDED', endedAt: new Date() } });
       await transaction.trackingEvent.create({ data: { consignmentId, eventType: ConsignmentStatus.DELIVERED, riderId: actor.riderId, performedById: actor.id, remarks } });
+      await this.notifyAdmins(transaction, actor.organizationId, actor.id, 'DELIVERY_COMPLETED', 'Delivery completed', `${updated.cnNumber} was delivered.`, consignmentId);
       await transaction.auditLog.create({ data: { organizationId: actor.organizationId, actorId: actor.id, action: 'delivery.completed', entityType: 'consignment', entityId: consignmentId, newValues: { status: ConsignmentStatus.DELIVERED } } });
       if (actor.riderId && !actor.roles.includes('ADMIN')) {
         const [rider, organization] = await Promise.all([
@@ -122,6 +124,7 @@ export class DeliveryService {
       const changed = await transaction.consignment.updateMany({ where: { id: consignmentId, status: ConsignmentStatus.OUT_FOR_DELIVERY }, data: { status: ConsignmentStatus.DELIVERY_ATTEMPT_FAILED, currentStatusAt: new Date() } });
       if (changed.count !== 1) throw new ConflictException('Shipment was already updated by another request.');
       await transaction.trackingEvent.create({ data: { consignmentId, eventType: ConsignmentStatus.DELIVERY_ATTEMPT_FAILED, riderId: actor.riderId, performedById: actor.id, remarks: reason } });
+      await this.notifyAdmins(transaction, actor.organizationId, actor.id, 'DELIVERY_FAILED', 'Delivery attempt failed', `${consignment.cnNumber}: ${reason}`, consignmentId);
       await transaction.auditLog.create({ data: { organizationId: actor.organizationId, actorId: actor.id, action: 'delivery.attempt_failed', entityType: 'consignment', entityId: consignmentId, newValues: { reason } } });
       return attempt;
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
@@ -131,6 +134,11 @@ export class DeliveryService {
     if (!actor.riderId) throw new ForbiddenException('Rider identity required');
     const assignment = await this.prisma.riderAssignment.findFirst({ where: { consignmentId, riderId: actor.riderId, status: 'ACTIVE', consignment: { organizationId: actor.organizationId } } });
     if (!assignment) throw new ForbiddenException('Shipment is not assigned to you');
+  }
+
+  private async notifyAdmins(transaction: Prisma.TransactionClient, organizationId: string, actorId: string, template: string, title: string, message: string, consignmentId: string) {
+    const admins = await transaction.user.findMany({ where: { organizationId, isActive: true, roles: { some: { role: { name: 'ADMIN' } } }, id: { not: actorId } }, select: { id: true } });
+    if (admins.length) await transaction.notification.createMany({ data: admins.map((admin) => ({ organizationId, recipientId: admin.id, channel: 'IN_APP', template, status: 'UNREAD', payload: { title, message, consignmentId } })) });
   }
 
   private require(actor: AuthenticatedUser, permission: string) { if (!actor.permissions.includes(permission)) throw new ForbiddenException('Permission missing'); }

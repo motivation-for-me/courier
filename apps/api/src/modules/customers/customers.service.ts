@@ -14,7 +14,7 @@ export class CustomersService {
 
   listCustomers(actor: AuthenticatedUser, search?: string) {
     return this.prisma.customer.findMany({
-      where: { organizationId: actor.organizationId, deletedAt: null, ...(actor.roles.includes('SHOP_MANAGER') ? { id: actor.customerId } : {}), ...(search ? { OR: [{ name: { contains: search, mode: 'insensitive' as const } }, { phone: { contains: search } }] } : {}) },
+      where: { organizationId: actor.organizationId, deletedAt: null, ...(actor.roles.includes('SHOP') ? { id: actor.customerId } : {}), ...(search ? { OR: [{ name: { contains: search, mode: 'insensitive' as const } }, { phone: { contains: search } }] } : {}) },
       orderBy: { name: 'asc' },
       take: 100,
       select: { id: true, name: true, email: true, phone: true, addresses: { orderBy: { label: 'asc' }, select: { id: true, label: true, addressLine: true, city: true, region: true, countryCode: true } }, _count: { select: { projects: true, consignments: true } } },
@@ -24,7 +24,7 @@ export class CustomersService {
   async listShopUsers(customerId: string, actor: AuthenticatedUser) {
     this.admin(actor);
     await this.requireCustomer(customerId, actor);
-    return this.prisma.user.findMany({ where: { organizationId: actor.organizationId, customerId, isActive: true, roles: { some: { role: { name: 'SHOP_MANAGER' } } } }, select: { id: true, displayName: true, email: true, phone: true, isActive: true, createdAt: true }, orderBy: { displayName: 'asc' } });
+    return this.prisma.user.findMany({ where: { organizationId: actor.organizationId, customerId, isActive: true, roles: { some: { role: { name: 'SHOP' } } } }, select: { id: true, displayName: true, email: true, phone: true, isActive: true, createdAt: true }, orderBy: { displayName: 'asc' } });
   }
 
   async createShopUser(customerId: string, input: CreateShopUserDto, actor: AuthenticatedUser) {
@@ -35,10 +35,10 @@ export class CustomersService {
       if (await transaction.user.findUnique({ where: { organizationId_email: { organizationId: actor.organizationId, email } } })) throw new BadRequestException('A user with this email already exists');
       const permissions = await transaction.permission.findMany({ where: { organizationId: actor.organizationId, code: { in: shopPermissionCodes } } });
       if (permissions.length !== shopPermissionCodes.length) throw new BadRequestException('Shop permissions are not configured');
-      const role = await transaction.role.upsert({ where: { organizationId_name: { organizationId: actor.organizationId, name: 'SHOP_MANAGER' } }, create: { organizationId: actor.organizationId, name: 'SHOP_MANAGER', description: 'Shop user restricted to the linked shop' }, update: {} });
+      const role = await transaction.role.upsert({ where: { organizationId_name: { organizationId: actor.organizationId, name: 'SHOP' } }, create: { organizationId: actor.organizationId, name: 'SHOP', description: 'Shop user restricted to the linked shop' }, update: {} });
       await transaction.rolePermission.createMany({ data: permissions.map((permission) => ({ roleId: role.id, permissionId: permission.id })), skipDuplicates: true });
       const user = await transaction.user.create({ data: { organizationId: actor.organizationId, customerId, displayName: input.displayName.trim(), email, phone: input.phone, passwordHash: await bcrypt.hash(input.password, 12), roles: { create: { organizationId: actor.organizationId, roleId: role.id } } }, select: { id: true, displayName: true, email: true, phone: true, customerId: true, isActive: true } });
-      await transaction.auditLog.create({ data: { organizationId: actor.organizationId, actorId: actor.id, action: 'shop.user.created', entityType: 'user', entityId: user.id, newValues: { customerId, email, role: 'SHOP_MANAGER' } } });
+      await transaction.auditLog.create({ data: { organizationId: actor.organizationId, actorId: actor.id, action: 'shop.user.created', entityType: 'user', entityId: user.id, newValues: { customerId, email, role: 'SHOP' } } });
       await transaction.notification.create({ data: { organizationId: actor.organizationId, recipientId: user.id, channel: 'IN_APP', template: 'SHOP_ACCOUNT_CREATED', status: 'UNREAD', payload: { title: 'Shop account ready', message: 'You can now create and track shipments for your shop.' } } });
       return user;
     });
@@ -67,15 +67,21 @@ export class CustomersService {
   }
 
   async deleteCustomer(customerId: string, actor: AuthenticatedUser) {
-    const customer = await this.prisma.customer.findFirst({ where: { id: customerId, organizationId: actor.organizationId, deletedAt: null }, select: { id: true, name: true } });
-    if (!customer) throw new NotFoundException('Shop not found');
-    const deletedAt = new Date();
-    await this.prisma.$transaction([
-      this.prisma.customer.update({ where: { id: customerId }, data: { deletedAt } }),
-      this.prisma.consignment.updateMany({ where: { customerId, deletedAt: null }, data: { deletedAt } }),
-      this.prisma.project.updateMany({ where: { customerId, isActive: true }, data: { isActive: false } }),
-      this.prisma.auditLog.create({ data: { organizationId: actor.organizationId, actorId: actor.id, action: 'customer.deleted', entityType: 'customer', entityId: customerId, oldValues: { name: customer.name }, newValues: { deletedAt } } }),
-    ]);
+    await this.prisma.$transaction(async (transaction) => {
+      const customer = await transaction.customer.findFirst({ where: { id: customerId, organizationId: actor.organizationId, deletedAt: null }, select: { id: true, name: true } });
+      if (!customer) throw new NotFoundException('Shop not found');
+      const deletedAt = new Date();
+      const changed = await transaction.customer.updateMany({ where: { id: customerId, organizationId: actor.organizationId, deletedAt: null }, data: { deletedAt } });
+      if (changed.count !== 1) throw new BadRequestException('Shop was already archived');
+      const users = await transaction.user.findMany({ where: { organizationId: actor.organizationId, customerId, isActive: true }, select: { id: true } });
+      const userIds = users.map((user) => user.id);
+      if (userIds.length) {
+        await transaction.user.updateMany({ where: { id: { in: userIds } }, data: { isActive: false } });
+        await transaction.authSession.updateMany({ where: { userId: { in: userIds }, revokedAt: null }, data: { revokedAt: deletedAt } });
+      }
+      await transaction.project.updateMany({ where: { customerId, isActive: true }, data: { isActive: false } });
+      await transaction.auditLog.create({ data: { organizationId: actor.organizationId, actorId: actor.id, action: 'customer.archived', entityType: 'customer', entityId: customerId, oldValues: { name: customer.name }, newValues: { deletedAt, disabledShopUsers: userIds.length, shipmentHistoryPreserved: true } } });
+    });
     return { success: true };
   }
 

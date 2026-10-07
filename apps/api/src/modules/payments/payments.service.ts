@@ -1,5 +1,5 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { PaymentStatus } from '@prisma/client';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { PaymentStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../../infrastructure/prisma/prisma.service';
 import { AuthenticatedUser } from '../../common/auth.types';
 import { UploadPaymentProofDto } from './dto/payment-proof.dto';
@@ -23,10 +23,12 @@ export class PaymentsService {
       if (payment.status === PaymentStatus.VERIFIED || payment.status === PaymentStatus.REJECTED) throw new BadRequestException('Payment decision already recorded');
       const document = await transaction.document.create({ data: { organizationId: actor.organizationId, consignmentId: payment.consignmentId, type: 'PAYMENT_PROOF', storageKey: input.storageKey, mimeType: input.mimeType, checksum: input.checksum, createdById: actor.id } });
       const proof = await transaction.paymentProof.create({ data: { paymentId: payment.id, documentId: document.id, uploadedById: actor.id } });
-      const updated = await transaction.payment.update({ where: { id: payment.id }, data: { status: PaymentStatus.VERIFICATION_PENDING } });
+      const changed = await transaction.payment.updateMany({ where: { id: payment.id, status: payment.status }, data: { status: PaymentStatus.VERIFICATION_PENDING } });
+      if (changed.count !== 1) throw new ConflictException('Payment changed while the proof was uploading. Reload and try again.');
+      const updated = await transaction.payment.findUniqueOrThrow({ where: { id: payment.id } });
       await transaction.auditLog.create({ data: { organizationId: actor.organizationId, actorId: actor.id, action: 'payment.proof_uploaded', entityType: 'payment', entityId: payment.id, oldValues: { status: payment.status }, newValues: { status: updated.status, documentId: document.id, sizeBytes: input.sizeBytes, mimeType: input.mimeType } } });
       return { payment: updated, proof, document };
-    });
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
   }
 
   async settleCod(codTransactionId: string, actor: AuthenticatedUser, amount: number, remarks?: string) {
@@ -39,7 +41,7 @@ export class PaymentsService {
       const settlement = await transaction.codSettlement.create({ data: { codTransactionId, amount, variance: Number(cod.expectedAmount) - amount, toBranchId: actor.branchId, approvedById: actor.id, settledAt: new Date(), remarks } });
       await transaction.auditLog.create({ data: { organizationId: actor.organizationId, actorId: actor.id, action: 'cod.settled', entityType: 'cod_transaction', entityId: codTransactionId, newValues: { amount, remarks } } });
       return settlement;
-    });
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
   }
 
   async paymentReport(actor: AuthenticatedUser) {
@@ -58,7 +60,9 @@ export class PaymentsService {
       const payment = await transaction.payment.findFirst({ where: { id: paymentId, consignment: { organizationId: actor.organizationId } } });
       if (!payment) throw new NotFoundException('Payment not found');
       if (payment.status === PaymentStatus.VERIFIED || payment.status === PaymentStatus.REJECTED) throw new BadRequestException('Payment decision already recorded');
-      const updated = await transaction.payment.update({ where: { id: paymentId }, data: { status, verifiedById: actor.id, verifiedAt: new Date(), remarks } });
+      const changed = await transaction.payment.updateMany({ where: { id: paymentId, status: payment.status }, data: { status, verifiedById: actor.id, verifiedAt: new Date(), remarks } });
+      if (changed.count !== 1) throw new ConflictException('Payment was already updated by another request. Reload to see the current decision.');
+      const updated = await transaction.payment.findUniqueOrThrow({ where: { id: paymentId } });
       await transaction.auditLog.create({ data: { organizationId: actor.organizationId, actorId: actor.id, action: `payment.${status.toLowerCase()}`, entityType: 'payment', entityId: paymentId, oldValues: { status: payment.status }, newValues: { status, remarks } } });
       return updated;
     });

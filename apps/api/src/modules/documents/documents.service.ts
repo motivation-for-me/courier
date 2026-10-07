@@ -17,7 +17,7 @@ export class DocumentsService {
     if (!['application/pdf', 'image/jpeg', 'image/png'].includes(input.mimeType)) throw new BadRequestException('Unsupported document type');
     if (!input.storageKey || input.storageKey.includes('..') || input.storageKey.startsWith('/')) throw new BadRequestException('Invalid storage key');
     return this.prisma.$transaction(async (tx) => {
-      const consignment = await tx.consignment.findFirst({ where: { id: consignmentId, organizationId: actor.organizationId, deletedAt: null, ...(actor.roles.includes('SHOP_MANAGER') ? { customerId: actor.customerId } : {}) } });
+      const consignment = await tx.consignment.findFirst({ where: { id: consignmentId, organizationId: actor.organizationId, deletedAt: null, ...(actor.roles.includes('SHOP') ? { customerId: actor.customerId } : {}) } });
       if (!consignment) throw new NotFoundException('Consignment not found');
       const document = await tx.document.create({ data: { organizationId: actor.organizationId, consignmentId, type: input.type, storageKey: input.storageKey, mimeType: input.mimeType, checksum: input.checksum, createdById: actor.id } });
       await tx.auditLog.create({ data: { organizationId: actor.organizationId, actorId: actor.id, action: 'document.registered', entityType: 'document', entityId: document.id, newValues: { type: input.type, consignmentId, sizeBytes: input.sizeBytes } } });
@@ -27,7 +27,7 @@ export class DocumentsService {
 
   async listForConsignment(id: string, actor: AuthenticatedUser) {
     if (!actor.permissions.includes('documents:view')) throw new ForbiddenException('Document permission missing');
-    const consignment = await this.prisma.consignment.findFirst({ where: { id, organizationId: actor.organizationId, deletedAt: null, ...(actor.roles.includes('SHOP_MANAGER') ? { customerId: actor.customerId } : {}) }, select: { id: true } });
+    const consignment = await this.prisma.consignment.findFirst({ where: { id, organizationId: actor.organizationId, deletedAt: null, ...(actor.roles.includes('SHOP') ? { customerId: actor.customerId } : {}) }, select: { id: true } });
     if (!consignment) throw new NotFoundException('Consignment not found');
     return this.prisma.document.findMany({ where: { consignmentId: id, organizationId: actor.organizationId }, orderBy: { createdAt: 'desc' } });
   }
@@ -77,11 +77,11 @@ export class DocumentsService {
   }
 
   private loadDispatch(id: string, actor: AuthenticatedUser) {
-    return this.prisma.consignment.findFirst({ where: { id, organizationId: actor.organizationId, deletedAt: null, ...(actor.roles.includes('SHOP_MANAGER') ? { customerId: actor.customerId } : {}) }, include: { organization: true, customer: true, project: true, parties: true, addresses: true, items: true, events: { orderBy: { eventTime: 'asc' as const } }, payments: true, assignments: { where: { status: 'ACTIVE' }, include: { rider: { include: { user: true } } } } } });
+    return this.prisma.consignment.findFirst({ where: { id, organizationId: actor.organizationId, deletedAt: null, ...(actor.roles.includes('SHOP') ? { customerId: actor.customerId } : {}) }, include: { organization: true, customer: true, parties: true, addresses: true, items: true, events: { orderBy: { eventTime: 'asc' as const } }, payments: true, assignments: { where: { status: 'ACTIVE' }, include: { rider: { include: { user: { select: { displayName: true, phone: true } } } } } } } });
   }
 
   private async assertCanView(consignmentId: string, actor: AuthenticatedUser) {
-    if (actor.roles.includes('SHOP_MANAGER')) {
+    if (actor.roles.includes('SHOP')) {
       const owned = await this.prisma.consignment.findFirst({ where: { id: consignmentId, organizationId: actor.organizationId, customerId: actor.customerId, deletedAt: null }, select: { id: true } });
       if (!owned) throw new ForbiddenException('This shipment does not belong to your shop');
       return;

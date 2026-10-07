@@ -8,7 +8,7 @@ export class PaymentDecisionDto {
 
 export class CodSettlementDto {
   @IsNumber()
-  @Min(0)
+  @Min(0.01)
   amount!: number;
 
   @IsOptional()

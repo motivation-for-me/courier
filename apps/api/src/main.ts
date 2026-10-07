@@ -3,6 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { PrismaExceptionFilter } from './common/prisma-exception.filter';
 
 function loadRepositoryEnvironment() {
   if (process.env.DATABASE_URL) return;
@@ -43,6 +44,7 @@ async function bootstrap() {
     allowedHeaders: 'Content-Type, Authorization, Idempotency-Key',
   });
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
+  app.useGlobalFilters(new PrismaExceptionFilter());
   await app.listen(configuration.port);
 }
 

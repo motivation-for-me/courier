@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { randomBytes, createHash } from 'node:crypto';
@@ -26,6 +26,7 @@ export class AuthService {
     }
 
     const authenticated = this.toAuthenticatedUser(user);
+    if (!authenticated.roles.length) throw new UnauthorizedException('This account does not have an active application role');
     const accessToken = await this.jwt.signAsync(authenticated, { expiresIn: '15m' });
     const refreshToken = randomBytes(48).toString('base64url');
     await this.prisma.authSession.create({
@@ -43,17 +44,20 @@ export class AuthService {
       where: { refreshHash: this.hash(refreshToken), revokedAt: null, expiresAt: { gt: new Date() } },
     });
     if (!session) throw new UnauthorizedException('Invalid refresh session');
-    const user = await this.prisma.user.findFirst({
-      where: { id: session.userId, isActive: true },
-      include: { roles: { include: { role: { include: { permissions: { include: { permission: true } } } } } }, rider: true },
-    });
-    if (!user) throw new UnauthorizedException('Invalid refresh session');
-    const authenticated = this.toAuthenticatedUser(user);
     const nextRefreshToken = randomBytes(48).toString('base64url');
-    await this.prisma.$transaction([
-      this.prisma.authSession.update({ where: { id: session.id }, data: { revokedAt: new Date() } }),
-      this.prisma.authSession.create({ data: { userId: user.id, refreshHash: this.hash(nextRefreshToken), expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) } }),
-    ]);
+    const authenticated = await this.prisma.$transaction(async (transaction) => {
+      const user = await transaction.user.findFirst({
+        where: { id: session.userId, isActive: true },
+        include: { roles: { include: { role: { include: { permissions: { include: { permission: true } } } } } }, rider: true },
+      });
+      if (!user) throw new UnauthorizedException('Invalid refresh session');
+      const currentUser = this.toAuthenticatedUser(user);
+      if (!currentUser.roles.length) throw new UnauthorizedException('This account does not have an active application role');
+      const revoked = await transaction.authSession.updateMany({ where: { id: session.id, revokedAt: null, expiresAt: { gt: new Date() } }, data: { revokedAt: new Date() } });
+      if (revoked.count !== 1) throw new ConflictException('Refresh token was already used. Sign in again.');
+      await transaction.authSession.create({ data: { userId: user.id, refreshHash: this.hash(nextRefreshToken), expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) } });
+      return currentUser;
+    });
     return { accessToken: await this.jwt.signAsync(authenticated, { expiresIn: '15m' }), refreshToken: nextRefreshToken, user: authenticated };
   }
 
@@ -63,8 +67,10 @@ export class AuthService {
   }
 
   private toAuthenticatedUser(user: any): AuthenticatedUser {
-    const roles = user.roles.map((assignment: any) => assignment.role.name);
-    const permissions = user.roles.flatMap((assignment: any) => assignment.role.permissions.map((item: any) => item.permission.code));
+    const allowedRoles = new Set(['ADMIN', 'SHOP', 'RIDER']);
+    const activeAssignments = user.roles.filter((assignment: any) => allowedRoles.has(assignment.role.name));
+    const roles = activeAssignments.map((assignment: any) => assignment.role.name);
+    const permissions = [...new Set<string>(activeAssignments.flatMap((assignment: any) => assignment.role.permissions.map((item: any) => item.permission.code as string)))];
     return { id: user.id, displayName: user.displayName, organizationId: user.organizationId, customerId: user.customerId ?? undefined, branchId: user.branchId ?? undefined, hubId: user.hubId ?? undefined, riderId: user.rider?.id, roles, permissions };
   }
 
