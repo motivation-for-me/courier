@@ -1,10 +1,11 @@
 import { Transform } from 'class-transformer';
-import { IsArray, IsEmail, IsIn, IsInt, IsNumber, IsOptional, IsString, Matches, Max, Min, MinLength } from 'class-validator';
+import { IsArray, IsEmail, IsIn, IsInt, IsNumber, IsOptional, IsString, Matches, Max, MaxLength, Min, MinLength } from 'class-validator';
 import { normalizePakistanPhone, pakistanPhonePattern } from '../../../common/phone';
 
 export class CreateRiderDto {
   @IsString()
   @MinLength(2)
+  @MaxLength(72)
   displayName!: string;
 
   @IsEmail()

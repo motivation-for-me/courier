@@ -1,5 +1,5 @@
 import { Transform } from 'class-transformer';
-import { IsEmail, IsOptional, IsString, Matches, MinLength } from 'class-validator';
+import { IsEmail, IsOptional, IsString, Matches, MaxLength, MinLength } from 'class-validator';
 import { normalizePakistanPhone, pakistanPhonePattern } from '../../../common/phone';
 
 export class CreateShopUserDto {
@@ -12,6 +12,7 @@ export class CreateShopUserDto {
 
   @IsString()
   @MinLength(12)
+  @MaxLength(72)
   password!: string;
 
   @IsOptional()

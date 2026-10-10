@@ -1,7 +1,6 @@
 'use client';
 
 import { Fragment, useEffect, useRef, useState } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { completePickup, completeRiderDelivery, createConsignment, dataChangedEvent, failPickup, failRiderDelivery, getAccessTokenExpiry, getAssignedPickups, getConsignments, getMyRiderAssignments, getMyRiderFinance, getNotifications, getSession, login, logout, openDispatchDocument, readAllNotifications, readNotification, sendRiderMessage, sessionExpiredEvent, startPickup, unlockRiderDispatch, updateRiderDispatchStatus, type ApiError, type AppNotification, type AuthSession, type PickupAssignment, type RiderDeliveryAssignment, type RiderFinanceSummary, type RiderScanResult, type RiderStatus } from '../lib/api';
 import { DispatchCreate } from './dispatch-create';
@@ -66,6 +65,7 @@ function Sidebar({ activeView, onNavigate, user, collapsed }: { activeView: View
     <aside className="sidebar">
       <div className="brand-lockup"><div className="brand-wordmark" aria-label="SwiftLog">Swift<span>Log</span></div></div>
       <div className="hub-context"><span className="live-dot" /> COMPANY DISPATCH <b>LIVE</b></div>
+      <div className="sidebar-notifications"><NotificationInbox /></div>
       <nav className="sidebar-nav" aria-label="Primary navigation">
         {navigation.filter((group) => group.items.some(visible)).map((group) => (
           <section key={group.label} className="nav-group">
@@ -97,18 +97,36 @@ function NotificationInbox() {
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<AppNotification[]>([]);
   const [loading, setLoading] = useState(true);
+  const [reply, setReply] = useState('');
+  const [replyBusy, setReplyBusy] = useState(false);
+  const [replyMessage, setReplyMessage] = useState('');
   const load = () => { setLoading(true); getNotifications().then(setItems).catch(() => setItems([])).finally(() => setLoading(false)); };
   useEffect(load, []);
   useEffect(() => { const refresh = () => load(); window.addEventListener(dataChangedEvent, refresh); return () => window.removeEventListener(dataChangedEvent, refresh); }, []);
   const unread = items.filter((item) => item.status !== 'READ').length;
   const notificationIcon = (template: string) => template === 'DELIVERY_OUT_FOR_DELIVERY' ? 'local_shipping' : template === 'DELIVERY_COMPLETED' ? 'task_alt' : template === 'DELIVERY_FAILED' ? 'warning' : template === 'RIDER_MESSAGE' ? 'chat' : template.startsWith('RIDER_') ? 'two_wheeler' : 'notifications';
   const groups = [{ label: 'Deliveries', icon: 'local_shipping', items: items.filter((item) => item.template.startsWith('DELIVERY_')) }, { label: 'Riders', icon: 'two_wheeler', items: items.filter((item) => item.template.startsWith('RIDER_')) }, { label: 'Other', icon: 'notifications', items: items.filter((item) => !item.template.startsWith('DELIVERY_') && !item.template.startsWith('RIDER_')) }].filter((group) => group.items.length);
-  return <div className="notification-inbox"><button aria-label={`Notifications${unread ? `, ${unread} unread` : ''}`} aria-expanded={open} className="icon-button notification" onClick={() => setOpen((value) => !value)} type="button"><Icon name="notifications" />{unread > 0 && <span>{unread > 9 ? '9+' : unread}</span>}</button>{open && <section className="notification-panel"><header><strong>Notifications</strong>{unread > 0 && <button onClick={() => void readAllNotifications().then(load)} type="button">Mark all read</button>}</header>{loading ? <div className="notification-skeleton"><i /><i /><i /></div> : groups.length ? <div className="notification-groups">{groups.map((group) => <div className="notification-group" key={group.label}><h4><Icon name={group.icon} /> {group.label}</h4>{group.items.map((item) => <button className={item.status === 'READ' ? '' : 'unread'} key={item.id} onClick={() => void readNotification(item.id).then(load)} type="button"><Icon name={notificationIcon(item.template)} /><span><strong>{item.payload?.title || 'Update'}</strong><small>{item.payload?.message || item.template.replaceAll('_', ' ')}</small><time>{new Date(item.createdAt).toLocaleString()}</time></span></button>)}</div>)}</div> : <p className="notification-empty">No notifications</p>}</section>}</div>;
+  async function submitReply(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!reply.trim()) return;
+    setReplyBusy(true);
+    setReplyMessage('');
+    try {
+      await sendRiderMessage(reply.trim());
+      setReply('');
+      setReplyMessage('Reply sent');
+    } catch (error) {
+      setReplyMessage((error as ApiError).message ?? 'Reply could not be sent.');
+    } finally {
+      setReplyBusy(false);
+    }
+  }
+  return <div className="notification-inbox"><button aria-label={`Notifications${unread ? `, ${unread} unread` : ''}`} aria-expanded={open} className="icon-button notification" onClick={() => setOpen((value) => !value)} type="button"><Icon name="notifications" />{unread > 0 && <span>{unread > 9 ? '9+' : unread}</span>}</button>{open && <section className="notification-panel"><header><strong>Notifications</strong>{unread > 0 && <button onClick={() => void readAllNotifications().then(load)} type="button">Mark all read</button>}</header>{loading ? <div className="notification-skeleton"><i /><i /><i /></div> : groups.length ? <div className="notification-groups">{groups.map((group) => <div className="notification-group" key={group.label}><h4><Icon name={group.icon} /> {group.label}</h4>{group.items.map((item) => <button className={item.status === 'READ' ? '' : 'unread'} key={item.id} onClick={() => void readNotification(item.id).then(load)} type="button"><Icon name={notificationIcon(item.template)} /><span><strong>{item.payload?.title || 'Update'}</strong><small>{item.payload?.message || item.template.replaceAll('_', ' ')}</small><time>{new Date(item.createdAt).toLocaleString()}</time></span></button>)}</div>)}</div> : <p className="notification-empty">No notifications</p>}<form className="notification-reply" onSubmit={submitReply}><label htmlFor="notification-reply">Reply to admin team</label><div><input id="notification-reply" value={reply} onChange={(event) => setReply(event.target.value)} placeholder="Write a reply" /><button aria-label="Send reply" className="icon-button" disabled={replyBusy || !reply.trim()} type="submit"><Icon name="send" /></button></div>{replyMessage && <small>{replyMessage}</small>}</form></section>}</div>;
 }
 
 function Header({ view, onNavigate, collapsed, onToggleSidebar, onLogout, riderOnly = false }: { view: View; onNavigate: (view: View) => void; collapsed: boolean; onToggleSidebar: () => void; onLogout: () => void; riderOnly?: boolean }) {
   const title = view === 'dashboard' ? 'Courier dashboard' : view === 'consignments' ? 'Shipment history' : view === 'booking' ? 'Create shipment' : view === 'rider' ? 'Rider workspace' : view === 'riders' ? 'Management' : view === 'settings' ? 'Settings' : 'Track shipment';
-  return <header className="topbar"><div className="topbar-leading"><button aria-label={collapsed ? 'Open sidebar' : 'Close sidebar'} aria-expanded={!collapsed} className="icon-button sidebar-toggle" onClick={onToggleSidebar} type="button"><Icon name={collapsed ? 'dock_to_right' : 'dock_to_left'} /></button><div className="topbar-title"><span className="eyebrow">OPERATIONS</span><h1>{title}</h1></div></div><div className="topbar-actions">{!riderOnly && <label className="global-search"><Icon name="search" /><input aria-label="Search consignments" placeholder="Search CN or rider" /><kbd>CTRL K</kbd></label>}<button aria-label="Scan QR code" className="icon-button scanner" onClick={() => onNavigate(riderOnly ? 'rider' : 'tracking')} type="button"><Icon name="qr_code_scanner" /></button><NotificationInbox /><button aria-label="Log out" className="icon-button logout-button" title="Log out" onClick={onLogout} type="button"><Icon name="logout" /></button></div></header>;
+  return <header className="topbar"><div className="topbar-leading"><button aria-label={collapsed ? 'Open sidebar' : 'Close sidebar'} aria-expanded={!collapsed} className="icon-button sidebar-toggle" onClick={onToggleSidebar} type="button"><Icon name={collapsed ? 'dock_to_right' : 'dock_to_left'} /></button><div className="topbar-title"><span className="eyebrow">OPERATIONS</span><h1>{title}</h1></div></div><div className="topbar-actions">{!riderOnly && <label className="global-search"><Icon name="search" /><input aria-label="Search consignments" placeholder="Search CN or rider" /><kbd>CTRL K</kbd></label>}<button aria-label="Scan QR code" className="icon-button scanner" onClick={() => onNavigate(riderOnly ? 'rider' : 'tracking')} type="button"><Icon name="qr_code_scanner" /></button><div className="mobile-notifications"><NotificationInbox /></div><button aria-label="Log out" className="icon-button logout-button" title="Log out" onClick={onLogout} type="button"><Icon name="logout" /></button></div></header>;
 }
 
 function SessionExpiredDialog({ onConfirm }: { onConfirm: () => void }) {
@@ -151,7 +169,7 @@ function LoginScreen({ onAuthenticated }: { onAuthenticated: (session: AuthSessi
       setState('error');
     }
   }
-  if (showIntro) return <main className="rider-intro" aria-label="SwiftLog introduction"><div className="rider-intro-stage"><Image className="rider-bike-image" src="/assets/logo.jpg" alt="Delivery rider" width={1365} height={768} priority sizes="(max-width: 760px) 92vw, 620px" /><div className="intro-wordmark">Swift<span>Log</span></div><div className="intro-progress" aria-hidden="true"><i /></div><button className="intro-skip" onClick={() => setShowIntro(false)} type="button">Sign in <Icon name="arrow_forward" /></button></div></main>;
+  if (showIntro) return <main className="rider-intro" aria-label="SwiftLog introduction"><div className="rider-intro-stage"><img className="rider-bike-image" src="/assets/logo.jpg" alt="Delivery rider" width={1365} height={768} fetchPriority="high" decoding="async" /><div className="intro-wordmark">Swift<span>Log</span></div><div className="intro-progress" aria-hidden="true"><i /></div><button className="intro-skip" onClick={() => setShowIntro(false)} type="button">Sign in <Icon name="arrow_forward" /></button></div></main>;
   return <main className="login-page"><form className="login-card" onSubmit={submit}><div className="login-wordmark">Swift<span>Log</span></div><h1>Sign in</h1><label className="field"><span>Email</span><input name="email" type="email" autoComplete="email" required /></label><label className="field"><span>Password</span><input name="password" type="password" autoComplete="current-password" minLength={12} required /></label>{state === 'error' && <div className="error-callout"><Icon name="error" /><span>{message}</span></div>}<button className="button primary login-submit" disabled={state === 'submitting'} type="submit">{state === 'submitting' ? 'Signing in' : 'Sign in'} <Icon name="arrow_forward" /></button></form></main>;
 }
 
@@ -363,8 +381,7 @@ export default function OperationsShell() {
   const [refreshVersion, setRefreshVersion] = useState(0);
   const refreshTimer = useRef<number | null>(null);
   useEffect(() => {
-    const savedTheme = localStorage.getItem('swiftlog-theme') || 'light';
-    document.documentElement.dataset.theme = savedTheme;
+    document.documentElement.dataset.theme = 'light';
     const url = new URL(window.location.href);
     const scan = url.searchParams.get('scan');
     if (scan) { setScannedCn(scan); setView('rider'); }

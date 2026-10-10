@@ -1,5 +1,5 @@
 /* SwiftLog PWA worker: authenticated API responses and mutations are never cached. */
-const VERSION='swiftlog-pwa-v2', STATIC_CACHE=`${VERSION}-static`, PAGE_CACHE=`${VERSION}-pages`, OFFLINE_URL='/offline.html';
+const VERSION='swiftlog-pwa-v3', STATIC_CACHE=`${VERSION}-static`, PAGE_CACHE=`${VERSION}-pages`, OFFLINE_URL='/offline.html';
 const PRECACHE=[OFFLINE_URL,'/manifest.webmanifest','/icons/swiftlog-192.png','/icons/swiftlog-512.png','/icons/swiftlog-maskable-512.png'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(STATIC_CACHE).then(cache=>cache.addAll(PRECACHE))));
 self.addEventListener('activate',event=>event.waitUntil(Promise.all([caches.keys().then(keys=>Promise.all(keys.filter(key=>![STATIC_CACHE,PAGE_CACHE].includes(key)).map(key=>caches.delete(key)))),self.clients.claim()])));

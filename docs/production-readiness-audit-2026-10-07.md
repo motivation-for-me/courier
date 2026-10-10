@@ -11,7 +11,7 @@
 - Document generation loaded the complete rider user record, including fields the renderer never needed.
 - Rider password constraints differed between the UI and API.
 - Failed-attempt status was absent from the shipment-history filter.
-- The deployed application currently returns `503` for database-backed login although its frontend, PWA files, health route, and unauthenticated authorization boundary respond.
+- On 2026-10-07 the deployed application returned `503` for database-backed login. A 2026-10-10 recheck returned readiness `200` and a correct `401` invalid-credentials response, confirming that the service binding and database connection are now reachable.
 - No active SHOP account exists in the connected production data, so a real credential-based SHOP flow cannot be completed without creating an intentional account.
 - The database migration table contains two historical migrations that are not present in the local repository: `20260928153000_dispatch_domain_foundation` and `20260928153100_dispatch_entities`.
 
@@ -103,7 +103,7 @@
 - Read-only authenticated API smoke tests using a two-minute, non-persisted token.
 - PDF response check: `200`, `application/pdf`, valid `%PDF` signature, non-empty output.
 - Public tracking check: `200`, matching shipment found.
-- Deployed checks: home, manifest, worker and health `200`; protected shipments route `401`; invalid login currently `503`.
+- Deployed checks: home, manifest, worker, health, and database readiness `200`; protected shipments route `401`; invalid login correctly returns `401` as of 2026-10-10.
 
 ## M. Build/typecheck/lint results
 
@@ -116,9 +116,8 @@
 
 ## N. Remaining items requiring owner/deployment action
 
-1. Configure/verify Vercel `DATABASE_URL` for Production and Preview using the Supabase transaction-pooler URL on port 6543 (including the project-qualified username and `pgbouncer=true`). Do not place this secret in `vercel.json`. Redeploy afterward; the current deployed login returns `503`.
-2. Deploy this repository revision. The deployed app is older: `/api/v1/health/ready` currently returns `404` even though the local production build exposes it.
-3. Create an intentional SHOP account through Admin Management and provide test credentials if a true password-based SHOP end-to-end acceptance run is required. The connected database currently has no shop-linked user; QA did not fabricate one in production.
-4. Recover the two missing historical migration folders from the original source/backup, or formally baseline migration history. Current forward migrations deploy, but local and remote histories are not fully reproducible until this is resolved.
+1. Deploy the 2026-10-10 login-bike fix so the page requests `/assets/logo.jpg` directly instead of the failing Vercel `/_next/image` optimizer route. The service worker cache version is now `v3` to retire the stale shell.
+2. Create an intentional SHOP account through Admin Management and provide test credentials if a true password-based SHOP end-to-end acceptance run is required. The connected database currently has no shop-linked user; QA did not fabricate one in production.
+3. Recover the two missing historical migration folders from the original source/backup, or formally baseline migration history. Current forward migrations deploy, but local and remote histories are not fully reproducible until this is resolved.
 
-Until items 1–2 are completed and deployed login is retested, the hosted environment should not be declared production-ready even though the current code builds and local production-mode API checks pass.
+The API connection is healthy as of 2026-10-10. Deploy and verify the login-bike revision before closing the visual regression.

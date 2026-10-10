@@ -1,6 +1,7 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import helmet from 'helmet';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { PrismaExceptionFilter } from './common/prisma-exception.filter';
@@ -21,12 +22,18 @@ function loadRepositoryEnvironment() {
 
 function requireRuntimeConfiguration() {
   for (const name of ['DATABASE_URL', 'JWT_SECRET'] as const) {
-    if (!process.env[name]?.trim()) throw new Error(`${name} must be configured`);
+      const value = process.env[name]?.trim();
+      if (!value) throw new Error(`${name} must be configured`);
+      if (name === 'JWT_SECRET' && value.length < 32) throw new Error('JWT_SECRET must be at least 32 characters');
   }
+    const isProduction = process.env.NODE_ENV === 'production';
   const port = Number(process.env.API_PORT ?? 3001);
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('API_PORT must be a valid TCP port');
-  const webOrigins = (process.env.WEB_ORIGIN ?? 'http://localhost:3000').split(',').map((origin) => origin.trim()).filter(Boolean);
-  return { port, webOrigins };
+    const configuredOrigins = process.env.WEB_ORIGIN?.split(',').map((origin) => origin.trim()).filter(Boolean) ?? [];
+    if (isProduction && configuredOrigins.length === 0) throw new Error('WEB_ORIGIN must be configured in production');
+    const webOrigins = configuredOrigins.length ? configuredOrigins : ['http://localhost:3000'];
+    if (webOrigins.some((origin) => !/^https?:\/\/[^\s/]+(?::\d+)?$/.test(origin))) throw new Error('WEB_ORIGIN contains an invalid origin');
+    return { port, webOrigins, isProduction };
 }
 
 async function bootstrap() {
@@ -34,9 +41,12 @@ async function bootstrap() {
   const configuration = requireRuntimeConfiguration();
   const { AppModule } = await import('./app.module');
   const app = await NestFactory.create(AppModule);
+  app.use(helmet({ contentSecurityPolicy: false }));
   app.setGlobalPrefix('api/v1');
-  const swaggerConfig = new DocumentBuilder().setTitle('Courier Management API').setVersion('1.0').addBearerAuth().build();
-  SwaggerModule.setup('api/docs', app, SwaggerModule.createDocument(app, swaggerConfig));
+  if (!configuration.isProduction) {
+    const swaggerConfig = new DocumentBuilder().setTitle('Courier Management API').setVersion('1.0').addBearerAuth().build();
+    SwaggerModule.setup('api/docs', app, SwaggerModule.createDocument(app, swaggerConfig));
+  }
   app.enableCors({
     origin: configuration.webOrigins,
     credentials: true,

@@ -3,11 +3,9 @@
 import { useEffect, useState } from 'react';
 import { enableMyRiderAccess, getSession, type ApiError } from '../lib/api';
 
-type Theme = 'light' | 'midnight' | 'cobalt';
+type Theme = 'light';
 const themes: Array<{ id: Theme; name: string; note: string; colors: string[] }> = [
   { id: 'light', name: 'Swift Light', note: 'Bright neutral workspace', colors: ['#f8f9ff', '#16263b', '#f05a1a'] },
-  { id: 'midnight', name: 'Midnight', note: 'Low-light operations', colors: ['#0b1220', '#e7edf7', '#ff6b2c'] },
-  { id: 'cobalt', name: 'Cobalt', note: 'Cool blue control room', colors: ['#eef5ff', '#102a56', '#2563eb'] },
 ];
 
 function Icon({ name }: { name: string }) {
@@ -22,9 +20,9 @@ export function SettingsPanel({ appearanceOnly = false }: { appearanceOnly?: boo
   const adminAlreadyRider = Boolean(getSession()?.user.riderId);
 
   useEffect(() => {
-    const saved = (localStorage.getItem('swiftlog-theme') as Theme | null) ?? 'light';
-    setTheme(saved);
-    document.documentElement.dataset.theme = saved;
+    setTheme('light');
+    localStorage.setItem('swiftlog-theme', 'light');
+    document.documentElement.dataset.theme = 'light';
   }, []);
 
   function chooseTheme(value: Theme) {

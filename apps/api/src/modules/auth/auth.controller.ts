@@ -23,6 +23,7 @@ export class AuthController {
   }
 
   @Post('logout')
+  @Throttle({ default: { limit: 20, ttl: 60_000 } })
   logout(@Body() input: RefreshDto) {
     return this.auth.logout(input.refreshToken);
   }
