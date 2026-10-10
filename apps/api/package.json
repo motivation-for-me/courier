@@ -5,8 +5,10 @@
   "scripts": {
     "dev": "nest start --watch",
     "generate": "prisma generate --schema ../../prisma/schema.prisma",
+    "migrate:deploy": "prisma migrate deploy --schema ../../prisma/schema.prisma",
     "prebuild": "npm run generate",
     "build": "nest build",
+    "vercel-build": "npm run generate && npm run migrate:deploy && nest build",
     "start": "node dist/main.js",
     "bootstrap:admin": "node dist/scripts/bootstrap-admin.js",
     "sync:permissions": "node dist/scripts/sync-admin-permissions.js",

@@ -17,7 +17,41 @@ function BikeLoader({ label }: { label?: string }) { return <DataSkeleton label=
 
 export function DispatchDashboard({ onCreate, onViewAll }: { onCreate: () => void; onViewAll: () => void }) {
   const [rows, setRows] = useState<DispatchSummary[]>([]); const [counts, setCounts] = useState({ today: 0, pending: 0, active: 0, delivered: 0, total: 0 }); const [error, setError] = useState(''); const [loading, setLoading] = useState(true); const [showSkeleton, setShowSkeleton] = useState(false);
-  useEffect(() => { const delay = window.setTimeout(() => setShowSkeleton(true), 180); getDispatchDashboardSummary().then((summary) => { setRows(summary.recent); setCounts(summary.counts); }).catch((e: ApiError) => setError(e.message)).finally(() => { window.clearTimeout(delay); setLoading(false); setShowSkeleton(false); }); return () => window.clearTimeout(delay); }, []);
+  useEffect(() => {
+    const delay = window.setTimeout(() => setShowSkeleton(true), 180);
+    const loadDashboard = async () => {
+      try {
+        const summary = await getDispatchDashboardSummary();
+        setRows(summary.recent);
+        setCounts(summary.counts);
+      } catch (summaryError) {
+        try {
+          const fallback = await getConsignmentPage('?page=1&limit=100');
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const count = (statuses: string[]) => fallback.items.filter((item) => statuses.includes(item.status)).length;
+          setRows(fallback.items.slice(0, 8));
+          setCounts({
+            today: fallback.items.filter((item) => new Date(item.createdAt) >= today).length,
+            pending: count(['DRAFT', 'CONFIRMED']),
+            active: count(['ASSIGNED_TO_RIDER', 'DISPATCHED', 'OUT_FOR_DELIVERY']),
+            delivered: count(['DELIVERED']),
+            total: fallback.total,
+          });
+          setError('Live summary is unavailable; showing shipment records.');
+        } catch (fallbackError) {
+          const message = fallbackError instanceof Error && fallbackError.message ? fallbackError.message : summaryError instanceof Error ? summaryError.message : 'Shipment data could not be loaded.';
+          setError(message);
+        }
+      } finally {
+        window.clearTimeout(delay);
+        setLoading(false);
+        setShowSkeleton(false);
+      }
+    };
+    void loadDashboard();
+    return () => window.clearTimeout(delay);
+  }, []);
   return <div className="page-content"><div className="page-header"><div><span className="eyebrow">SWIFTLOG / TODAY</span><h2>Courier operations</h2><p>Current city-level shipment, pickup, and delivery activity.</p></div><button className="button primary" onClick={onCreate}>+ Create shipment</button></div>{error && <div className="error-callout">{error}</div>}{loading && showSkeleton ? <><section className="metric-grid metric-skeleton" aria-label="Loading overview"><i /><i /><i /><i /></section><section className="surface-panel"><DataSkeleton label="Loading recent shipments" rows={4} /></section></> : !loading && <><section className="metric-grid"><Metric title="Shipments today" value={counts.today} /><Metric title="Draft / confirmed" value={counts.pending} /><Metric title="On delivery" value={counts.active} /><Metric title="Delivered" value={counts.delivered} /></section><button className="history-entry" onClick={onViewAll} type="button"><span className="history-entry-icon"><Icon name="history" /></span><span><small>SHIPMENT HISTORY</small><strong>Previous shipments</strong><em>Search and filter the complete operational record</em></span><b>{counts.total}<Icon name="arrow_forward" /></b></button><section className="surface-panel"><div className="panel-heading"><div><span className="eyebrow">RECENT ACTIVITY</span><h3>Recent shipments</h3></div><button className="text-button" onClick={onViewAll}>View history <Icon name="arrow_forward" /></button></div><DispatchTable rows={rows} /></section></>}</div>;
 }
 
