@@ -4,7 +4,9 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const excludedRequestHeaders = new Set(['connection', 'content-length', 'host', 'transfer-encoding']);
-const excludedResponseHeaders = new Set(['connection', 'content-length', 'transfer-encoding']);
+// Server-side fetch decodes compressed upstream bodies. Forwarding the original
+// encoding would make the browser try to decompress the decoded body again.
+const excludedResponseHeaders = new Set(['connection', 'content-length', 'content-encoding', 'transfer-encoding']);
 
 async function proxy(request: NextRequest, context: { params: Promise<{ path: string[] }> }) {
   const { path } = await context.params;

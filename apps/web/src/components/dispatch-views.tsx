@@ -66,7 +66,10 @@ export function DispatchList({ onCreate }: { onCreate: () => void }) {
       if (to) query.set('to', `${to}T23:59:59.999`);
       setLoading(true); setMessage('');
       const skeletonDelay = window.setTimeout(() => setShowSkeleton(true), 180);
-      getConsignmentPage(`?${query}`).then((result) => { setRows(result.items); setTotal(result.total); setPages(result.pages); if (page > result.pages) setPage(result.pages); }).catch((e: ApiError) => setMessage(e.message)).finally(() => { window.clearTimeout(skeletonDelay); setLoading(false); setShowSkeleton(false); });
+      getConsignmentPage(`?${query}`).then((result) => {
+        if (!result || !Array.isArray(result.items) || typeof result.total !== 'number') throw new Error('The shipment response was incomplete.');
+        setRows(result.items); setTotal(result.total); setPages(result.pages); if (page > result.pages) setPage(result.pages);
+      }).catch((e: ApiError | Error) => setMessage(e instanceof TypeError ? 'Network error while loading shipment records. Check the API connection.' : e.message || 'Shipment data could not be loaded.')).finally(() => { window.clearTimeout(skeletonDelay); setLoading(false); setShowSkeleton(false); });
     }, search ? 300 : 0);
     return () => window.clearTimeout(requestDelay);
   }, [search, status, from, to, page]);

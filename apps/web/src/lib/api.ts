@@ -123,7 +123,12 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}): Pr
     throw new ApiError(response.status, message);
   }
 
-  const result = await response.json() as T;
+  let result: T;
+  try {
+    result = await response.json() as T;
+  } catch {
+    throw new ApiError(response.status, `The API returned an invalid response for ${path}. Refresh the page and try again.`);
+  }
   if (method !== 'GET' && method !== 'HEAD' && !path.startsWith('/auth/')) {
     window.dispatchEvent(new CustomEvent(dataChangedEvent, { detail: { method, path } }));
   }
@@ -135,7 +140,17 @@ export function getConsignments(query = '') {
 }
 
 export type DispatchPage = { items: DispatchSummary[]; total: number; page: number; pageSize: number; pages: number };
-export function getConsignmentPage(query = '') { return apiRequest<DispatchPage>(`/dispatches/page${query}`); }
+export async function getConsignmentPage(query = '') {
+  const result = await apiRequest<DispatchPage | DispatchSummary[]>(`/dispatches/page${query}`);
+  if (Array.isArray(result)) return { items: result, total: result.length, page: 1, pageSize: result.length, pages: 1 };
+  return {
+    items: Array.isArray(result?.items) ? result.items : [],
+    total: typeof result?.total === 'number' ? result.total : 0,
+    page: typeof result?.page === 'number' ? result.page : 1,
+    pageSize: typeof result?.pageSize === 'number' ? result.pageSize : result?.items?.length ?? 0,
+    pages: typeof result?.pages === 'number' ? result.pages : 1,
+  };
+}
 
 export type DispatchDashboardSummary = { counts: { today: number; pending: number; active: number; delivered: number; total: number }; recent: DispatchSummary[] };
 export function getDispatchDashboardSummary() { return apiRequest<DispatchDashboardSummary>('/dispatches/summary'); }
