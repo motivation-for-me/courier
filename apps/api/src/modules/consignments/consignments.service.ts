@@ -1,3 +1,4 @@
+import { notifyShipmentDelivery } from '../../common/shipment-notifications';
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { ConsignmentStatus, Prisma } from '@prisma/client';
 import { createHash } from 'node:crypto';
@@ -75,15 +76,10 @@ export class ConsignmentsService {
     });
   }
 
-  async list(actor: AuthenticatedUser, filters: { search?: string; status?: string; from?: string; to?: string; customerId?: string; riderId?: string } = {}) {
+  async list(actor: AuthenticatedUser, filters: { search?: string; scope?: string; status?: string; from?: string; to?: string; customerId?: string; riderId?: string } = {}) {
     if (!actor.permissions.includes('shipment:view')) throw new ForbiddenException('Shipment view permission missing');
-    const status = filters.status && filters.status !== 'ALL' ? filters.status as ConsignmentStatus : undefined;
-    if (status && !Object.values(ConsignmentStatus).includes(status)) throw new BadRequestException('Invalid shipment status filter');
-    const from = filters.from ? new Date(filters.from) : undefined;
-    const to = filters.to ? new Date(filters.to) : undefined;
-    if ((from && Number.isNaN(from.getTime())) || (to && Number.isNaN(to.getTime())) || (from && to && from > to)) throw new BadRequestException('Invalid shipment history date range');
     const consignments = await this.prisma.consignment.findMany({
-      where: { organizationId: actor.organizationId, deletedAt: null, ...(actor.roles.includes('SHOP') ? { customerId: actor.customerId } : filters.customerId ? { customerId: filters.customerId } : {}), ...(status ? { status } : {}), ...(from || to ? { createdAt: { ...(from ? { gte: from } : {}), ...(to ? { lte: to } : {}) } } : {}), ...(filters.riderId ? { assignments: { some: { riderId: filters.riderId } } } : {}), ...(filters.search ? { OR: [{ cnNumber: { contains: filters.search, mode: 'insensitive' } }, { customer: { name: { contains: filters.search, mode: 'insensitive' } } }, { parties: { some: { OR: [{ name: { contains: filters.search, mode: 'insensitive' } }, { phone: { contains: filters.search } }] } } }] } : {}) },
+      where: this.listWhere(actor, filters),
       orderBy: { createdAt: 'desc' },
       take: 500,
       select: { id: true, cnNumber: true, status: true, serviceType: true, currentStatusAt: true, createdAt: true, customer: { select: { id: true, name: true } }, parties: { select: { kind: true, name: true, phone: true } }, items: { select: { id: true, description: true, quantity: true, unit: true } }, assignments: { where: { status: 'ACTIVE' }, select: { riderId: true, rider: { select: { employeeCode: true, user: { select: { displayName: true, phone: true } } } } } } },
@@ -91,7 +87,7 @@ export class ConsignmentsService {
     return consignments.map((consignment) => ({ ...consignment, publicTrackingKey: createPublicTrackingToken(consignment.id) }));
   }
 
-  async page(actor: AuthenticatedUser, filters: { search?: string; status?: string; from?: string; to?: string; customerId?: string; riderId?: string; page?: string; limit?: string } = {}) {
+  async page(actor: AuthenticatedUser, filters: { search?: string; scope?: string; status?: string; from?: string; to?: string; customerId?: string; riderId?: string; page?: string; limit?: string } = {}) {
     if (!actor.permissions.includes('shipment:view')) throw new ForbiddenException('Shipment view permission missing');
     const page = this.positiveInteger(filters.page, 1, 10_000, 'page');
     const pageSize = this.positiveInteger(filters.limit, 25, 100, 'limit');
@@ -118,7 +114,7 @@ export class ConsignmentsService {
       this.prisma.consignment.count({ where: { ...scope, createdAt: { gte: today } } }),
       this.prisma.consignment.groupBy({ by: ['status'], where: scope, _count: { _all: true } }),
       this.prisma.consignment.findMany({
-        where: scope,
+        where: { ...scope, status: { not: ConsignmentStatus.DELIVERED } },
         orderBy: { createdAt: 'desc' },
         take: 8,
         select: { id: true, cnNumber: true, status: true, serviceType: true, currentStatusAt: true, createdAt: true, customer: { select: { id: true, name: true } }, parties: { select: { kind: true, name: true, phone: true } }, items: { select: { id: true, description: true, quantity: true, unit: true } }, assignments: { where: { status: 'ACTIVE' }, select: { riderId: true, rider: { select: { employeeCode: true, user: { select: { displayName: true, phone: true } } } } } } },
@@ -198,6 +194,7 @@ export class ConsignmentsService {
       if (changed.count !== 1) throw new ConflictException('Shipment changed while this action was running. Reload and try again.');
       const updated = await transaction.consignment.findUniqueOrThrow({ where: { id } });
       await transaction.trackingEvent.create({ data: { consignmentId: id, eventType: requested, performedById: actor.id, remarks: remarks ?? 'Status updated by administrator' } });
+      if (requested === 'DELIVERED' || requested === 'OUT_FOR_DELIVERY' || requested === 'DELIVERY_FAILED') await notifyShipmentDelivery(transaction, updated, actor.id, requested);
       await transaction.auditLog.create({ data: { organizationId: actor.organizationId, actorId: actor.id, action: 'dispatch.admin_status_updated', entityType: 'consignment', entityId: id, oldValues: { status: consignment.status }, newValues: { status: requested } } });
       return updated;
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
@@ -216,6 +213,7 @@ export class ConsignmentsService {
         await transaction.riderAssignment.updateMany({ where: { consignmentId: id, status: 'ACTIVE' }, data: { status: 'ENDED', endedAt: new Date() } });
       }
       await transaction.trackingEvent.create({ data: { consignmentId: id, eventType: requested, performedById: actor.id, remarks: `Administrative correction: ${reason}` } });
+      if (requested !== consignment.status && (requested === 'DELIVERED' || requested === 'OUT_FOR_DELIVERY' || requested === 'DELIVERY_FAILED')) await notifyShipmentDelivery(transaction, updated, actor.id, requested);
       await transaction.auditLog.create({ data: { organizationId: actor.organizationId, actorId: actor.id, action: 'dispatch.status_corrected', entityType: 'consignment', entityId: id, oldValues: { status: consignment.status }, newValues: { status: requested, reason } } });
       return updated;
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
@@ -248,13 +246,16 @@ export class ConsignmentsService {
     return parsed;
   }
 
-  private listWhere(actor: AuthenticatedUser, filters: { search?: string; status?: string; from?: string; to?: string; customerId?: string; riderId?: string }): Prisma.ConsignmentWhereInput {
+  private listWhere(actor: AuthenticatedUser, filters: { search?: string; scope?: string; status?: string; from?: string; to?: string; customerId?: string; riderId?: string }): Prisma.ConsignmentWhereInput {
+    if (filters.scope && !['active', 'history'].includes(filters.scope)) throw new BadRequestException('Invalid shipment scope');
     const status = filters.status && filters.status !== 'ALL' ? filters.status as ConsignmentStatus : undefined;
+    const scopeStatus: Prisma.ConsignmentWhereInput = filters.scope === 'active' ? { status: { not: ConsignmentStatus.DELIVERED } } : filters.scope === 'history' ? { status: ConsignmentStatus.DELIVERED } : {};
+    const statusFilters = [scopeStatus, ...(status ? [{ status }] : [])];
     if (status && !Object.values(ConsignmentStatus).includes(status)) throw new BadRequestException('Invalid shipment status filter');
     const from = filters.from ? new Date(filters.from) : undefined;
     const to = filters.to ? new Date(filters.to) : undefined;
     if ((from && Number.isNaN(from.getTime())) || (to && Number.isNaN(to.getTime())) || (from && to && from > to)) throw new BadRequestException('Invalid shipment history date range');
     const search = filters.search?.trim();
-    return { organizationId: actor.organizationId, deletedAt: null, ...(actor.roles.includes('SHOP') ? { customerId: actor.customerId ?? '__unlinked_shop__' } : filters.customerId ? { customerId: filters.customerId } : {}), ...(status ? { status } : {}), ...(from || to ? { createdAt: { ...(from ? { gte: from } : {}), ...(to ? { lte: to } : {}) } } : {}), ...(filters.riderId ? { assignments: { some: { riderId: filters.riderId } } } : {}), ...(search ? { OR: [{ cnNumber: { contains: search, mode: 'insensitive' } }, { customer: { name: { contains: search, mode: 'insensitive' } } }, { parties: { some: { OR: [{ name: { contains: search, mode: 'insensitive' } }, { phone: { contains: search } }] } } }] } : {}) };
+    return { organizationId: actor.organizationId, deletedAt: null, ...(actor.roles.includes('SHOP') ? { customerId: actor.customerId ?? '__unlinked_shop__' } : filters.customerId ? { customerId: filters.customerId } : {}), AND: statusFilters, ...(from || to ? { createdAt: { ...(from ? { gte: from } : {}), ...(to ? { lte: to } : {}) } } : {}), ...(filters.riderId ? { assignments: { some: { riderId: filters.riderId } } } : {}), ...(search ? { OR: [{ cnNumber: { contains: search, mode: 'insensitive' } }, { customer: { name: { contains: search, mode: 'insensitive' } } }, { parties: { some: { OR: [{ name: { contains: search, mode: 'insensitive' } }, { phone: { contains: search } }] } } }] } : {}) };
   }
 }

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { CurrentUser } from '../../common/current-user.decorator';
 import { AuthenticatedUser } from '../../common/auth.types';
 import { NotificationsService } from './notifications.service';
@@ -10,6 +10,9 @@ export class NotificationsController {
 
   @Get()
   list(@CurrentUser() actor: AuthenticatedUser) { return this.notifications.list(actor); }
+
+  @Get('inbox')
+  inbox(@CurrentUser() actor: AuthenticatedUser, @Query('unread') unread?: string) { return this.notifications.inbox(actor, unread === 'true'); }
 
   @Post('rider-message')
   riderMessage(@Body() input: CreateNotificationDto, @CurrentUser() actor: AuthenticatedUser) { return this.notifications.riderMessage(input.message, actor); }

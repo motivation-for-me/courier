@@ -1,5 +1,7 @@
 'use client';
 
+import { NotificationInbox } from './notification-inbox';
+
 import { Fragment, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { completePickup, completeRiderDelivery, createConsignment, dataChangedEvent, failPickup, failRiderDelivery, getAccessTokenExpiry, getAssignedPickups, getConsignments, getMyRiderAssignments, getMyRiderFinance, getNotifications, getSession, login, logout, openDispatchDocument, readAllNotifications, readNotification, sendRiderMessage, sessionExpiredEvent, startPickup, unlockRiderDispatch, updateRiderDispatchStatus, type ApiError, type AppNotification, type AuthSession, type PickupAssignment, type RiderDeliveryAssignment, type RiderFinanceSummary, type RiderScanResult, type RiderStatus } from '../lib/api';
@@ -8,7 +10,7 @@ import { DispatchDashboard, DispatchList, TrackingView } from './dispatch-views'
 import { RiderManagement } from './rider-management';
 import { SettingsPanel } from './settings-panel';
 
-type View = 'dashboard' | 'consignments' | 'booking' | 'tracking' | 'rider' | 'riders' | 'manifest' | 'settings';
+type View = 'shipments' | 'dashboard' | 'consignments' | 'booking' | 'tracking' | 'rider' | 'riders' | 'manifest' | 'settings';
 
 type NavItem = { label: string; icon: string; view: View; permission?: string };
 type NavGroup = { label: string; items: NavItem[] };
@@ -18,6 +20,7 @@ const navigation: NavGroup[] = [
   {
     label: 'Dispatches',
     items: [
+      { label: 'Shipments', icon: 'inventory_2', view: 'shipments', permission: 'shipment:view' },
       { label: 'Shipment History', icon: 'history', view: 'consignments', permission: 'shipment:view' },
       { label: 'Create Dispatch', icon: 'add_box', view: 'booking', permission: 'shipment:create' },
       { label: 'Track / Scan QR', icon: 'qr_code_scanner', view: 'tracking', permission: 'shipment:view' },
@@ -65,7 +68,6 @@ function Sidebar({ activeView, onNavigate, user, collapsed }: { activeView: View
     <aside className="sidebar">
       <div className="brand-lockup"><div className="brand-wordmark" aria-label="SwiftLog">Swift<span>Log</span></div></div>
       <div className="hub-context"><span className="live-dot" /> COMPANY DISPATCH <b>LIVE</b></div>
-      <div className="sidebar-notifications"><NotificationInbox /></div>
       <nav className="sidebar-nav" aria-label="Primary navigation">
         {navigation.filter((group) => group.items.some(visible)).map((group) => (
           <section key={group.label} className="nav-group">
@@ -84,48 +86,18 @@ function Sidebar({ activeView, onNavigate, user, collapsed }: { activeView: View
 }
 
 function MobileNavigation({ activeView, onNavigate, riderOnly = false, isAdmin = false, hasRider = false }: { activeView: View; onNavigate: (view: View) => void; riderOnly?: boolean; isAdmin?: boolean; hasRider?: boolean }) {
-  const items: Array<[View, string, string]> = riderOnly ? [['rider', 'two_wheeler', 'Deliveries'], ['settings', 'palette', 'Theme']] : isAdmin ? [['dashboard', 'speed', 'Home'], ['consignments', 'inventory_2', 'Dispatches'], ['booking', 'add_circle', 'Create'], ['tracking', 'qr_code_scanner', 'Track'], ['riders', 'manage_accounts', 'Manage'], ...(hasRider ? [['rider', 'two_wheeler', 'Rider'] as [View, string, string]] : [])] : [['dashboard', 'speed', 'Home'], ['consignments', 'inventory_2', 'Dispatches'], ['booking', 'add_circle', 'Create'], ['tracking', 'qr_code_scanner', 'Track']];
+  const items: Array<[View, string, string]> = riderOnly ? [['rider', 'two_wheeler', 'Deliveries'], ['settings', 'palette', 'Theme']] : isAdmin ? [['dashboard', 'speed', 'Home'], ['shipments', 'inventory_2', 'Shipments'], ['consignments', 'history', 'History'], ['booking', 'add_circle', 'Create'], ['tracking', 'qr_code_scanner', 'Track'], ['riders', 'manage_accounts', 'Manage'], ...(hasRider ? [['rider', 'two_wheeler', 'Rider'] as [View, string, string]] : [])] : [['dashboard', 'speed', 'Home'], ['shipments', 'inventory_2', 'Shipments'], ['consignments', 'history', 'History'], ['booking', 'add_circle', 'Create'], ['tracking', 'qr_code_scanner', 'Track']];
   return <nav className="mobile-nav" aria-label="Mobile navigation"><div className="mobile-dock">{items.map(([view, icon, label]) => <button key={view} aria-label={label} className={activeView === view ? 'active' : ''} onClick={() => onNavigate(view)} type="button"><Icon name={icon} /><span>{label}</span></button>)}</div></nav>;
 }
 
 function LegacyHeader({ view, onNavigate }: { view: View; onNavigate: (view: View) => void }) {
-  const title = view === 'dashboard' ? 'Courier Dashboard' : view === 'consignments' ? 'All Shipments' : view === 'booking' ? 'Create Shipment' : view === 'rider' ? 'Rider Workspace' : view === 'riders' ? 'Branches & Team' : 'Track Shipment';
+  const title = view === 'dashboard' ? 'Courier Dashboard' : view === 'shipments' ? 'Shipments' : view === 'consignments' ? 'Shipment History' : view === 'booking' ? 'Create Shipment' : view === 'rider' ? 'Rider Workspace' : view === 'riders' ? 'Branches & Team' : 'Track Shipment';
   return <header className="topbar"><div className="topbar-title"><span className="eyebrow">OPERATIONS / LIVE CONTROL</span><h1>{title}</h1></div><div className="topbar-actions"><label className="global-search"><Icon name="search" /><input aria-label="Search consignments" placeholder="Search CN, manifest, rider..." /><kbd>⌘ K</kbd></label><button aria-label="Scan barcode" className="icon-button scanner" onClick={() => onNavigate('manifest')} type="button"><Icon name="barcode_scanner" /></button><button aria-label="Notifications" className="icon-button notification" type="button"><Icon name="notifications" /><span>3</span></button><div className="avatar">SM</div></div></header>;
 }
 
-function NotificationInbox() {
-  const [open, setOpen] = useState(false);
-  const [items, setItems] = useState<AppNotification[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [reply, setReply] = useState('');
-  const [replyBusy, setReplyBusy] = useState(false);
-  const [replyMessage, setReplyMessage] = useState('');
-  const load = () => { setLoading(true); getNotifications().then(setItems).catch(() => setItems([])).finally(() => setLoading(false)); };
-  useEffect(load, []);
-  useEffect(() => { const refresh = () => load(); window.addEventListener(dataChangedEvent, refresh); return () => window.removeEventListener(dataChangedEvent, refresh); }, []);
-  const unread = items.filter((item) => item.status !== 'READ').length;
-  const notificationIcon = (template: string) => template === 'DELIVERY_OUT_FOR_DELIVERY' ? 'local_shipping' : template === 'DELIVERY_COMPLETED' ? 'task_alt' : template === 'DELIVERY_FAILED' ? 'warning' : template === 'RIDER_MESSAGE' ? 'chat' : template.startsWith('RIDER_') ? 'two_wheeler' : 'notifications';
-  const groups = [{ label: 'Deliveries', icon: 'local_shipping', items: items.filter((item) => item.template.startsWith('DELIVERY_')) }, { label: 'Riders', icon: 'two_wheeler', items: items.filter((item) => item.template.startsWith('RIDER_')) }, { label: 'Other', icon: 'notifications', items: items.filter((item) => !item.template.startsWith('DELIVERY_') && !item.template.startsWith('RIDER_')) }].filter((group) => group.items.length);
-  async function submitReply(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!reply.trim()) return;
-    setReplyBusy(true);
-    setReplyMessage('');
-    try {
-      await sendRiderMessage(reply.trim());
-      setReply('');
-      setReplyMessage('Reply sent');
-    } catch (error) {
-      setReplyMessage((error as ApiError).message ?? 'Reply could not be sent.');
-    } finally {
-      setReplyBusy(false);
-    }
-  }
-  return <div className="notification-inbox"><button aria-label={`Notifications${unread ? `, ${unread} unread` : ''}`} aria-expanded={open} className="icon-button notification" onClick={() => setOpen((value) => !value)} type="button"><Icon name="notifications" />{unread > 0 && <span>{unread > 9 ? '9+' : unread}</span>}</button>{open && <section className="notification-panel"><header><strong>Notifications</strong>{unread > 0 && <button onClick={() => void readAllNotifications().then(load)} type="button">Mark all read</button>}</header>{loading ? <div className="notification-skeleton"><i /><i /><i /></div> : groups.length ? <div className="notification-groups">{groups.map((group) => <div className="notification-group" key={group.label}><h4><Icon name={group.icon} /> {group.label}</h4>{group.items.map((item) => <button className={item.status === 'READ' ? '' : 'unread'} key={item.id} onClick={() => void readNotification(item.id).then(load)} type="button"><Icon name={notificationIcon(item.template)} /><span><strong>{item.payload?.title || 'Update'}</strong><small>{item.payload?.message || item.template.replaceAll('_', ' ')}</small><time>{new Date(item.createdAt).toLocaleString()}</time></span></button>)}</div>)}</div> : <p className="notification-empty">No notifications</p>}<form className="notification-reply" onSubmit={submitReply}><label htmlFor="notification-reply">Reply to admin team</label><div><input id="notification-reply" value={reply} onChange={(event) => setReply(event.target.value)} placeholder="Write a reply" /><button aria-label="Send reply" className="icon-button" disabled={replyBusy || !reply.trim()} type="submit"><Icon name="send" /></button></div>{replyMessage && <small>{replyMessage}</small>}</form></section>}</div>;
-}
 
 function Header({ view, onNavigate, collapsed, onToggleSidebar, onLogout, riderOnly = false }: { view: View; onNavigate: (view: View) => void; collapsed: boolean; onToggleSidebar: () => void; onLogout: () => void; riderOnly?: boolean }) {
-  const title = view === 'dashboard' ? 'Courier dashboard' : view === 'consignments' ? 'Shipment history' : view === 'booking' ? 'Create shipment' : view === 'rider' ? 'Rider workspace' : view === 'riders' ? 'Management' : view === 'settings' ? 'Settings' : 'Track shipment';
+  const title = view === 'dashboard' ? 'Courier dashboard' : view === 'shipments' ? 'Shipments' : view === 'consignments' ? 'Shipment history' : view === 'booking' ? 'Create shipment' : view === 'rider' ? 'Rider workspace' : view === 'riders' ? 'Management' : view === 'settings' ? 'Settings' : 'Track shipment';
   return <header className="topbar"><div className="topbar-leading"><button aria-label={collapsed ? 'Open sidebar' : 'Close sidebar'} aria-expanded={!collapsed} className="icon-button sidebar-toggle" onClick={onToggleSidebar} type="button"><Icon name={collapsed ? 'dock_to_right' : 'dock_to_left'} /></button><div className="topbar-title"><span className="eyebrow">OPERATIONS</span><h1>{title}</h1></div></div><div className="topbar-actions">{!riderOnly && <label className="global-search"><Icon name="search" /><input aria-label="Search consignments" placeholder="Search CN or rider" /><kbd>CTRL K</kbd></label>}<button aria-label="Scan QR code" className="icon-button scanner" onClick={() => onNavigate(riderOnly ? 'rider' : 'tracking')} type="button"><Icon name="qr_code_scanner" /></button><div className="mobile-notifications"><NotificationInbox /></div><button aria-label="Log out" className="icon-button logout-button" title="Log out" onClick={onLogout} type="button"><Icon name="logout" /></button></div></header>;
 }
 
@@ -359,7 +331,7 @@ function LegacyBooking({ onNavigate }: { onNavigate: (view: View) => void }) {
 
 function Booking({ onNavigate }: { onNavigate: (view: View) => void }) {
   const [createdCn, setCreatedCn] = useState('');
-  if (createdCn) return <div className="page-content"><div className="surface-panel workspace-placeholder"><div className="workspace-icon"><Icon name="verified" /></div><h3>Dispatch created</h3><p>The permanent dispatch number is <strong>{createdCn}</strong>.</p><div className="workspace-actions"><button className="button primary" onClick={() => onNavigate('consignments')} type="button">View dispatches</button><button className="button subtle" onClick={() => setCreatedCn('')} type="button">Create another</button></div></div></div>;
+  if (createdCn) return <div className="page-content"><div className="surface-panel workspace-placeholder"><div className="workspace-icon"><Icon name="verified" /></div><h3>Dispatch created</h3><p>The permanent dispatch number is <strong>{createdCn}</strong>.</p><div className="workspace-actions"><button className="button primary" onClick={() => onNavigate('shipments')} type="button">View dispatches</button><button className="button subtle" onClick={() => setCreatedCn('')} type="button">Create another</button></div></div></div>;
   return <DispatchCreate onDone={setCreatedCn} onCancel={() => onNavigate('dashboard')} />;
 }
 
@@ -367,7 +339,7 @@ function SectionHeading({ number, title }: { number: string; title: string }) { 
 function Field({ name, label, placeholder, wide, type = 'text' }: { name?: string; label: string; placeholder: string; wide?: boolean; type?: string }) { return <label className={wide ? 'field wide' : 'field'}><span>{label}</span><input name={name} placeholder={placeholder} type={type} /></label>; }
 
 function OperationalView({ view }: { view: View }) {
-  const labels: Record<View, [string, string, string, string]> = { tracking: ['Tracking and reports', 'Authorized visibility across movement, payment, and document records.', 'timeline', 'The API-backed operational view will appear here when its endpoint is available.'], manifest: ['Manifest management', 'Create, scan, dispatch, receive, and reconcile operational manifests.', 'receipt_long', 'Manifest commands are server-controlled and will be connected here.'], rider: ['Rider operations', 'Manage rider availability, assignments, performance, and collections.', 'two_wheeler', 'Rider data will be loaded from the authorized API scope.'], riders: ['Rider management', 'Create and manage rider accounts.', 'manage_accounts', 'Rider management is restricted to administrators.'], settings: ['Settings', 'Configure appearance and staff access.', 'settings', 'Settings are restricted to administrators.'], dashboard: ['', '', '', ''], consignments: ['', '', '', ''], booking: ['', '', '', ''] };
+  const labels: Record<View, [string, string, string, string]> = { tracking: ['Tracking and reports', 'Authorized visibility across movement, payment, and document records.', 'timeline', 'The API-backed operational view will appear here when its endpoint is available.'], manifest: ['Manifest management', 'Create, scan, dispatch, receive, and reconcile operational manifests.', 'receipt_long', 'Manifest commands are server-controlled and will be connected here.'], rider: ['Rider operations', 'Manage rider availability, assignments, performance, and collections.', 'two_wheeler', 'Rider data will be loaded from the authorized API scope.'], riders: ['Rider management', 'Create and manage rider accounts.', 'manage_accounts', 'Rider management is restricted to administrators.'], settings: ['Settings', 'Configure appearance and staff access.', 'settings', 'Settings are restricted to administrators.'], dashboard: ['', '', '', ''], consignments: ['', '', '', ''], shipments: ['', '', '', ''], booking: ['', '', '', ''] };
   const [title, description, icon, message] = labels[view];
   return <div className="page-content"><PageHeader eyebrow="OPERATIONS / WORKSPACE" title={title} description={description} /><div className="surface-panel workspace-placeholder"><div className="workspace-icon"><Icon name={icon} /></div><h3>{title} is ready for API integration</h3><p>{message}</p><div className="workspace-actions"><button className="button subtle" type="button"><Icon name="filter_alt" /> Configure filters</button><button className="button subtle" type="button"><Icon name="picture_as_pdf" /> Request PDF</button></div><div className="permission-note"><Icon name="lock" /> Backend permissions remain authoritative. This screen will never infer access from hidden buttons.</div></div></div>;
 }
@@ -419,7 +391,7 @@ export default function OperationsShell() {
     return () => window.clearTimeout(timer);
   }, [session]);
   useEffect(() => {
-    const openTracking = () => setView('tracking');
+    const openTracking = () => { setView('tracking'); setRefreshVersion((version) => version + 1); };
     window.addEventListener('swiftlog.open-tracking', openTracking);
     return () => window.removeEventListener('swiftlog.open-tracking', openTracking);
   }, []);
@@ -434,6 +406,6 @@ export default function OperationsShell() {
   }
   if (!session) return <LoginScreen onAuthenticated={(authenticated) => { setSessionExpired(false); setSession(authenticated); }} />;
   const riderOnly = session.user.roles.length === 1 && session.user.roles.includes('RIDER');
-  const content = view === 'dashboard' ? <DispatchDashboard onCreate={() => setView('booking')} onViewAll={() => setView('consignments')} /> : view === 'consignments' ? <DispatchList onCreate={() => setView('booking')} /> : view === 'booking' ? <Booking onNavigate={setView} /> : view === 'rider' ? <RiderHome initialCn={scannedCn} /> : view === 'riders' ? <RiderManagement /> : view === 'settings' ? <SettingsPanel appearanceOnly={riderOnly} /> : <TrackingView onBack={() => setView('consignments')} />;
+  const content = view === 'dashboard' ? <DispatchDashboard onCreate={() => setView('booking')} onViewAll={() => setView('consignments')} /> : view === 'shipments' ? <DispatchList key="active" onCreate={() => setView('booking')} /> : view === 'consignments' ? <DispatchList key="history" history onCreate={() => setView('booking')} /> : view === 'booking' ? <Booking onNavigate={setView} /> : view === 'rider' ? <RiderHome initialCn={scannedCn} /> : view === 'riders' ? <RiderManagement /> : view === 'settings' ? <SettingsPanel appearanceOnly={riderOnly} /> : <TrackingView onBack={() => setView('consignments')} />;
   return <div className={`app-shell ${riderOnly ? 'rider-only-shell' : ''} ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}><a className="skip-link" href="#main-content">Skip to operations</a><Sidebar activeView={view} onNavigate={setView} user={session.user} collapsed={sidebarCollapsed} /><main className="main-column" id="main-content"><Header view={view} onNavigate={setView} collapsed={sidebarCollapsed} onToggleSidebar={() => setSidebarCollapsed((value) => !value)} onLogout={() => void handleLogout()} riderOnly={riderOnly} /><Fragment key={`${view}-${refreshVersion}`}>{content}</Fragment></main><MobileNavigation activeView={view} onNavigate={setView} riderOnly={riderOnly} isAdmin={session.user.roles.includes('ADMIN')} hasRider={session.user.roles.includes('RIDER')} />{sessionExpired && <SessionExpiredDialog onConfirm={confirmExpiredSession} />}<Link className="sr-only" href="/">SwiftLog Dispatch Operations</Link></div>;
 }

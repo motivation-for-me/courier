@@ -20,7 +20,8 @@ const sessionKey = 'courier.auth-session';
 export const sessionExpiredEvent = 'courier:session-expired';
 export const dataChangedEvent = 'courier:data-changed';
 
-export type AppNotification = { id: string; status: string; template: string; payload?: { title?: string; message?: string; consignmentId?: string } | null; createdAt: string };
+export type AppNotification = { id: string; status: string; template: string; payload?: { title?: string; message?: string; consignmentId?: string; cnNumber?: string } | null; createdAt: string };
+export function getNotificationInbox(unreadOnly = false) { return apiRequest<{ items: AppNotification[]; unread: number }>(`/notifications/inbox?unread=${unreadOnly}`); }
 export function getNotifications() { return apiRequest<AppNotification[]>('/notifications'); }
 export function sendRiderMessage(message: string) { return apiRequest<{ success: true; recipients: number }>('/notifications/rider-message', { method: 'POST', body: JSON.stringify({ message }) }); }
 export function readNotification(id: string) { return apiRequest<AppNotification>(`/notifications/${id}/read`, { method: 'PATCH', body: '{}' }); }
