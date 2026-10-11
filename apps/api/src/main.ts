@@ -31,8 +31,18 @@ function requireRuntimeConfiguration() {
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('API_PORT must be a valid TCP port');
     const configuredOrigins = process.env.WEB_ORIGIN?.split(',').map((origin) => origin.trim()).filter(Boolean) ?? [];
     if (isProduction && configuredOrigins.length === 0) throw new Error('WEB_ORIGIN must be configured in production');
-    const webOrigins = configuredOrigins.length ? configuredOrigins : ['http://localhost:3000'];
-    if (webOrigins.some((origin) => !/^https?:\/\/[^\s/]+(?::\d+)?$/.test(origin))) throw new Error('WEB_ORIGIN contains an invalid origin');
+    const webOrigins = (configuredOrigins.length ? configuredOrigins : ['http://localhost:3000']).map((origin) => {
+      let parsed: URL;
+      try {
+        parsed = new URL(origin);
+      } catch {
+        throw new Error('WEB_ORIGIN contains an invalid origin');
+      }
+      if (!['http:', 'https:'].includes(parsed.protocol) || parsed.username || parsed.password || parsed.search || parsed.hash || (parsed.pathname !== '/' && parsed.pathname !== '')) {
+        throw new Error('WEB_ORIGIN contains an invalid origin');
+      }
+      return parsed.origin;
+    });
     return { port, webOrigins, isProduction };
 }
 
