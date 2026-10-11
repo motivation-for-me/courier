@@ -1,6 +1,6 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { ConsignmentStatus, PaymentStatus } from '@prisma/client';
-import * as bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { PrismaService } from '../../infrastructure/prisma/prisma.service';
 import { AuthenticatedUser } from '../../common/auth.types';
 import { CreateRiderDto, UpdateRiderDto } from './dto/create-rider.dto';

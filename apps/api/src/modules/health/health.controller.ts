@@ -20,7 +20,9 @@ export class HealthController {
   async getReadiness() {
     try {
       await this.prisma.$queryRaw`SELECT 1`;
-      return { status: 'ready', service: 'courier-api', database: 'connected' };
+      await this.prisma.$queryRaw`SELECT 1 FROM "User" LIMIT 1`;
+      await this.prisma.$queryRaw`SELECT 1 FROM "AuthSession" LIMIT 1`;
+      return { status: 'ready', service: 'courier-api', database: 'connected', authSchema: 'ready' };
     } catch {
       throw new ServiceUnavailableException('Database is unavailable');
     }
