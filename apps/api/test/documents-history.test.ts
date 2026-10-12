@@ -29,7 +29,7 @@ test('active and history pagination apply status scope to both rows and totals',
   }
 });
 
-test('shipment PDF renders with bundled fonts when font files are unavailable', async () => {
+test('shipment PDF renders with the Node PDFKit entry point and packaged fonts', async () => {
   process.env.JWT_SECRET = 'qa-test-secret-with-enough-entropy';
   process.env.WEB_ORIGIN = 'https://courier.example';
   const shipment = {
@@ -43,19 +43,9 @@ test('shipment PDF renders with bundled fonts when font files are unavailable', 
     consignment: { findFirst: async () => shipment },
     auditLog: { create: async () => { audited = true; return {}; } },
   };
-  const fs = require('node:fs');
-  const originalRead = fs.readFileSync;
-  fs.readFileSync = (path: any, ...args: any[]) => {
-    if (String(path).endsWith('.afm')) throw new Error('Font file absent from serverless bundle');
-    return originalRead(path, ...args);
-  };
-  try {
-    const result = await new DocumentsService(prisma).consignmentPdf(shipment.id, actor);
-    assert.equal(result.buffer.subarray(0, 5).toString(), '%PDF-');
-    assert.ok(result.buffer.length > 1000);
-    assert.equal(result.filename, 'CN-TEST-1-dispatch.pdf');
-    assert.equal(audited, true);
-  } finally {
-    fs.readFileSync = originalRead;
-  }
+  const result = await new DocumentsService(prisma).consignmentPdf(shipment.id, actor);
+  assert.equal(result.buffer.subarray(0, 5).toString(), '%PDF-');
+  assert.ok(result.buffer.length > 1000);
+  assert.equal(result.filename, 'CN-TEST-1-dispatch.pdf');
+  assert.equal(audited, true);
 });

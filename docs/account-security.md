@@ -27,6 +27,8 @@ Empty credentials show configuration errors; the application never simulates ema
 
 ## Deployment
 
+The API service in `vercel.json` explicitly includes the PDFKit package and font assets from both workspace-local and hoisted dependency locations. PDF rendering uses the normal Node `pdfkit` entry point, loaded only for PDF requests. Deploy the updated configuration together with the API; an older deployment importing `pdfkit/js/pdfkit.standalone.js` can crash before login with `MODULE_NOT_FOUND`. After deployment, check `/api/v1/auth/config`, `/api/v1/health/ready`, password sign-in and a shipment PDF download.
+
 1. Ensure every account that needs access has a real email inbox. Correct old placeholder addresses through trusted administrative/database tooling before enforcing verification.
 2. Configure Resend, its verified sender, the website URL, and Google client ID.
 3. Apply `20261012090000_account_security` using `npm run db:migrate`; generate Prisma Client and deploy the API and web together.

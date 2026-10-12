@@ -1,8 +1,6 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { DocumentType } from '@prisma/client';
 import type PDFKitDocument = require('pdfkit');
-// The standalone build includes font metrics so serverless bundles need no font files.
-const PDFDocument: typeof PDFKitDocument = require('pdfkit/js/pdfkit.standalone.js');
 import * as QRCode from 'qrcode';
 import { PrismaService } from '../../infrastructure/prisma/prisma.service';
 import { AuthenticatedUser } from '../../common/auth.types';
@@ -38,6 +36,9 @@ export class DocumentsService {
     await this.assertCanView(id, actor);
     const shipment = await this.loadDispatch(id, actor);
     if (!shipment) throw new NotFoundException('Consignment not found');
+    // Load PDF dependencies only for PDF requests, keeping account/API startup
+    // independent of PDF rendering. Vercel explicitly includes PDFKit's fonts.
+    const PDFDocument: typeof PDFKitDocument = require('pdfkit');
     const scanUrl = `${process.env.WEB_ORIGIN ?? 'http://localhost:3000'}/track/${encodeURIComponent(shipment.cnNumber)}?key=${createPublicTrackingToken(shipment.id)}`;
     const qr = await QRCode.toBuffer(scanUrl, { width: 240, margin: 1, errorCorrectionLevel: 'M' });
     const document = new PDFDocument({ size: 'A4', margin: 42, info: { Title: `SwiftLog Dispatch ${shipment.cnNumber}`, Author: shipment.organization.name } });
@@ -54,7 +55,6 @@ export class DocumentsService {
     document.fontSize(10).text(shipment.organization.name, 360, 31, { width: 190, align: 'right' }).text(`Created ${shipment.createdAt.toLocaleString()}`, 360, 50, { width: 190, align: 'right' });
     document.fillColor('#0b1c30').font('Helvetica-Bold').fontSize(19).text(shipment.cnNumber, 42, 112);
     document.fontSize(10).fillColor('#5a6478').text(`STATUS  ${shipment.status.replaceAll('_', ' ')}`, 42, 140).text(`TYPE  ${shipment.serviceType}`, 250, 140);
-    // A data URL works with the standalone build's own Buffer implementation.
     document.image(`data:image/png;base64,${qr.toString('base64')}`, 438, 106, { width: 112, height: 112 });
     document.fillColor('#5a6478').font('Helvetica').fontSize(9).text('Scan for secure live tracking', 42, 172).text(scanUrl, 42, 189, { width: 370, ellipsis: true });
     let y = 230;

@@ -1,4 +1,3 @@
-import { OAuth2Client } from 'google-auth-library';
 import { requirePasswordBytes } from '../../common/password';
 import { requireEmailConfiguration, sendAccountEmail } from './account-email';
 import { ConflictException, ForbiddenException, Injectable, ServiceUnavailableException, UnauthorizedException } from '@nestjs/common';
@@ -150,6 +149,7 @@ export class AuthService {
     if (process.env.GOOGLE_AUTH_ENABLED !== 'true') throw new ServiceUnavailableException('Google sign-in is temporarily disabled.');
     const clientId = process.env.GOOGLE_CLIENT_ID;
     if (!clientId) throw new ServiceUnavailableException('Google sign-in is not configured.');
+    const { OAuth2Client } = await import('google-auth-library');
     let payload;
     try { payload = (await new OAuth2Client(clientId).verifyIdToken({ idToken: credential, audience: clientId })).getPayload(); }
     catch { throw new UnauthorizedException('Google identity could not be verified'); }
