@@ -11,12 +11,12 @@ export class DeliveryService {
   constructor(private readonly prisma: PrismaService) {}
 
   async scan(cnNumber: string, actor: AuthenticatedUser) {
-    const consignment = await this.prisma.consignment.findFirst({ where: { organizationId: actor.organizationId, cnNumber }, select: { id: true, cnNumber: true, status: true, serviceType: true, payments: { select: { method: true, status: true } }, assignments: { where: { status: 'ACTIVE' }, select: { riderId: true } } } });
+    const consignment = await this.prisma.consignment.findFirst({ where: { organizationId: actor.organizationId, cnNumber, deletedAt: null }, select: { id: true, cnNumber: true, status: true, serviceType: true, currentStatusAt: true, parties: { select: { kind: true, name: true, phone: true } }, addresses: { select: { kind: true, addressLine: true, city: true, landmark: true, deliveryNote: true } }, items: { select: { description: true, quantity: true, unit: true } }, events: { orderBy: { eventTime: 'asc' }, select: { eventType: true, eventTime: true, remarks: true, location: { select: { name: true, city: true } } } }, payments: { select: { method: true, status: true } }, assignments: { where: { status: 'ACTIVE' }, select: { riderId: true } } } });
     if (!consignment) throw new NotFoundException('Shipment not found');
     const assignedToActor = actor.riderId ? consignment.assignments.some((assignment) => assignment.riderId === actor.riderId) : false;
     if (!actor.riderId || !assignedToActor) throw new ForbiddenException('Shipment is not assigned to you');
     await this.prisma.auditLog.create({ data: { organizationId: actor.organizationId, actorId: actor.id, action: 'dispatch.cn_scanned', entityType: 'consignment', entityId: consignment.id, newValues: { cnNumber: consignment.cnNumber } } });
-    return { id: consignment.id, cnNumber: consignment.cnNumber, status: consignment.status, serviceType: consignment.serviceType, assignedToActor, allowedStatuses: allowedRiderStatuses(consignment.status, consignment.payments.some((payment) => payment.method === 'CASH' && payment.status !== 'VERIFIED')) };
+    return { id: consignment.id, cnNumber: consignment.cnNumber, status: consignment.status, serviceType: consignment.serviceType, currentStatusAt: consignment.currentStatusAt, parties: consignment.parties, addresses: consignment.addresses, items: consignment.items, events: consignment.events, assignedToActor, allowedStatuses: allowedRiderStatuses(consignment.status, consignment.payments.some((payment) => payment.method === 'CASH' && payment.status !== 'VERIFIED')) };
   }
 
   async updateRiderStatus(consignmentId: string, requested: 'OUT_FOR_DELIVERY', actor: AuthenticatedUser, remarks?: string) {

@@ -5,7 +5,6 @@ import * as QRCode from 'qrcode';
 import { PrismaService } from '../../infrastructure/prisma/prisma.service';
 import { AuthenticatedUser } from '../../common/auth.types';
 import { RegisterDocumentDto } from './dto/register-document.dto';
-import { createPublicTrackingToken } from '../../common/public-tracking-token';
 
 @Injectable()
 export class DocumentsService {
@@ -39,7 +38,7 @@ export class DocumentsService {
     // Generated during build and copied beside compiled API code. This renderer
     // embeds fonts and dependencies, without runtime node_modules resolution.
     const PDFDocument: typeof PDFKitDocument = require('../../generated/pdfkit-runtime.cjs');
-    const scanUrl = `${process.env.WEB_ORIGIN ?? 'http://localhost:3000'}/track/${encodeURIComponent(shipment.cnNumber)}?key=${createPublicTrackingToken(shipment.id)}`;
+    const scanUrl = `${process.env.APP_PUBLIC_URL || process.env.WEB_ORIGIN || 'http://localhost:3000'}/scan/${encodeURIComponent(shipment.cnNumber)}`;
     const qr = await QRCode.toBuffer(scanUrl, { width: 240, margin: 1, errorCorrectionLevel: 'M' });
     const document = new PDFDocument({ size: 'A4', margin: 42, info: { Title: `SwiftLog Dispatch ${shipment.cnNumber}`, Author: shipment.organization.name } });
     const chunks: Buffer[] = [];
@@ -56,7 +55,7 @@ export class DocumentsService {
     document.fillColor('#0b1c30').font('Helvetica-Bold').fontSize(19).text(shipment.cnNumber, 42, 112);
     document.fontSize(10).fillColor('#5a6478').text(`STATUS  ${shipment.status.replaceAll('_', ' ')}`, 42, 140).text(`TYPE  ${shipment.serviceType}`, 250, 140);
     document.image(`data:image/png;base64,${qr.toString('base64')}`, 438, 106, { width: 112, height: 112 });
-    document.fillColor('#5a6478').font('Helvetica').fontSize(9).text('Scan for secure live tracking', 42, 172).text(scanUrl, 42, 189, { width: 370, ellipsis: true });
+    document.fillColor('#5a6478').font('Helvetica').fontSize(9).text('Scan for rider access / customer tracking', 42, 172).text(scanUrl, 42, 189, { width: 370, ellipsis: true });
     let y = 230;
     const section = (title: string) => { document.fillColor('#e8edf5').rect(42, y, 508, 22).fill(); document.fillColor('#16263b').font('Helvetica-Bold').fontSize(10).text(title, 50, y + 6); y += 32; };
     const pair = (leftLabel: string, leftValue: string, rightLabel: string, rightValue: string) => { document.fillColor('#5a6478').font('Helvetica-Bold').fontSize(8).text(leftLabel, 42, y).text(rightLabel, 302, y); document.fillColor('#0b1c30').font('Helvetica').fontSize(10).text(leftValue || '—', 42, y + 12, { width: 235 }).text(rightValue || '—', 302, y + 12, { width: 248 }); y += 42; };

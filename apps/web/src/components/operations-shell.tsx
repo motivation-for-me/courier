@@ -150,6 +150,7 @@ function RiderHome({ initialCn = '' }: { initialCn?: string }) {
   const streamRef = useRef<MediaStream | null>(null);
   const loadWork = () => Promise.all([getAssignedPickups(), getMyRiderAssignments(), getMyRiderFinance()]).then(([pickupRows, assignmentRows, financeSummary]) => { setPickups(pickupRows); setAssignments(assignmentRows); setFinance(financeSummary); }).catch((error: ApiError) => setMessage(error.message));
   useEffect(() => { void loadWork().finally(() => setInitialLoading(false)); }, []);
+  useEffect(() => { if (initialCn) void openShipment(initialCn); }, [initialCn]);
   useEffect(() => () => streamRef.current?.getTracks().forEach((track) => track.stop()), []);
 
   async function openShipment(value: string) {
@@ -202,6 +203,7 @@ function RiderHome({ initialCn = '' }: { initialCn?: string }) {
       const updated = await updateRiderDispatchStatus(consignmentId, status, remarks || undefined);
       setMessage(`Status updated to ${updated.status.replaceAll('_', ' ')}.`);
       setRemarks(''); await loadWork();
+      if (dispatch?.id === consignmentId) await openShipment(dispatch.cnNumber);
     } catch (error) { setMessage((error as ApiError).message ?? 'Status could not be updated.'); }
     finally { setBusy(false); }
   }
@@ -218,7 +220,8 @@ function RiderHome({ initialCn = '' }: { initialCn?: string }) {
     if (cashPayment && !window.confirm(`Confirm that you collected ${amount} from the receiver?`)) return;
     setBusy(true); setMessage('');
     try {
-      await completeRiderDelivery(assignment.consignment.id, amount, remarks || undefined);
+      const completed = await completeRiderDelivery(assignment.consignment.id, amount, remarks || undefined);
+      if (dispatch?.id === completed.id) setDispatch({ ...dispatch, status: completed.status, allowedStatuses: [] });
       setRemarks(''); setMessage('Delivery completed successfully.'); await loadWork();
     } catch (error) { setMessage((error as ApiError).message ?? 'Delivery could not be completed.'); }
     finally { setBusy(false); }
@@ -230,6 +233,7 @@ function RiderHome({ initialCn = '' }: { initialCn?: string }) {
     setBusy(true); setMessage('');
     try {
       await failRiderDelivery(failingAssignment.consignment.id, failureReason.trim(), remarks || undefined);
+      if (dispatch?.id === failingAssignment.consignment.id) await openShipment(dispatch.cnNumber);
       setFailingAssignment(null); setFailureReason(''); setRemarks('');
       setMessage('Delivery attempt recorded as failed.'); await loadWork();
     } catch (error) { setMessage((error as ApiError).message ?? 'Delivery failure could not be recorded.'); }
@@ -267,6 +271,17 @@ function RiderHome({ initialCn = '' }: { initialCn?: string }) {
     <PageHeader eyebrow="RIDER / TODAY" title="My deliveries" description="Update any assigned parcel directly. Scan its QR only when that is faster." action={<button className="button primary rider-camera-action" onClick={() => void openCamera()} type="button"><Icon name="qr_code_scanner" /> Scan parcel QR</button>} />
     <section className="rider-metrics"><MetricCard label="Assigned parcels" value={String(assignments.filter((item) => item.status === 'ACTIVE').length)} note="Active workload" icon="package_2" /><MetricCard label="Pickups" value={String(pickups.length)} note="Awaiting collection" icon="inventory" /><MetricCard label="Out for delivery" value={String(assignments.filter((item) => item.consignment.status === 'OUT_FOR_DELIVERY').length)} note="On route" icon="two_wheeler" /><MetricCard label="Completed today" value={String(finance?.completedToday ?? assignments.filter((item) => item.consignment.status === 'DELIVERED').length)} note="Finished" icon="task_alt" /></section>
     {message && <div className="success-callout">{message}</div>}
+    <section className="surface-panel"><h3>Scanned parcel</h3><form onSubmit={unlock}><label className="field"><span>Parcel CN</span><input value={cnNumber} onChange={(event) => setCnNumber(event.target.value)} required /></label><button className="button primary" disabled={busy} type="submit">Open parcel</button></form>
+      {dispatch && <><h3>{dispatch.cnNumber}</h3><StatusBadge status={dispatch.status} /><p>{dispatch.serviceType.replaceAll('_', ' ')} · Updated {new Date(dispatch.currentStatusAt).toLocaleString()}</p>
+        {dispatch.parties.map((party, index) => <p key={index}><strong>{party.kind}: {party.name}</strong>{party.phone && <> · <a href={`tel:${party.phone}`}>{party.phone}</a></>}</p>)}
+        {dispatch.addresses.map((address, index) => <p key={index}><strong>{address.kind}</strong>: {address.addressLine}{address.city ? `, ${address.city}` : ''}{address.landmark && <> · {address.landmark}</>}{address.deliveryNote && <> · {address.deliveryNote}</>}</p>)}
+        <h4>Parcel contents</h4>{dispatch.items.map((item, index) => <p key={index}>{item.description} · {item.quantity} {item.unit}</p>)}
+        <h4>Status history</h4>{dispatch.events.map((event, index) => <p key={index}>{event.eventType.replaceAll('_', ' ')} · {new Date(event.eventTime).toLocaleString()}{event.location && <> · {event.location.name}{event.location.city ? `, ${event.location.city}` : ''}</>}{event.remarks && <> · {event.remarks}</>}</p>)}
+        <label className="field"><span>Delivery remarks</span><textarea value={remarks} onChange={(event) => setRemarks(event.target.value)} maxLength={500} /></label>
+        <div className="workspace-actions">{dispatch.allowedStatuses.includes('OUT_FOR_DELIVERY') && <button className="button primary" disabled={busy} onClick={() => void changeAssignedStatus(dispatch.id, 'OUT_FOR_DELIVERY')} type="button">Out for delivery</button>}{assignments.filter((assignment) => assignment.consignment.id === dispatch.id && assignment.status === 'ACTIVE').map((assignment) => <Fragment key={assignment.id}>{dispatch.status === 'OUT_FOR_DELIVERY' && <button className="button primary" disabled={busy} onClick={() => void completeAssignedDelivery(assignment)} type="button">Complete delivery</button>}{dispatch.allowedStatuses.includes('DELIVERY_FAILED') && <button className="button subtle" disabled={busy} onClick={() => { setFailingAssignment(assignment); setFailureReason(''); }} type="button">Delivery failed</button>}</Fragment>)}</div>
+        {!dispatch.allowedStatuses.length && <p>{dispatch.status === 'DELIVERED' ? 'Delivery completed.' : 'Confirm pickup using the collection actions below before changing delivery status.'}</p>}
+      </>}
+    </section>
     {financeSummary}
     <section className="surface-panel rider-admin-message"><div className="panel-heading"><div><span className="eyebrow">RIDER / ADMIN</span><h3>Message the admin team</h3></div><Icon name="support_agent" /></div><form onSubmit={sendMessageToAdmin}><textarea value={adminMessage} onChange={(event) => setAdminMessage(event.target.value)} placeholder="Share a delivery issue, route update, or support request." maxLength={500} /><button className="button primary" disabled={messageBusy || !adminMessage.trim()} type="submit"><Icon name="send" /> {messageBusy ? 'Sending...' : 'Send message'}</button></form></section>
     {assignedParcelActions}
@@ -382,8 +397,8 @@ export default function OperationsShell() {
     setSessionExpired(false);
     void logout().finally(() => setSession(null));
   }
-  if (!session) return <AccountLogin onAuthenticated={(authenticated) => { setSessionExpired(false); setSession(authenticated); }} />;
+  if (!session) return <AccountLogin parcelCn={scannedCn} onAuthenticated={(authenticated) => { setSessionExpired(false); setSession(authenticated); }} />;
   const riderOnly = session.user.roles.length === 1 && session.user.roles.includes('RIDER');
-  const content = view === 'dashboard' && !session.user.permissions.includes('shipment:view') ? <div className="page-content"><h2>Your account</h2><p>Shipment access is disabled for your account. Contact your administrator to change it.</p><button className="button subtle" type="button" onClick={() => setView('settings')}>Account settings</button></div> : view === 'dashboard' ? <DispatchDashboard onCreate={() => setView('booking')} onViewAll={() => setView('consignments')} /> : view === 'shipments' ? <DispatchList key="active" onCreate={() => setView('booking')} /> : view === 'consignments' ? <DispatchList key="history" history onCreate={() => setView('booking')} /> : view === 'booking' ? <Booking onNavigate={setView} /> : view === 'rider' ? <RiderHome initialCn={scannedCn} /> : view === 'riders' ? <RiderManagement /> : view === 'settings' ? <SettingsPanel appearanceOnly={riderOnly} /> : <TrackingView onBack={() => setView('consignments')} />;
+  const content = view === 'dashboard' && !session.user.permissions.includes('shipment:view') ? <div className="page-content"><h2>Your account</h2><p>Shipment access is disabled for your account. Contact your administrator to change it.</p><button className="button subtle" type="button" onClick={() => setView('settings')}>Account settings</button></div> : view === 'dashboard' ? <DispatchDashboard onCreate={() => setView('booking')} onViewAll={() => setView('consignments')} /> : view === 'shipments' ? <DispatchList key="active" onCreate={() => setView('booking')} /> : view === 'consignments' ? <DispatchList key="history" history onCreate={() => setView('booking')} /> : view === 'booking' ? <Booking onNavigate={setView} /> : view === 'rider' ? session.user.roles.includes('RIDER') ? <RiderHome initialCn={scannedCn} /> : <div className={'page-content'}><h2>Rider account required</h2><p>Sign out and use the rider account provided by your administrator to open this parcel.</p></div> : view === 'riders' ? <RiderManagement /> : view === 'settings' ? <SettingsPanel appearanceOnly={riderOnly} /> : <TrackingView onBack={() => setView('consignments')} />;
   return <div className={`app-shell ${riderOnly ? 'rider-only-shell' : ''} ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}><a className="skip-link" href="#main-content">Skip to operations</a><Sidebar activeView={view} onNavigate={setView} user={session.user} collapsed={sidebarCollapsed} /><main className="main-column" id="main-content"><Header view={view} onNavigate={setView} collapsed={sidebarCollapsed} onToggleSidebar={() => setSidebarCollapsed((value) => !value)} onLogout={() => void handleLogout()} riderOnly={riderOnly} /><Fragment key={`${view}-${refreshVersion}`}>{content}</Fragment></main><MobileNavigation activeView={view} onNavigate={setView} riderOnly={riderOnly} isAdmin={session.user.roles.includes('ADMIN')} hasRider={session.user.roles.includes('RIDER')} />{sessionExpired && <SessionExpiredDialog onConfirm={confirmExpiredSession} />}<Link className="sr-only" href="/">SwiftLog Dispatch Operations</Link></div>;
 }

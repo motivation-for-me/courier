@@ -32,6 +32,7 @@ test('active and history pagination apply status scope to both rows and totals',
 test('shipment PDF renders with the generated self-contained PDF runtime', async () => {
   process.env.JWT_SECRET = 'qa-test-secret-with-enough-entropy';
   process.env.WEB_ORIGIN = 'https://courier.example';
+  process.env.APP_PUBLIC_URL = 'https://courier.example';
   const shipment = {
     id: 'shipment', cnNumber: 'CN-TEST-1', organizationId: actor.organizationId,
     organization: { name: 'Test Courier' }, createdAt: new Date(), status: 'DELIVERED', serviceType: 'STANDARD',
@@ -43,9 +44,16 @@ test('shipment PDF renders with the generated self-contained PDF runtime', async
     consignment: { findFirst: async () => shipment },
     auditLog: { create: async () => { audited = true; return {}; } },
   };
-  const result = await new DocumentsService(prisma).consignmentPdf(shipment.id, actor);
-  assert.equal(result.buffer.subarray(0, 5).toString(), '%PDF-');
-  assert.ok(result.buffer.length > 1000);
-  assert.equal(result.filename, 'CN-TEST-1-dispatch.pdf');
-  assert.equal(audited, true);
+  const qr = require('qrcode');
+  const originalToBuffer = qr.toBuffer;
+  let qrLink = '';
+  qr.toBuffer = (link: string, options: unknown) => { qrLink = link; return originalToBuffer(link, options); };
+  try {
+    const result = await new DocumentsService(prisma).consignmentPdf(shipment.id, actor);
+    assert.equal(result.buffer.subarray(0, 5).toString(), '%PDF-');
+    assert.ok(result.buffer.length > 1000);
+    assert.equal(result.filename, 'CN-TEST-1-dispatch.pdf');
+    assert.equal(audited, true);
+    assert.equal(qrLink, 'https://courier.example/scan/CN-TEST-1');
+  } finally { qr.toBuffer = originalToBuffer; }
 });

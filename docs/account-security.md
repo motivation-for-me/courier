@@ -37,6 +37,12 @@ The API build runs `prepare:pdf`, which copies the pinned PDFKit self-contained 
 
 The migration remains required for the account fields and shop access controls even while external authentication is disabled. Provider credentials are not required for this temporary password-only deployment. The setup steps above describe later activation. Email and OAuth credentials are required to validate those external flows end to end.
 
+## Parcel QR and public tracking
+
+New dispatch PDFs encode `/scan/{CN}`. This page offers rider access and customer tracking without embedding credentials or a customer-detail token. Rider access continues to the scanned parcel after normal sign-in; the administrator provides the rider account ID/password through account setup. The delivery scan API requires authentication, delivery scan permission and an active assignment to the signed-in rider within their organization. Authorized riders see contacts, delivery addresses, items, status history and recorded locations, with server-authorized delivery actions. Recorded locations represent shipment events, not live GPS.
+
+Customer tracking links remain available from the shipment list. The public tracking API never returns the receiver phone number, including when a signed customer link is used. Public HTML also omits the receiver phone. Existing printed QR codes continue using their original tracking URLs; download/reprint the PDF for the rider QR flow.
+
 ## Shop access
 
 Open **Management → Shops → select shop → Access**. Create a login, enable/disable it, set shipment and PDF permissions, set a new password, or send verification/reset emails. Disabled accounts remain visible for re-enabling. Permission changes invalidate old access and refresh sessions immediately. Shop permissions never grant access to another shop or company; admin/rider privileges cannot be assigned through this editor. Password changes are audited without recording passwords.

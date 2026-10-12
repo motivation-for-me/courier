@@ -173,7 +173,7 @@ export type DispatchDashboardSummary = { counts: { today: number; pending: numbe
 export function getDispatchDashboardSummary() { return apiRequest<DispatchDashboardSummary>('/dispatches/summary'); }
 
 export type DispatchSummary = { id: string; cnNumber: string; status: string; serviceType: string; currentStatusAt: string; createdAt: string; publicTrackingKey?: string; customer?: { id: string; name: string } | null; project?: { id: string; name: string; siteName?: string | null; addressLine: string } | null; parties: Array<{ kind: string; name: string; phone?: string | null }>; items: Array<{ id: string; description: string; quantity: number; unit: string }>; payments: Array<{ amount: string | number; status: string; method: string }>; assignments: Array<{ riderId: string; rider: { employeeCode: string; user: { displayName: string; phone?: string | null } } }> };
-export type TrackingResult = { found: false } | { found: true; shipment: { cnNumber: string; status: string; serviceType: string; currentStatusAt: string; organization?: { name?: string | null } | null; receiver?: { name: string; phone?: string | null } | null; destination?: { addressLine: string; city?: string | null; landmark?: string | null; deliveryNote?: string | null } | null; rider?: { employeeCode: string; vehicleDetails?: { vehicleNumber?: string } | null; user: { displayName: string; phone?: string | null } } | null; events: Array<{ eventType: string; eventTime: string; remarks?: string | null }> } };
+export type TrackingResult = { found: false } | { found: true; shipment: { cnNumber: string; status: string; serviceType: string; currentStatusAt: string; organization?: { name?: string | null } | null; receiver?: { name: string } | null; destination?: { addressLine: string; city?: string | null; landmark?: string | null; deliveryNote?: string | null } | null; rider?: { employeeCode: string; vehicleDetails?: { vehicleNumber?: string } | null; user: { displayName: string; phone?: string | null } } | null; events: Array<{ eventType: string; eventTime: string; remarks?: string | null }> } };
 
 export function trackDispatch(cnNumber: string, key?: string) {
   const query = key ? `?key=${encodeURIComponent(key)}` : '';
@@ -267,7 +267,7 @@ export function createProject(payload: { customerId?: string; name: string; site
   return apiRequest<ProjectOption>('/projects', { method: 'POST', body: JSON.stringify(payload) });
 }
 
-export type RiderScanResult = { id: string; cnNumber: string; status: string; serviceType: string; assignedToActor: boolean; allowedStatuses: RiderStatus[] };
+export type RiderScanResult = { id: string; cnNumber: string; status: string; serviceType: string; assignedToActor: boolean; currentStatusAt: string; parties: Array<{ kind: string; name: string; phone?: string | null }>; addresses: Array<{ kind: string; addressLine: string; city?: string | null; landmark?: string | null; deliveryNote?: string | null }>; items: Array<{ description: string; quantity: number; unit: string }>; events: Array<{ eventType: string; eventTime: string; remarks?: string | null; location?: { name: string; city?: string | null } | null }>; allowedStatuses: RiderStatus[] };
 export type RiderStatus = 'OUT_FOR_DELIVERY' | 'DELIVERED' | 'DELIVERY_FAILED';
 
 export function unlockRiderDispatch(cnNumber: string) {
