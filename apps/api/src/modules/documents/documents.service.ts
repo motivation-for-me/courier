@@ -36,9 +36,9 @@ export class DocumentsService {
     await this.assertCanView(id, actor);
     const shipment = await this.loadDispatch(id, actor);
     if (!shipment) throw new NotFoundException('Consignment not found');
-    // Load PDF dependencies only for PDF requests, keeping account/API startup
-    // independent of PDF rendering. Vercel explicitly includes PDFKit's fonts.
-    const PDFDocument: typeof PDFKitDocument = require('pdfkit');
+    // Generated during build and copied beside compiled API code. This renderer
+    // embeds fonts and dependencies, without runtime node_modules resolution.
+    const PDFDocument: typeof PDFKitDocument = require('../../generated/pdfkit-runtime.cjs');
     const scanUrl = `${process.env.WEB_ORIGIN ?? 'http://localhost:3000'}/track/${encodeURIComponent(shipment.cnNumber)}?key=${createPublicTrackingToken(shipment.id)}`;
     const qr = await QRCode.toBuffer(scanUrl, { width: 240, margin: 1, errorCorrectionLevel: 'M' });
     const document = new PDFDocument({ size: 'A4', margin: 42, info: { Title: `SwiftLog Dispatch ${shipment.cnNumber}`, Author: shipment.organization.name } });

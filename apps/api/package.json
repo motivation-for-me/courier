@@ -3,17 +3,20 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
+    "prepare:pdf": "node scripts/prepare-pdf-runtime.cjs",
+    "predev": "npm run prepare:pdf",
     "dev": "nest start --watch",
     "generate": "prisma generate --schema ../../prisma/schema.prisma",
     "migrate:deploy": "prisma migrate deploy --schema ../../prisma/schema.prisma",
     "prebuild": "npm run generate",
-    "build": "npm run migrate:deploy && nest build",
+    "build": "npm run prepare:pdf && npm run migrate:deploy && nest build",
     "vercel-build": "npm run build",
     "start": "node dist/main.js",
     "bootstrap:admin": "node dist/scripts/bootstrap-admin.js",
     "sync:permissions": "node dist/scripts/sync-admin-permissions.js",
     "pretypecheck": "npm run generate",
     "typecheck": "tsc --noEmit",
+    "pretest": "npm run prepare:pdf",
     "test": "node --test --require ts-node/register test/*.test.ts"
   },
   "dependencies": {

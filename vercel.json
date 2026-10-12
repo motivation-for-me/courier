@@ -6,8 +6,8 @@
       "framework": "nestjs",
       "entrypoint": "src/main.ts",
       "functions": {
-        "src/main.ts": {
-          "includeFiles": "{node_modules/pdfkit/**,../../node_modules/pdfkit/**}"
+        "**": {
+          "includeFiles": "**/generated/{pdfkit-runtime.cjs,pdfkit-LICENSE}"
         }
       }
     },

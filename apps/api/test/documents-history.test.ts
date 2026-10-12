@@ -29,7 +29,7 @@ test('active and history pagination apply status scope to both rows and totals',
   }
 });
 
-test('shipment PDF renders with the Node PDFKit entry point and packaged fonts', async () => {
+test('shipment PDF renders with the generated self-contained PDF runtime', async () => {
   process.env.JWT_SECRET = 'qa-test-secret-with-enough-entropy';
   process.env.WEB_ORIGIN = 'https://courier.example';
   const shipment = {

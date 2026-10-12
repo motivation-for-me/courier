@@ -27,7 +27,7 @@ Empty credentials show configuration errors; the application never simulates ema
 
 ## Deployment
 
-The API service in `vercel.json` explicitly includes the PDFKit package and font assets from both workspace-local and hoisted dependency locations. PDF rendering uses the normal Node `pdfkit` entry point, loaded only for PDF requests. Deploy the updated configuration together with the API; an older deployment importing `pdfkit/js/pdfkit.standalone.js` can crash before login with `MODULE_NOT_FOUND`. After deployment, check `/api/v1/auth/config`, `/api/v1/health/ready`, password sign-in and a shipment PDF download.
+The API build runs `prepare:pdf`, which copies the pinned PDFKit self-contained renderer and its license into `src/generated`. Nest copies these assets into `dist/generated`, and Vercel explicitly includes them in the API function. Fonts and PDF dependencies are embedded in this renderer; PDF downloads no longer resolve the PDFKit package from runtime `node_modules`. Missing build inputs fail the build. Development and test scripts also prepare the runtime automatically. Deploy the updated build scripts, Nest configuration and Vercel configuration together; older deployments can fail with `Cannot find module 'pdfkit'`. After deployment, check `/api/v1/auth/config`, `/api/v1/health/ready`, password sign-in and a shipment PDF download.
 
 1. Ensure every account that needs access has a real email inbox. Correct old placeholder addresses through trusted administrative/database tooling before enforcing verification.
 2. Configure Resend, its verified sender, the website URL, and Google client ID.
