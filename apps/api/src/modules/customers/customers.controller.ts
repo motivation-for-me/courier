@@ -7,6 +7,7 @@ import { CreateCustomerAddressDto, CreateCustomerDto, UpdateCustomerDto } from '
 import { CreateProjectDto } from './dto/project.dto';
 import { CreateShopUserDto } from './dto/shop-user.dto';
 import { CustomersService } from './customers.service';
+import { UpdateShopUserDto } from './dto/update-shop-user.dto';
 
 @Controller()
 @UseGuards(AuthGuard)
@@ -28,6 +29,10 @@ export class CustomersController {
   @Post('customers/:customerId/users')
   @RequirePermission('user:view')
   createShopUser(@Param('customerId') customerId: string, @Body() input: CreateShopUserDto, @CurrentUser() actor: AuthenticatedUser) { return this.customers.createShopUser(customerId, input, actor); }
+
+  @Patch('customers/:customerId/users/:userId')
+  @RequirePermission('user:view')
+  updateShopUser(@Param('customerId') customerId: string, @Param('userId') userId: string, @Body() input: UpdateShopUserDto, @CurrentUser() actor: AuthenticatedUser) { return this.customers.updateShopUser(customerId, userId, input, actor); }
 
   @Patch('customers/:customerId')
   @RequirePermission('customer:create')

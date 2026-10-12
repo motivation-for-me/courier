@@ -1,4 +1,5 @@
 'use client';
+import { AccountSecurity } from './account-security';
 
 import { useEffect, useState } from 'react';
 import { enableMyRiderAccess, getSession, type ApiError } from '../lib/api';
@@ -50,7 +51,8 @@ export function SettingsPanel({ appearanceOnly = false }: { appearanceOnly?: boo
       <header><Icon name="palette" /><div><h3>Appearance</h3><p>Theme is saved on this browser.</p></div></header>
       <div className="theme-options">{themes.map((item) => <button className={theme === item.id ? 'active' : ''} key={item.id} onClick={() => chooseTheme(item.id)} type="button"><span className="theme-swatches">{item.colors.map((color) => <i key={color} style={{ background: color }} />)}</span><strong>{item.name}</strong><small>{item.note}</small>{theme === item.id && <Icon name="check_circle" />}</button>)}</div>
     </section>
-    {!appearanceOnly && <section className="settings-section">
+    <AccountSecurity />
+    {!appearanceOnly && getSession()?.user.roles.includes('ADMIN') && <section className="settings-section">
       <header><Icon name="two_wheeler" /><div><h3>Admin rider access</h3><p>An administrator may also receive rider assignments.</p></div></header>
       {adminAlreadyRider ? <div className="success-callout">Your admin account already has rider access.</div> : <div className="compact-form-grid"><label className="field"><span>Rider employee code</span><input value={adminEmployeeCode} onChange={(event) => setAdminEmployeeCode(event.target.value)} /></label><div className="editor-actions"><button className="button primary" disabled={busy || adminEmployeeCode.trim().length < 2} onClick={() => void enableAdminRider()} type="button">{busy ? 'Saving…' : 'Enable rider access'}</button></div></div>}
       {message && <div className="management-message">{message}</div>}

@@ -1,4 +1,5 @@
 'use client';
+import { AccountLogin } from './account-login';
 
 import { NotificationInbox } from './notification-inbox';
 
@@ -33,7 +34,7 @@ const navigation: NavGroup[] = [
       { label: 'Management', icon: 'settings_suggest', view: 'riders', permission: 'user:view' },
     ],
   },
-  { label: 'System', items: [{ label: 'Settings', icon: 'tune', view: 'settings', permission: 'user:view' }] },
+  { label: 'System', items: [{ label: 'Account settings', icon: 'tune', view: 'settings' }] },
 ];
 
 const statusStyles: Record<string, string> = {
@@ -86,8 +87,8 @@ function Sidebar({ activeView, onNavigate, user, collapsed }: { activeView: View
 }
 
 function MobileNavigation({ activeView, onNavigate, riderOnly = false, isAdmin = false, hasRider = false }: { activeView: View; onNavigate: (view: View) => void; riderOnly?: boolean; isAdmin?: boolean; hasRider?: boolean }) {
-  const items: Array<[View, string, string]> = riderOnly ? [['rider', 'two_wheeler', 'Deliveries'], ['settings', 'palette', 'Theme']] : isAdmin ? [['dashboard', 'speed', 'Home'], ['shipments', 'inventory_2', 'Shipments'], ['consignments', 'history', 'History'], ['booking', 'add_circle', 'Create'], ['tracking', 'qr_code_scanner', 'Track'], ['riders', 'manage_accounts', 'Manage'], ...(hasRider ? [['rider', 'two_wheeler', 'Rider'] as [View, string, string]] : [])] : [['dashboard', 'speed', 'Home'], ['shipments', 'inventory_2', 'Shipments'], ['consignments', 'history', 'History'], ['booking', 'add_circle', 'Create'], ['tracking', 'qr_code_scanner', 'Track']];
-  return <nav className="mobile-nav" aria-label="Mobile navigation"><div className="mobile-dock">{items.map(([view, icon, label]) => <button key={view} aria-label={label} className={activeView === view ? 'active' : ''} onClick={() => onNavigate(view)} type="button"><Icon name={icon} /><span>{label}</span></button>)}</div></nav>;
+  const items: Array<[View, string, string]> = riderOnly ? [['rider', 'two_wheeler', 'Deliveries'], ['settings', 'settings', 'Account']] : isAdmin ? [['dashboard', 'speed', 'Home'], ['shipments', 'inventory_2', 'Shipments'], ['consignments', 'history', 'History'], ['booking', 'add_circle', 'Create'], ['tracking', 'qr_code_scanner', 'Track'], ['riders', 'manage_accounts', 'Manage'], ['settings', 'settings', 'Account'], ...(hasRider ? [['rider', 'two_wheeler', 'Rider'] as [View, string, string]] : [])] : [['dashboard', 'speed', 'Home'], ['shipments', 'inventory_2', 'Shipments'], ['consignments', 'history', 'History'], ['booking', 'add_circle', 'Create'], ['tracking', 'qr_code_scanner', 'Track'], ['settings', 'settings', 'Account']];
+  return <nav className="mobile-nav" aria-label="Mobile navigation"><div className="mobile-dock">{items.filter(([view]) => view === 'booking' ? getSession()?.user.permissions.includes('shipment:create') : ['shipments', 'consignments', 'tracking'].includes(view) ? getSession()?.user.permissions.includes('shipment:view') : true).map(([view, icon, label]) => <button key={view} aria-label={label} className={activeView === view ? 'active' : ''} onClick={() => onNavigate(view)} type="button"><Icon name={icon} /><span>{label}</span></button>)}</div></nav>;
 }
 
 function LegacyHeader({ view, onNavigate }: { view: View; onNavigate: (view: View) => void }) {
@@ -121,29 +122,6 @@ function LoadingRows({ label }: { label: string }) {
   return <div className="data-skeleton-loader" aria-label={label} aria-live="polite"><div className="table-skeleton" aria-hidden="true">{Array.from({ length: 4 }, (_, index) => <div key={index}><i /><i /><i /><i /></div>)}</div></div>;
 }
 
-function LoginScreen({ onAuthenticated }: { onAuthenticated: (session: AuthSession) => void }) {
-  const [state, setState] = useState<'idle' | 'submitting' | 'error'>('idle');
-  const [message, setMessage] = useState('');
-  const [showIntro, setShowIntro] = useState(true);
-  useEffect(() => {
-    const timer = window.setTimeout(() => setShowIntro(false), 3000);
-    return () => window.clearTimeout(timer);
-  }, []);
-  async function submit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    setState('submitting');
-    setMessage('');
-    try {
-      onAuthenticated(await login(String(form.get('email') ?? ''), String(form.get('password') ?? '')));
-    } catch (error) {
-      setMessage((error as ApiError).message ?? 'Unable to sign in.');
-      setState('error');
-    }
-  }
-  if (showIntro) return <main className="rider-intro" aria-label="SwiftLog introduction"><div className="rider-intro-stage"><img className="rider-bike-image" src="/assets/logo.jpg" alt="Delivery rider" width={1365} height={768} fetchPriority="high" decoding="async" /><div className="intro-wordmark">Swift<span>Log</span></div><div className="intro-progress" aria-hidden="true"><i /></div><button className="intro-skip" onClick={() => setShowIntro(false)} type="button">Sign in <Icon name="arrow_forward" /></button></div></main>;
-  return <main className="login-page"><form className="login-card" onSubmit={submit}><div className="login-wordmark">Swift<span>Log</span></div><h1>Sign in</h1><label className="field"><span>Email</span><input name="email" type="email" autoComplete="email" required /></label><label className="field"><span>Password</span><input name="password" type="password" autoComplete="current-password" minLength={12} required /></label>{state === 'error' && <div className="error-callout"><Icon name="error" /><span>{message}</span></div>}<button className="button primary login-submit" disabled={state === 'submitting'} type="submit">{state === 'submitting' ? 'Signing in' : 'Sign in'} <Icon name="arrow_forward" /></button></form></main>;
-}
 
 function Dashboard({ onNavigate }: { onNavigate: (view: View) => void }) {
   const [state, setState] = useState<'loading' | 'error' | 'empty'>('loading');
@@ -404,8 +382,8 @@ export default function OperationsShell() {
     setSessionExpired(false);
     void logout().finally(() => setSession(null));
   }
-  if (!session) return <LoginScreen onAuthenticated={(authenticated) => { setSessionExpired(false); setSession(authenticated); }} />;
+  if (!session) return <AccountLogin onAuthenticated={(authenticated) => { setSessionExpired(false); setSession(authenticated); }} />;
   const riderOnly = session.user.roles.length === 1 && session.user.roles.includes('RIDER');
-  const content = view === 'dashboard' ? <DispatchDashboard onCreate={() => setView('booking')} onViewAll={() => setView('consignments')} /> : view === 'shipments' ? <DispatchList key="active" onCreate={() => setView('booking')} /> : view === 'consignments' ? <DispatchList key="history" history onCreate={() => setView('booking')} /> : view === 'booking' ? <Booking onNavigate={setView} /> : view === 'rider' ? <RiderHome initialCn={scannedCn} /> : view === 'riders' ? <RiderManagement /> : view === 'settings' ? <SettingsPanel appearanceOnly={riderOnly} /> : <TrackingView onBack={() => setView('consignments')} />;
+  const content = view === 'dashboard' && !session.user.permissions.includes('shipment:view') ? <div className="page-content"><h2>Your account</h2><p>Shipment access is disabled for your account. Contact your administrator to change it.</p><button className="button subtle" type="button" onClick={() => setView('settings')}>Account settings</button></div> : view === 'dashboard' ? <DispatchDashboard onCreate={() => setView('booking')} onViewAll={() => setView('consignments')} /> : view === 'shipments' ? <DispatchList key="active" onCreate={() => setView('booking')} /> : view === 'consignments' ? <DispatchList key="history" history onCreate={() => setView('booking')} /> : view === 'booking' ? <Booking onNavigate={setView} /> : view === 'rider' ? <RiderHome initialCn={scannedCn} /> : view === 'riders' ? <RiderManagement /> : view === 'settings' ? <SettingsPanel appearanceOnly={riderOnly} /> : <TrackingView onBack={() => setView('consignments')} />;
   return <div className={`app-shell ${riderOnly ? 'rider-only-shell' : ''} ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}><a className="skip-link" href="#main-content">Skip to operations</a><Sidebar activeView={view} onNavigate={setView} user={session.user} collapsed={sidebarCollapsed} /><main className="main-column" id="main-content"><Header view={view} onNavigate={setView} collapsed={sidebarCollapsed} onToggleSidebar={() => setSidebarCollapsed((value) => !value)} onLogout={() => void handleLogout()} riderOnly={riderOnly} /><Fragment key={`${view}-${refreshVersion}`}>{content}</Fragment></main><MobileNavigation activeView={view} onNavigate={setView} riderOnly={riderOnly} isAdmin={session.user.roles.includes('ADMIN')} hasRider={session.user.roles.includes('RIDER')} />{sessionExpired && <SessionExpiredDialog onConfirm={confirmExpiredSession} />}<Link className="sr-only" href="/">SwiftLog Dispatch Operations</Link></div>;
 }

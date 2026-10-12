@@ -635,6 +635,17 @@ img,svg,video,canvas { max-width:100%; }
 }
 
 .notification-inbox { position:relative; }
+.login-card form { display:grid; gap:16px; }
+.account-login-actions { display:flex; flex-wrap:wrap; gap:14px; margin-top:16px; }
+.account-login-actions button { border:0; background:transparent; color:var(--orange); padding:4px 0; cursor:pointer; }
+.google-sign-in { margin-top:20px; }
+.account-config-note { color:var(--muted); font-size:12px; }
+.shop-account-editor { display:grid; gap:12px; padding:18px; border:1px solid var(--line); border-radius:10px; }
+.shop-account-editor header { display:grid; gap:5px; }
+.shop-account-editor small { color:var(--muted); }
+.shop-account-editor label { display:flex; align-items:center; gap:8px; font-size:13px; }
+.shop-account-editor label.field { display:grid; }
+.shop-account-editor input[type="checkbox"] { width:16px; height:16px; }
 .notification .notification-badge { position:absolute; top:-4px; right:-4px; width:auto; min-width:18px; height:18px; padding:0 4px; border-radius:10px; background:#d84b24; color:white; font:700 10px/18px sans-serif; text-align:center; }
 .notification-toast { position:fixed; bottom:100px; right:16px; z-index:1200; display:flex; width:min(360px,calc(100vw - 32px)); border:1px solid var(--line); border-radius:10px; background:var(--surface); box-shadow:0 10px 30px rgba(13,31,54,.16); }
 .notification-toast button { border:0; background:transparent; color:var(--ink); padding:14px; text-align:left; cursor:pointer; }

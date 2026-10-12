@@ -8,6 +8,7 @@ import {
   getShopPricing,
   saveShopPricing,
   getCustomers,
+  getSession,
   type ApiError,
   type CustomerOption,
   type ShopBranchOption,
@@ -16,6 +17,7 @@ import {
 const NEW_SHOP = '__new_shop__';
 
 export function DispatchCreate({ onDone, onCancel }: { onDone: (cn: string) => void; onCancel: () => void }) {
+  const isShop = !!getSession()?.user.roles.includes('SHOP') && !getSession()?.user.roles.includes('ADMIN');
   const [shops, setShops] = useState<CustomerOption[]>([]);
   const [shopId, setShopId] = useState('');
   const [message, setMessage] = useState('');
@@ -24,7 +26,7 @@ export function DispatchCreate({ onDone, onCancel }: { onDone: (cn: string) => v
 
   useEffect(() => {
     getCustomers()
-      .then(setShops)
+      .then((rows) => { setShops(rows); if (isShop && rows.length === 1) setShopId(rows[0].id); })
       .catch((error: ApiError) => setMessage(error.message));
   }, []);
 
@@ -54,6 +56,7 @@ export function DispatchCreate({ onDone, onCancel }: { onDone: (cn: string) => v
       if (!shop) throw new Error('Select a shop or add a new shop.');
 
       let pickupBranch: ShopBranchOption | undefined = shopBranches[0];
+      if (addingBranch && isShop) throw new Error('Ask your administrator to configure your shop pickup address.');
       if (addingBranch) {
         pickupBranch = await createShopBranch(shop.id, {
           label: String(form.get('shopBranchName') ?? '').trim(),
@@ -92,10 +95,10 @@ export function DispatchCreate({ onDone, onCancel }: { onDone: (cn: string) => v
     <form className="surface-panel booking-form" onSubmit={submit}>
       <div className="section-heading"><span>01</span><h3>Sender shop</h3></div>
       <div className="form-grid">
-        <label className="field"><span>Shop</span><select value={shopId} onChange={(event) => setShopId(event.target.value)} required><option value="">Select shop</option>{shops.map((shop) => <option key={shop.id} value={shop.id}>{shop.name}</option>)}<option value={NEW_SHOP}>＋ Add new shop</option></select></label>
+        <label className="field"><span>Shop</span><select value={shopId} onChange={(event) => setShopId(event.target.value)} required><option value="">Select shop</option>{shops.map((shop) => <option key={shop.id} value={shop.id}>{shop.name}</option>)}{!isShop && <option value={NEW_SHOP}>Add new shop</option>}</select></label>
         {addingShop && <label className="field"><span>New shop name</span><input name="shopName" required /></label>}
         {!addingShop && shopBranches[0] && <div className="shop-pickup-preview"><span>Pickup automatically selected</span><strong>{shopBranches[0].label || selectedShop?.name}</strong><small>{shopBranches[0].addressLine}{shopBranches[0].city ? `, ${shopBranches[0].city}` : ''}</small></div>}
-        {addingBranch && <><label className="field"><span>Branch name</span><input name="shopBranchName" placeholder="Main shop, Gulberg, Warehouse…" required /></label><label className="field wide"><span>Pickup address</span><input name="shopBranchAddress" required /></label><label className="field"><span>Pickup city</span><input name="shopBranchCity" /></label></>}
+        {addingBranch && !isShop && <><label className="field"><span>Branch name</span><input name="shopBranchName" placeholder="Main shop, Gulberg, Warehouse…" required /></label><label className="field wide"><span>Pickup address</span><input name="shopBranchAddress" required /></label><label className="field"><span>Pickup city</span><input name="shopBranchCity" /></label></>}
         <label className="field"><span>Delivery fee (PKR)</span><input min="0" name="deliveryFee" onChange={(event) => setShopDeliveryFee(event.target.value)} step="0.01" type="number" value={shopDeliveryFee} /></label>
       </div>
 

@@ -113,7 +113,13 @@ export class RidersService {
     const rider = await this.prisma.rider.findFirst({ where: { id, organizationId: actor.organizationId }, select: { id: true, userId: true } });
     if (!rider) throw new NotFoundException('Rider not found');
     return this.prisma.$transaction(async (transaction) => {
-      await transaction.user.update({ where: { id: rider.userId }, data: { ...(input.displayName ? { displayName: input.displayName.trim() } : {}), ...(input.email ? { email: input.email.trim().toLowerCase() } : {}), ...(input.phone !== undefined ? { phone: input.phone || null } : {}) } });
+      const account = await transaction.user.findUniqueOrThrow({ where: { id: rider.userId }, select: { email: true } });
+      const emailChanged = !!input.email && input.email.trim().toLowerCase() !== account.email;
+      if (emailChanged) {
+        await transaction.authSession.updateMany({ where: { userId: rider.userId, revokedAt: null }, data: { revokedAt: new Date() } });
+        await transaction.emailAction.updateMany({ where: { userId: rider.userId, consumedAt: null }, data: { consumedAt: new Date() } });
+      }
+      await transaction.user.update({ where: { id: rider.userId }, data: { ...(input.displayName ? { displayName: input.displayName.trim() } : {}), ...(input.email ? { email: input.email.trim().toLowerCase() } : {}), ...(emailChanged ? { emailVerifiedAt: null, googleSubject: null, authVersion: { increment: 1 } } : {}), ...(input.phone !== undefined ? { phone: input.phone || null } : {}) } });
       return transaction.rider.update({ where: { id }, data: { ...(input.employeeCode ? { employeeCode: input.employeeCode.trim().toUpperCase() } : {}), ...(input.vehicleNumber !== undefined ? { vehicleDetails: input.vehicleNumber ? { vehicleNumber: input.vehicleNumber.trim().toUpperCase() } : undefined } : {}), ...(input.serviceAreas ? { serviceAreas: input.serviceAreas.map((area) => area.trim()).filter(Boolean) } : {}), ...(input.dailyCapacity ? { dailyCapacity: input.dailyCapacity } : {}), ...(input.deliveryFee !== undefined ? { deliveryFee: input.deliveryFee } : {}), ...(input.availability ? { availability: input.availability } : {}) }, include: { user: { select: { id: true, displayName: true, email: true, phone: true } }, assignments: { where: { status: 'ACTIVE' }, select: { consignmentId: true } }, earnings: { select: { amount: true, status: true } } } });
     });
   }

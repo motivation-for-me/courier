@@ -1,3 +1,5 @@
+import { UpdateShopUserDto } from './dto/update-shop-user.dto';
+import { requirePasswordBytes } from '../../common/password';
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../../infrastructure/prisma/prisma.service';
@@ -24,10 +26,11 @@ export class CustomersService {
   async listShopUsers(customerId: string, actor: AuthenticatedUser) {
     this.admin(actor);
     await this.requireCustomer(customerId, actor);
-    return this.prisma.user.findMany({ where: { organizationId: actor.organizationId, customerId, isActive: true, roles: { some: { role: { name: 'SHOP' } } } }, select: { id: true, displayName: true, email: true, phone: true, isActive: true, createdAt: true }, orderBy: { displayName: 'asc' } });
+    return this.prisma.user.findMany({ where: { organizationId: actor.organizationId, customerId, roles: { some: { role: { name: 'SHOP' } } } }, select: { id: true, displayName: true, email: true, phone: true, isActive: true, emailVerifiedAt: true, shopPermissions: true, createdAt: true }, orderBy: { displayName: 'asc' } });
   }
 
   async createShopUser(customerId: string, input: CreateShopUserDto, actor: AuthenticatedUser) {
+    requirePasswordBytes(input.password);
     this.admin(actor);
     await this.requireCustomer(customerId, actor);
     return this.prisma.$transaction(async (transaction) => {
@@ -41,6 +44,23 @@ export class CustomersService {
       await transaction.auditLog.create({ data: { organizationId: actor.organizationId, actorId: actor.id, action: 'shop.user.created', entityType: 'user', entityId: user.id, newValues: { customerId, email, role: 'SHOP' } } });
       await transaction.notification.create({ data: { organizationId: actor.organizationId, recipientId: user.id, channel: 'IN_APP', template: 'SHOP_ACCOUNT_CREATED', status: 'UNREAD', payload: { title: 'Shop account ready', message: 'You can now create and track shipments for your shop.' } } });
       return user;
+    });
+  }
+
+
+  async updateShopUser(customerId: string, userId: string, input: UpdateShopUserDto, actor: AuthenticatedUser) {
+    this.admin(actor);
+    if (input.password) requirePasswordBytes(input.password);
+    await this.requireCustomer(customerId, actor);
+    const passwordHash = input.password ? await bcrypt.hash(input.password, 12) : undefined;
+    return this.prisma.$transaction(async (transaction) => {
+      const user = await transaction.user.findFirst({ where: { id: userId, organizationId: actor.organizationId, customerId, roles: { some: { role: { name: 'SHOP' } } } }, include: { roles: { include: { role: true } } } });
+      if (!user || user.roles.some((assignment) => assignment.role.name !== 'SHOP')) throw new NotFoundException('Shop-only account not found');
+      const updated = await transaction.user.update({ where: { id: user.id }, data: { ...(input.isActive !== undefined ? { isActive: input.isActive } : {}), ...(input.permissions ? { shopPermissions: input.permissions } : {}), ...(passwordHash ? { passwordHash } : {}), authVersion: { increment: 1 } }, select: { id: true, email: true, displayName: true, isActive: true, shopPermissions: true, emailVerifiedAt: true, createdAt: true } });
+      await transaction.authSession.updateMany({ where: { userId, revokedAt: null }, data: { revokedAt: new Date() } });
+      if (passwordHash) await transaction.emailAction.updateMany({ where: { userId, purpose: 'RESET_PASSWORD', consumedAt: null }, data: { consumedAt: new Date() } });
+      await transaction.auditLog.create({ data: { organizationId: actor.organizationId, actorId: actor.id, action: 'shop.user.access_updated', entityType: 'user', entityId: userId, newValues: { isActive: updated.isActive, permissions: updated.shopPermissions, passwordChanged: !!passwordHash } } });
+      return updated;
     });
   }
 

@@ -85,6 +85,7 @@ export class DocumentsService {
 
   private async assertCanView(consignmentId: string, actor: AuthenticatedUser) {
     if (actor.roles.includes('SHOP')) {
+      if (!actor.permissions.includes('documents:view')) throw new ForbiddenException('Document access is disabled for this account');
       const owned = await this.prisma.consignment.findFirst({ where: { id: consignmentId, organizationId: actor.organizationId, customerId: actor.customerId, deletedAt: null }, select: { id: true } });
       if (!owned) throw new ForbiddenException('This shipment does not belong to your shop');
       return;

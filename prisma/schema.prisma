@@ -229,6 +229,10 @@ model User {
   hubId              String?
   email              String
   passwordHash       String
+  emailVerifiedAt    DateTime?
+  googleSubject      String?             @unique
+  authVersion        Int                 @default(0)
+  shopPermissions    String[]            @default(["shipment:create", "shipment:view", "customer:view", "documents:view", "documents:create"])
   displayName        String
   phone              String?
   isActive           Boolean             @default(true)
@@ -251,6 +255,7 @@ model User {
   collectedPayments  Payment[]           @relation("PaymentCollector")
   verifiedPayments   Payment[]           @relation("PaymentVerifier")
   sessions           AuthSession[]
+  emailActions       EmailAction[]
   requestedPickups   Pickup[]            @relation("PickupRequester")
   assignedPickups    Pickup[]            @relation("PickupAssignee")
   createdAt          DateTime            @default(now())
@@ -271,6 +276,20 @@ model AuthSession {
   createdAt   DateTime  @default(now())
 
   @@index([userId, expiresAt])
+}
+
+model EmailAction {
+  id          String    @id @default(uuid())
+  userId      String
+  tokenHash   String    @unique
+  purpose     String
+  emailAddress String
+  expiresAt   DateTime
+  consumedAt  DateTime?
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+
+  @@index([userId, purpose, expiresAt])
 }
 
 model IdempotencyRecord {

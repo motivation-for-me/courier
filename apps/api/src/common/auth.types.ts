@@ -8,4 +8,5 @@ export interface AuthenticatedUser {
   riderId?: string;
   roles: string[];
   permissions: string[];
+  authVersion?: number;
 }

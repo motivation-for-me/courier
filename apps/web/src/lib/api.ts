@@ -67,6 +67,22 @@ export async function login(email: string, password: string): Promise<AuthSessio
   return session;
 }
 
+export function getAuthConfig() { return apiRequest<{ googleClientId: string | null; emailEnabled: boolean }>('/auth/config'); }
+export async function loginWithGoogle(credential: string) {
+  const session = await apiRequest<AuthSession>('/auth/google', { method: 'POST', body: JSON.stringify({ credential }) });
+  sessionStorage.setItem(sessionKey, JSON.stringify(session));
+  return session;
+}
+export function requestAccountEmail(email: string, reset = false) { return apiRequest<{ message: string }>(reset ? '/auth/forgot-password' : '/auth/request-verification', { method: 'POST', body: JSON.stringify({ email }) }); }
+export function verifyAccountEmail(token: string) { return apiRequest<{ message: string }>('/auth/verify-email', { method: 'POST', body: JSON.stringify({ token }) }); }
+export function resetAccountPassword(token: string, password: string) { return apiRequest<{ message: string }>('/auth/reset-password', { method: 'POST', body: JSON.stringify({ token, password }) }); }
+export async function changeAccountPassword(currentPassword: string, password: string) {
+  const result = await apiRequest<{ message: string }>('/auth/change-password', { method: 'POST', body: JSON.stringify({ currentPassword, password }) });
+  clearSession();
+  window.dispatchEvent(new CustomEvent(sessionExpiredEvent));
+  return result;
+}
+
 export async function logout(): Promise<void> {
   const refreshToken = getSession()?.refreshToken;
   try {
@@ -211,7 +227,8 @@ export function createCustomer(payload: { name: string; email?: string; phone?: 
 }
 export function updateCustomer(id: string, payload: { name?: string; email?: string; phone?: string }) { return apiRequest<CustomerOption>(`/customers/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }); }
 export function deleteCustomer(id: string) { return apiRequest<{ success: true }>(`/customers/${id}`, { method: 'DELETE' }); }
-export type ShopUserOption = { id: string; displayName: string; email: string; phone?: string | null; isActive: boolean; createdAt: string };
+export type ShopUserOption = { id: string; displayName: string; email: string; phone?: string | null; isActive: boolean; createdAt: string; emailVerifiedAt?: string | null; shopPermissions?: string[] };
+export function updateShopUser(customerId: string, userId: string, payload: { isActive?: boolean; permissions?: string[]; password?: string }) { return apiRequest<ShopUserOption>(`/customers/${customerId}/users/${userId}`, { method: 'PATCH', body: JSON.stringify(payload) }); }
 export function getShopUsers(customerId: string) { return apiRequest<ShopUserOption[]>(`/customers/${customerId}/users`); }
 export function createShopUser(customerId: string, payload: { displayName: string; email: string; password: string; phone?: string }) { return apiRequest<ShopUserOption>(`/customers/${customerId}/users`, { method: 'POST', body: JSON.stringify(payload) }); }
 export type ShopFinancialRow = { id: string; cnNumber: string; status: string; bookedAt: string; currencyCode: string; revenue: string; cost: string; profit: string; codCollected: string; shopPayable: string; paidToShop: string; outstanding: string; entries: Array<{ id: string; category: string; type: string; amount: string; reason?: string | null; createdAt: string }> };
