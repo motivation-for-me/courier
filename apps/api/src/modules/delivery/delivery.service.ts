@@ -35,7 +35,7 @@ export class DeliveryService {
       await notifyShipmentDelivery(transaction, updated, actor.id, 'OUT_FOR_DELIVERY');
       await transaction.auditLog.create({ data: { organizationId: actor.organizationId, actorId: actor.id, action: 'delivery.rider_status_updated', entityType: 'consignment', entityId: consignmentId, oldValues: { status: consignment.status }, newValues: { status: requested } } });
       return { id: updated.id, cnNumber: updated.cnNumber, status: updated.status, allowedStatuses: allowedRiderStatuses(updated.status, pendingCod) };
-    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, maxWait: 10_000, timeout: 30_000 });
   }
 
   async assign(consignmentId: string, riderId: string, actor: AuthenticatedUser, reason?: string) {
@@ -85,8 +85,9 @@ export class DeliveryService {
           return prior.response;
         }
       }
-      const consignment = await transaction.consignment.findFirst({ where: { id: consignmentId, organizationId: actor.organizationId }, include: { payments: true, codTransactions: true, assignments: { where: { status: 'ACTIVE' } } } });
+      const consignment = await transaction.consignment.findFirst({ where: { id: consignmentId, organizationId: actor.organizationId }, include: { payments: true, assignments: { where: { status: 'ACTIVE' } } } });
       if (!consignment || consignment.status !== ConsignmentStatus.OUT_FOR_DELIVERY) throw new BadRequestException('Shipment is not out for delivery');
+      if (!consignment.assignments.some((assignment) => assignment.riderId === actor.riderId)) throw new ForbiddenException('Shipment assignment changed; refresh your route');
       const payment = consignment.payments[0];
       if (payment?.method === 'CASH') {
         if (collectedAmount === undefined || Number(collectedAmount) !== Number(payment.amount)) throw new BadRequestException('Exact COD amount must be collected');
@@ -102,7 +103,7 @@ export class DeliveryService {
       await transaction.trackingEvent.create({ data: { consignmentId, eventType: ConsignmentStatus.DELIVERED, riderId: actor.riderId, performedById: actor.id, remarks } });
       await notifyShipmentDelivery(transaction, updated, actor.id, 'DELIVERED');
       await transaction.auditLog.create({ data: { organizationId: actor.organizationId, actorId: actor.id, action: 'delivery.completed', entityType: 'consignment', entityId: consignmentId, newValues: { status: ConsignmentStatus.DELIVERED } } });
-      if (actor.riderId && !actor.roles.includes('ADMIN')) {
+      if (actor.riderId) {
         const [rider, organization] = await Promise.all([
           transaction.rider.findUniqueOrThrow({ where: { id: actor.riderId }, select: { deliveryFee: true } }),
           transaction.organization.findUniqueOrThrow({ where: { id: actor.organizationId }, select: { currencyCode: true } }),
@@ -111,7 +112,7 @@ export class DeliveryService {
       }
       if (idempotencyKey) await transaction.idempotencyRecord.create({ data: { organizationId: actor.organizationId, actorId: actor.id, operation: 'delivery.complete', resourceKey: idempotencyKey, requestHash, response: updated } });
       return updated;
-    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, maxWait: 10_000, timeout: 30_000 });
   }
 
   async failed(consignmentId: string, actor: AuthenticatedUser, reason: string, remarks?: string) {
@@ -127,7 +128,7 @@ export class DeliveryService {
       await notifyShipmentDelivery(transaction, consignment, actor.id, 'DELIVERY_FAILED', reason);
       await transaction.auditLog.create({ data: { organizationId: actor.organizationId, actorId: actor.id, action: 'delivery.attempt_failed', entityType: 'consignment', entityId: consignmentId, newValues: { reason } } });
       return attempt;
-    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, maxWait: 10_000, timeout: 30_000 });
   }
 
   private async assertAssigned(consignmentId: string, actor: AuthenticatedUser) {

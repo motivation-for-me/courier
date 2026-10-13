@@ -126,3 +126,17 @@ test('Resend email uses the configured website and keeps the token in a fragment
   try { await assert.rejects(new AuthService({} as any, {} as any).googleLogin('credential'), /temporarily disabled/); }
   finally { process.env.GOOGLE_AUTH_ENABLED = 'true'; }
 });
+
+test('linked Google identity cannot sign in after its email differs from the administrator-approved account', async () => {
+  const previous = process.env.GOOGLE_CLIENT_ID;
+  const originalVerify = OAuth2Client.prototype.verifyIdToken;
+  process.env.GOOGLE_CLIENT_ID = 'test-client';
+  try {
+    OAuth2Client.prototype.verifyIdToken = (async () => ({ getPayload: () => ({ sub: 'linked-google-user', email: 'old@gmail.com', email_verified: true }) })) as any;
+    const prisma: any = { user: { findUnique: async () => ({ isActive: true, email: 'approved@gmail.com' }) } };
+    await assert.rejects(new AuthService(prisma, {} as any).googleLogin('credential'), /match the account email/);
+  } finally {
+    OAuth2Client.prototype.verifyIdToken = originalVerify;
+    if (previous === undefined) delete process.env.GOOGLE_CLIENT_ID; else process.env.GOOGLE_CLIENT_ID = previous;
+  }
+});

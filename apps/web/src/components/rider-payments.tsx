@@ -1,0 +1,69 @@
+'use client';
+import { useEffect, useState } from 'react';
+import { amendRiderEarning, confirmRiderPayment, getPaymentRiders, getRiderPayments, getSession, recordRiderEarning, sendRiderPayment, updateRider, type RiderPaymentDetail, type RiderPaymentEntry, type RiderPaymentRider, type RiderPaymentTotal } from '../lib/api';
+
+const labels: Record<string, string> = { PENDING: 'Unpaid', SENT: 'Awaiting rider confirmation', DISPUTED: 'Not received — review required', PAID: 'Cleared', VOIDED: 'Voided' };
+function cents(value: string) { const [whole, fraction = ''] = value.split('.'); return BigInt(whole || '0') * BigInt(100) + BigInt(fraction.padEnd(2, '0').slice(0, 2)); }
+function money(value: bigint) { return `${value / BigInt(100)}.${(value % BigInt(100)).toString().padStart(2, '0')}`; }
+function Totals({ rows }: { rows: RiderPaymentTotal[] }) {
+  const currencies = Array.from(new Set(rows.map((row) => row.currencyCode)));
+  return <div className="financial-metrics">{currencies.map((currency) => <div key={currency}><h4>{currency}</h4><p>Total earnings: <strong>{money(rows.filter((row) => row.currencyCode === currency && row.status !== 'VOIDED').reduce((sum, row) => sum + cents(row._sum.amount || '0'), BigInt(0)))}</strong></p><p>Recorded deliveries: {rows.filter((row) => row.currencyCode === currency && row.kind === 'DELIVERY' && row.status !== 'VOIDED').reduce((sum, row) => sum + row._count._all, 0)}</p>{['PENDING', 'SENT', 'DISPUTED', 'PAID'].map((status) => {
+    const matching = rows.filter((row) => row.currencyCode === currency && row.status === status);
+    const total = matching.reduce((sum, row) => sum + cents(row._sum.amount || '0'), BigInt(0));
+    return <p key={status}>{labels[status]}: <strong>{money(total)}</strong> · {matching.reduce((sum, row) => sum + row._count._all, 0)} entries ({matching.filter((row) => row.kind === 'DELIVERY').reduce((sum, row) => sum + row._count._all, 0)} deliveries)</p>;
+  })}<p>Unpaid bonuses: <strong>{money(rows.filter((row) => row.currencyCode === currency && row.kind === 'BONUS' && row.status === 'PENDING').reduce((sum, row) => sum + cents(row._sum.amount || '0'), BigInt(0)))}</strong></p></div>)}</div>;
+}
+export function RiderPayments() {
+  const user = getSession()?.user;
+  const admin = !!user?.roles.includes('ADMIN');
+  const [riders, setRiders] = useState<RiderPaymentRider[]>([]);
+  const [id, setId] = useState(() => admin ? sessionStorage.getItem('swiftlog.payment-rider') || '' : user?.riderId || '');
+  const [detail, setDetail] = useState<RiderPaymentDetail | null>(null);
+  const [search, setSearch] = useState(''); const [status, setStatus] = useState(''); const [page, setPage] = useState(1);
+  const [selection, setSelection] = useState<string[]>([]); const [reference, setReference] = useState('');
+  const [message, setMessage] = useState(''); const [busy, setBusy] = useState(false); const [loading, setLoading] = useState(true);
+  async function load() {
+    setLoading(true);
+    try { if (admin) setRiders(await getPaymentRiders()); if (id) setDetail(await getRiderPayments(id, page, status)); else setDetail(null); setSelection([]); }
+    catch (error) { setMessage(error instanceof Error ? error.message : 'Payments could not load.'); setDetail(null); }
+    finally { setLoading(false); }
+  }
+  useEffect(() => { void load(); }, [id, page, status]);
+  useEffect(() => { if (admin) return; const timer = window.setInterval(() => { if (!document.hidden && !busy) void load(); }, 30000); return () => window.clearInterval(timer); }, [id, page, status, busy, admin]);
+  async function run(action: () => Promise<unknown>, success: string) {
+    if (busy) return; setBusy(true); setMessage('');
+    try { await action(); setMessage(success); await load(); }
+    catch (error) { setMessage(error instanceof Error ? error.message : 'Payment action failed.'); }
+    finally { setBusy(false); }
+  }
+  const selected = detail?.entries.filter((entry) => selection.includes(entry.id)) || [];
+  const selectionCurrencies = Array.from(new Set(selected.map((entry) => entry.currencyCode)));
+  const selectionTotal = selected.reduce((sum, entry) => sum + cents(entry.amount), BigInt(0));
+  const receiptAllowed = user?.riderId === id;
+  return <div className="page-content rider-payments-page"><div className="page-header"><div><span className="eyebrow">PAYMENTS / RIDERS</span><h2>{admin ? 'Rider payments' : 'My payments'}</h2><p>Unpaid earnings → admin records payment sent → rider confirms receipt → cleared.</p></div><button className="button subtle" onClick={() => void load()} type="button">Refresh</button></div>
+    {message && <div className="management-message" role="status">{message}</div>}
+    {admin && <section className="surface-panel"><label className="field"><span>Find rider</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Name, email, employee code" /></label><div className="rider-earning-list">{riders.filter((rider) => `${rider.user.displayName} ${rider.user.email} ${rider.employeeCode}`.toLowerCase().includes(search.toLowerCase())).map((rider) => <div key={rider.id}><button className="button subtle" onClick={() => { sessionStorage.setItem('swiftlog.payment-rider', rider.id); setId(rider.id); setPage(1); setStatus(''); }} type="button">{rider.user.displayName} · {rider.employeeCode}{!rider.isActive && ' · Inactive'}</button><small>{rider.user.email}</small><Totals rows={rider.totals} /></div>)}</div>{!riders.length && !loading && <p>No rider accounts found.</p>}</section>}
+    {loading && <p role="status">Loading payment records…</p>}
+    {detail && !loading && <><section className="surface-panel"><h3>{detail.rider.user.displayName} · {detail.rider.employeeCode}</h3><Totals rows={detail.totals} />{!detail.totals.length && <p>No earnings recorded yet. Fees are recorded when a rider completes a delivery.</p>}
+      {admin && <><MoneyForm label="Default fee for future deliveries" amount={detail.rider.deliveryFee} busy={busy} reasonRequired={false} onSave={(amount) => run(() => updateRider(id, { deliveryFee: Number(amount) }), 'Future delivery fee saved. Existing earnings are unchanged.')} /><MoneyForm label="Add rider bonus" busy={busy} onSave={(amount, reason) => run(() => recordRiderEarning(id, amount, reason), 'Bonus added to unpaid earnings.')} /></>}
+    </section>
+    {detail.missingCount > 0 && <section className="surface-panel"><h3>{detail.missingCount} completed deliveries need a fee</h3><p>These deliveries have no earning record. An administrator must enter the agreed fee. Showing the next {detail.missing.length}; recording a fee reveals further deliveries.</p>{detail.missing.map((shipment) => <div key={shipment.id}><strong>{shipment.cnNumber}</strong> · {shipment.deliveredAt && new Date(shipment.deliveredAt).toLocaleDateString()}{admin ? <MoneyForm label="Record delivery fee" busy={busy} onSave={(amount, reason) => run(() => recordRiderEarning(id, amount, reason, shipment.id), 'Delivery fee recorded.')} /> : <p>Ask your administrator to record this delivery fee.</p>}</div>)}</section>}
+    <section className="surface-panel"><div className="history-filters"><h3>Delivery fees and bonuses</h3><select aria-label="Payment status" value={status} onChange={(event) => { setStatus(event.target.value); setPage(1); }}><option value="">All payments</option>{Object.entries(labels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></div><p>{detail.total} entries · Page {page} of {detail.pages}</p>
+    {detail.entries.map((entry) => <article className="payment-entry" key={entry.id}><div><h4>{entry.kind === 'BONUS' ? 'Bonus' : entry.consignment?.cnNumber || 'Delivery fee'} · {entry.currencyCode} {entry.amount}</h4><strong>{entry.status === 'PAID' && !entry.confirmedAt ? 'Previously paid — legacy record' : labels[entry.status]}</strong><p>{entry.note}</p>{entry.reference && <p>Reference: {entry.reference}</p>}{entry.sentAt && <p>Admin recorded payment: {new Date(entry.sentAt).toLocaleString()} · {entry.sentById}</p>}{entry.confirmedAt && <p>Rider confirmed: {new Date(entry.confirmedAt).toLocaleString()} · {entry.confirmedById}</p>}
+    {entry.consignment && <details><summary>Delivery information</summary><p>Delivered: {entry.consignment.deliveredAt ? new Date(entry.consignment.deliveredAt).toLocaleString() : 'Not recorded'}</p><p>{entry.consignment.serviceType}</p>{entry.consignment.parties.map((party, index) => <p key={index}>{party.kind}: {party.name}</p>)}{entry.consignment.addresses.map((address, index) => <p key={index}>{address.kind}: {address.addressLine}, {address.city}</p>)}</details>}
+    {admin && ['PENDING', 'DISPUTED'].includes(entry.status) && <label><input type="checkbox" checked={selection.includes(entry.id)} onChange={(event) => setSelection((previous) => event.target.checked ? [...previous, entry.id] : previous.filter((value) => value !== entry.id))} /> {entry.status === 'DISPUTED' ? 'Select after resolving non-receipt' : 'Select for payment'}</label>}
+    {admin && entry.status === 'PENDING' && <MoneyForm label="Edit unpaid fee / bonus" amount={entry.amount} busy={busy} onSave={(amount, reason) => run(() => amendRiderEarning(id, entry.id, amount, reason), 'Unpaid amount updated and logged.')} />}
+    {receiptAllowed && entry.status === 'SENT' && <Receipt entry={entry} busy={busy} onDecision={(decision, reason) => run(() => confirmRiderPayment(entry.id, decision, reason), decision === 'confirm' ? 'Receipt confirmed. This payment is cleared.' : 'Non-receipt reported to the administrator.')} />}
+    </div></article>)}{!detail.entries.length && <p>No payment entries match this filter.</p>}
+    <div className="workspace-actions"><button className="button subtle" disabled={page === 1 || busy} onClick={() => setPage((value) => value - 1)} type="button">Previous</button><button className="button subtle" disabled={page >= detail.pages || busy} onClick={() => setPage((value) => value + 1)} type="button">Next</button></div>
+    {admin && selected.length > 0 && <form onSubmit={(event) => { event.preventDefault(); if (selectionCurrencies.length !== 1) { setMessage('Select one currency at a time.'); return; } if (window.confirm(`Have you already paid ${selectionCurrencies[0]} ${money(selectionTotal)} to this rider? This records the payment; it does not transfer money.`)) void run(() => sendRiderPayment(id, selection, reference), 'Payment sent for rider confirmation.'); }}><h3>Selected: {selected.length} entries · {selectionCurrencies.join(', ')} {money(selectionTotal)}</h3><label className="field"><span>Payment reference / method</span><input value={reference} onChange={(event) => setReference(event.target.value)} minLength={3} maxLength={200} required placeholder="Bank reference or cash payment note" /></label><button className="button primary" disabled={busy || selectionCurrencies.length !== 1} type="submit">Pay — I have sent this amount</button></form>}
+    </section><section className="surface-panel"><h3>Payment activity · latest 50</h3>{detail.log.map((event) => <details key={event.id}><summary>{event.action.replaceAll('rider-payment.', '').replaceAll('_', ' ')} · {new Date(event.createdAt).toLocaleString()}</summary><p>Recorded by {event.actorId}</p><pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{JSON.stringify(event.newValues, null, 2)}</pre></details>)}{!detail.log.length && <p>No payment actions recorded yet.</p>}</section></>}
+  </div>;
+}
+function MoneyForm({ label, amount = '', busy, onSave, reasonRequired = true }: { label: string; amount?: string; busy: boolean; reasonRequired?: boolean; onSave: (amount: string, reason: string) => Promise<void> }) {
+  return <form key={`${label}-${amount}`} className="compact-form-grid" onSubmit={(event) => { event.preventDefault(); const form = new FormData(event.currentTarget); void onSave(String(form.get('amount')), String(form.get('reason') || 'Default delivery fee updated')); }}><label className="field"><span>{label}</span><input name="amount" defaultValue={amount} inputMode="decimal" pattern="(0|[1-9][0-9]{0,9})(\.[0-9]{1,2})?" required placeholder="0.00" /></label>{reasonRequired && <label className="field"><span>Reason</span><input name="reason" minLength={3} maxLength={500} required /></label>}<button className="button subtle" disabled={busy} type="submit">Save</button></form>;
+}
+function Receipt({ entry, busy, onDecision }: { entry: RiderPaymentEntry; busy: boolean; onDecision: (decision: 'confirm' | 'dispute', reason?: string) => Promise<void> }) {
+  const [reason, setReason] = useState('');
+  return <div><p>Have you received {entry.currencyCode} {entry.amount}? Confirm only after receiving the money.</p><button className="button primary" disabled={busy} onClick={() => { if (window.confirm(`Confirm you received ${entry.currencyCode} ${entry.amount}?`)) void onDecision('confirm'); }} type="button">Yes, I received it</button><label className="field"><span>If not received, explain the problem</span><input value={reason} onChange={(event) => setReason(event.target.value)} maxLength={500} /></label><button className="button subtle" disabled={busy || !reason.trim()} onClick={() => void onDecision('dispute', reason)} type="button">Not received — notify admin</button></div>;
+}

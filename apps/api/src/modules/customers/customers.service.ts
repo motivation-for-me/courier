@@ -26,7 +26,7 @@ export class CustomersService {
   async listShopUsers(customerId: string, actor: AuthenticatedUser) {
     this.admin(actor);
     await this.requireCustomer(customerId, actor);
-    return this.prisma.user.findMany({ where: { organizationId: actor.organizationId, customerId, roles: { some: { role: { name: 'SHOP' } } } }, select: { id: true, displayName: true, email: true, phone: true, isActive: true, emailVerifiedAt: true, shopPermissions: true, createdAt: true }, orderBy: { displayName: 'asc' } });
+    return this.prisma.user.findMany({ where: { organizationId: actor.organizationId, customerId, deletedAt: null, roles: { some: { role: { name: 'SHOP' } } } }, select: { id: true, displayName: true, email: true, phone: true, isActive: true, emailVerifiedAt: true, shopPermissions: true, createdAt: true }, orderBy: { displayName: 'asc' } });
   }
 
   async createShopUser(customerId: string, input: CreateShopUserDto, actor: AuthenticatedUser) {
@@ -54,7 +54,7 @@ export class CustomersService {
     await this.requireCustomer(customerId, actor);
     const passwordHash = input.password ? await bcrypt.hash(input.password, 12) : undefined;
     return this.prisma.$transaction(async (transaction) => {
-      const user = await transaction.user.findFirst({ where: { id: userId, organizationId: actor.organizationId, customerId, roles: { some: { role: { name: 'SHOP' } } } }, include: { roles: { include: { role: true } } } });
+      const user = await transaction.user.findFirst({ where: { id: userId, organizationId: actor.organizationId, customerId, deletedAt: null, roles: { some: { role: { name: 'SHOP' } } } }, include: { roles: { include: { role: true } } } });
       if (!user || user.roles.some((assignment) => assignment.role.name !== 'SHOP')) throw new NotFoundException('Shop-only account not found');
       const updated = await transaction.user.update({ where: { id: user.id }, data: { ...(input.isActive !== undefined ? { isActive: input.isActive } : {}), ...(input.permissions ? { shopPermissions: input.permissions } : {}), ...(passwordHash ? { passwordHash } : {}), authVersion: { increment: 1 } }, select: { id: true, email: true, displayName: true, isActive: true, shopPermissions: true, emailVerifiedAt: true, createdAt: true } });
       await transaction.authSession.updateMany({ where: { userId, revokedAt: null }, data: { revokedAt: new Date() } });

@@ -83,6 +83,11 @@ export function NotificationInbox() {
     try {
       if (item) await readNotification(item.id); else await readAllNotifications();
       window.dispatchEvent(new Event(notificationsChanged));
+      if (item?.payload?.section === 'payments') {
+        if (item.payload.riderId) sessionStorage.setItem('swiftlog.payment-rider', item.payload.riderId);
+        window.dispatchEvent(new CustomEvent('swiftlog.open-payments'));
+        setOpen(false);
+      }
       if (item?.payload?.cnNumber) {
         sessionStorage.setItem('swiftlog.tracking-query', item.payload.cnNumber);
         window.dispatchEvent(new CustomEvent('swiftlog.open-tracking'));

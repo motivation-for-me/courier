@@ -5,6 +5,8 @@ import { PrismaService } from '../../infrastructure/prisma/prisma.service';
 import { AuthenticatedUser } from '../../common/auth.types';
 import { CreateRiderDto, UpdateRiderDto } from './dto/create-rider.dto';
 import { allowedRiderStatuses } from '../../common/rider-status';
+import { deleteAccount } from '../accounts/accounts.module';
+import { Prisma } from '@prisma/client';
 
 const riderPermissions = ['delivery:view', 'delivery:scan', 'delivery:update', 'delivery:complete', 'shipment:view', 'pickup:view', 'pickup:update'];
 
@@ -69,7 +71,7 @@ export class RidersService {
   list(actor: AuthenticatedUser) {
     this.requireAdmin(actor);
     return this.prisma.rider.findMany({
-      where: { organizationId: actor.organizationId, isActive: true },
+      where: { organizationId: actor.organizationId, isActive: true, deletedAt: null, user: { isActive: true, deletedAt: null } },
       orderBy: { createdAt: 'desc' },
       select: { id: true, employeeCode: true, isActive: true, vehicleDetails: true, serviceAreas: true, dailyCapacity: true, deliveryFee: true, availability: true, branch: { select: { id: true, name: true, code: true } }, user: { select: { id: true, displayName: true, email: true, phone: true } }, assignments: { where: { status: 'ACTIVE', consignment: { deletedAt: null, status: { notIn: ['DELIVERED', 'RETURNED', 'CANCELLED'] } } }, select: { consignmentId: true } }, earnings: { select: { amount: true, status: true } } },
     });
@@ -110,7 +112,7 @@ export class RidersService {
 
   async update(id: string, input: UpdateRiderDto, actor: AuthenticatedUser) {
     this.requireAdmin(actor);
-    const rider = await this.prisma.rider.findFirst({ where: { id, organizationId: actor.organizationId }, select: { id: true, userId: true } });
+    const rider = await this.prisma.rider.findFirst({ where: { id, organizationId: actor.organizationId, deletedAt: null }, select: { id: true, userId: true } });
     if (!rider) throw new NotFoundException('Rider not found');
     return this.prisma.$transaction(async (transaction) => {
       const account = await transaction.user.findUniqueOrThrow({ where: { id: rider.userId }, select: { email: true } });
@@ -126,10 +128,11 @@ export class RidersService {
 
   async remove(id: string, actor: AuthenticatedUser) {
     this.requireAdmin(actor);
-    const rider = await this.prisma.rider.findFirst({ where: { id, organizationId: actor.organizationId }, select: { id: true, userId: true, assignments: { where: { status: 'ACTIVE' }, select: { id: true } } } });
-    if (!rider) throw new NotFoundException('Rider not found');
-    if (rider.assignments.length) throw new BadRequestException('End or reassign active deliveries before removing this rider');
-    await this.prisma.$transaction([this.prisma.rider.update({ where: { id }, data: { isActive: false } }), this.prisma.user.update({ where: { id: rider.userId }, data: { isActive: false } }), this.prisma.authSession.updateMany({ where: { userId: rider.userId, revokedAt: null }, data: { revokedAt: new Date() } })]);
+    await this.prisma.$transaction(async (tx) => {
+      const rider = await tx.rider.findFirst({ where: { id, organizationId: actor.organizationId, deletedAt: null }, select: { userId: true } });
+      if (!rider) throw new NotFoundException('Rider not found');
+      await deleteAccount(tx, rider.userId, actor, 'RIDER');
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, maxWait: 10000, timeout: 30000 });
     return { success: true };
   }
 

@@ -7,6 +7,7 @@
       "entrypoint": "src/main.ts",
       "functions": {
         "**": {
+          "regions": ["bom1"],
           "includeFiles": "**/generated/{pdfkit-runtime.cjs,pdfkit-LICENSE}"
         }
       }

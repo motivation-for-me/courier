@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { AccountsModule } from './modules/accounts/accounts.module';
 import { PrismaModule } from './infrastructure/prisma/prisma.module';
 import { HealthModule } from './modules/health/health.module';
 //import { DomainModules } from './modules/domain-modules';
@@ -23,7 +24,7 @@ import { BranchesModule } from './modules/branches/branches.module';
 import { ShopFinancialsModule } from './modules/shop-financials/shop-financials.module';
 
 @Module({
-  imports: [ThrottlerModule.forRoot([{ ttl: 60_000, limit: 120 }]), PrismaModule, HealthModule, AuthModule, BranchesModule, CustomersModule, ShopFinancialsModule, RidersModule, ConsignmentsModule, ManifestsModule, DeliveryModule, PaymentsModule, TrackingModule, ReturnsModule, DocumentsModule, PickupsModule, TransitModule, NotificationsModule],
+  imports: [ThrottlerModule.forRoot([{ ttl: 60_000, limit: 120 }]), PrismaModule, AccountsModule, HealthModule, AuthModule, BranchesModule, CustomersModule, ShopFinancialsModule, RidersModule, ConsignmentsModule, ManifestsModule, DeliveryModule, PaymentsModule, TrackingModule, ReturnsModule, DocumentsModule, PickupsModule, TransitModule, NotificationsModule],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: AuthGuard },

@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query } from '@nestjs/common';
+import { RequirePermission } from '../../common/permissions.decorator';
 import { CurrentUser } from '../../common/current-user.decorator';
 import { AuthenticatedUser } from '../../common/auth.types';
 import { ChangePasswordDto, EmailRequestDto, EmailTokenDto, GoogleLoginDto, ResetPasswordDto } from './dto/account.dto';
@@ -11,6 +12,10 @@ import { Public } from '../../common/public.decorator';
 @Controller('auth')
 export class AuthController {
   constructor(private readonly auth: AuthService) {}
+
+  @Get('accounts')
+  @RequirePermission('user:view')
+  accounts(@CurrentUser() actor: AuthenticatedUser, @Query() query: { role?: string; search?: string; page?: string }) { return this.auth.listAccounts(actor, query); }
 
   @Post('login')
   @Public()

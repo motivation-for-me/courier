@@ -20,7 +20,17 @@ const sessionKey = 'courier.auth-session';
 export const sessionExpiredEvent = 'courier:session-expired';
 export const dataChangedEvent = 'courier:data-changed';
 
-export type AppNotification = { id: string; status: string; template: string; payload?: { title?: string; message?: string; consignmentId?: string; cnNumber?: string } | null; createdAt: string };
+export type AppNotification = { id: string; status: string; template: string; payload?: { title?: string; message?: string; consignmentId?: string; cnNumber?: string; section?: string; riderId?: string } | null; createdAt: string };
+export type RiderPaymentEntry = { id: string; amount: string; currencyCode: string; status: string; kind: string; note?: string | null; reference?: string | null; sentAt?: string | null; sentById?: string | null; confirmedAt?: string | null; confirmedById?: string | null; createdAt: string; consignment?: { id: string; cnNumber: string; deliveredAt?: string | null; serviceType: string; parties: Array<{ kind: string; name: string }>; addresses: Array<{ kind: string; addressLine: string; city?: string | null }> } | null };
+export type RiderPaymentTotal = { status: string; currencyCode: string; kind?: string; _count: { _all: number }; _sum: { amount: string | null } };
+export type RiderPaymentRider = { id: string; employeeCode: string; deliveryFee: string; isActive: boolean; user: { displayName: string; email: string }; totals: RiderPaymentTotal[] };
+export type RiderPaymentDetail = { rider: RiderPaymentRider & { organization: { currencyCode: string } }; entries: RiderPaymentEntry[]; totals: RiderPaymentTotal[]; missing: Array<{ id: string; cnNumber: string; deliveredAt?: string | null }>; missingCount: number; total: number; page: number; pages: number; log: Array<{ id: string; action: string; actorId: string; createdAt: string; newValues: unknown }> };
+export function getPaymentRiders() { return apiRequest<RiderPaymentRider[]>('/rider-payments'); }
+export function getRiderPayments(id: string, page = 1, status = '') { return apiRequest<RiderPaymentDetail>(`/rider-payments/${id}?page=${page}${status ? `&status=${status}` : ''}`); }
+export function recordRiderEarning(id: string, amount: string, reason: string, consignmentId?: string) { return apiRequest(`/rider-payments/${id}/entries`, { method: 'POST', body: JSON.stringify({ amount, reason, consignmentId }) }); }
+export function amendRiderEarning(id: string, entryId: string, amount: string, reason: string) { return apiRequest(`/rider-payments/${id}/entries/${entryId}`, { method: 'PATCH', body: JSON.stringify({ amount, reason }) }); }
+export function sendRiderPayment(id: string, ids: string[], reference: string) { return apiRequest(`/rider-payments/${id}/pay`, { method: 'POST', body: JSON.stringify({ ids, reference }) }); }
+export function confirmRiderPayment(entryId: string, decision: 'confirm' | 'dispute', reason?: string) { return apiRequest(`/rider-payments/entries/${entryId}/receipt`, { method: 'POST', body: JSON.stringify({ decision, reason }) }); }
 export function getNotificationInbox(unreadOnly = false) { return apiRequest<{ items: AppNotification[]; unread: number }>(`/notifications/inbox?unread=${unreadOnly}`); }
 export function getNotifications() { return apiRequest<AppNotification[]>('/notifications'); }
 export function sendRiderMessage(message: string) { return apiRequest<{ success: true; recipients: number }>('/notifications/rider-message', { method: 'POST', body: JSON.stringify({ message }) }); }
@@ -228,6 +238,14 @@ export function createCustomer(payload: { name: string; email?: string; phone?: 
 export function updateCustomer(id: string, payload: { name?: string; email?: string; phone?: string }) { return apiRequest<CustomerOption>(`/customers/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }); }
 export function deleteCustomer(id: string) { return apiRequest<{ success: true }>(`/customers/${id}`, { method: 'DELETE' }); }
 export type ShopUserOption = { id: string; displayName: string; email: string; phone?: string | null; isActive: boolean; createdAt: string; emailVerifiedAt?: string | null; shopPermissions?: string[] };
+export type AccountDirectoryResult = { total: number; page: number; pages: number; accounts: Array<{ id: string; displayName: string; email: string; phone?: string | null; roles: string[]; isActive: boolean; emailVerifiedAt?: string | null; customer?: { name: string } | null; rider?: { employeeCode: string } | null }> };
+export function getAccountDirectory(role: string, search: string, page: number) { const query = new URLSearchParams({ page: String(page) }); if (role) query.set('role', role); if (search) query.set('search', search); return apiRequest<AccountDirectoryResult>(`/auth/accounts?${query}`); }
+export type AccountInput = { displayName: string; email: string; phone: string; password?: string; isActive?: boolean; role?: string; employeeCode?: string; customerId?: string };
+export function saveAccount(id: string | null, input: AccountInput) { return apiRequest(id ? `/accounts/${id}` : '/accounts', { method: id ? 'PATCH' : 'POST', body: JSON.stringify(input) }); }
+export function deleteAccount(id: string) { return apiRequest(`/accounts/${id}`, { method: 'DELETE' }); }
+export type RecycleBinResult = { items: Array<{ id: string; label: string; entityType: string; createdAt: string }>; total: number; page: number; pages: number };
+export function getRecycleBin(type: string, search: string, page: number) { return apiRequest<RecycleBinResult>(`/recycle-bin?${new URLSearchParams({ type, search, page: String(page) })}`); }
+export function restoreDeletedRecord(id: string) { return apiRequest(`/recycle-bin/${id}/restore`, { method: 'POST', body: '{}' }); }
 export function updateShopUser(customerId: string, userId: string, payload: { isActive?: boolean; permissions?: string[]; password?: string }) { return apiRequest<ShopUserOption>(`/customers/${customerId}/users/${userId}`, { method: 'PATCH', body: JSON.stringify(payload) }); }
 export function getShopUsers(customerId: string) { return apiRequest<ShopUserOption[]>(`/customers/${customerId}/users`); }
 export function createShopUser(customerId: string, payload: { displayName: string; email: string; password: string; phone?: string }) { return apiRequest<ShopUserOption>(`/customers/${customerId}/users`, { method: 'POST', body: JSON.stringify(payload) }); }

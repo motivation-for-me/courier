@@ -125,6 +125,8 @@ enum ShopSettlementStatus {
 
 enum RiderEarningStatus {
   PENDING
+  SENT
+  DISPUTED
   PAID
   VOIDED
 }
@@ -222,6 +224,7 @@ model Location {
 }
 
 model User {
+  deletedAt          DateTime?
   id                 String              @id @default(uuid())
   organizationId     String
   customerId         String?
@@ -262,6 +265,7 @@ model User {
   updatedAt          DateTime            @updatedAt
 
   @@unique([organizationId, email])
+  @@index([organizationId, deletedAt, displayName])
   @@index([organizationId, branchId, hubId])
   @@index([organizationId, customerId, isActive])
 }
@@ -603,6 +607,7 @@ model DeliveryAttempt {
 }
 
 model Rider {
+  deletedAt      DateTime?
   id             String            @id @default(uuid())
   userId         String            @unique
   organizationId String
@@ -625,6 +630,7 @@ model Rider {
   updatedAt      DateTime          @updatedAt
 
   @@unique([organizationId, employeeCode])
+  @@index([organizationId, deletedAt])
   @@index([organizationId, branchId, isActive])
 }
 
@@ -632,7 +638,13 @@ model RiderEarning {
   id             String             @id @default(uuid())
   organizationId String
   riderId        String
-  consignmentId  String             @unique
+  consignmentId  String?            @unique
+  kind           String             @default("DELIVERY")
+  note           String?
+  sentById       String?
+  sentAt         DateTime?
+  confirmedById  String?
+  confirmedAt    DateTime?
   amount         Decimal            @db.Decimal(14, 2)
   currencyCode   String
   status         RiderEarningStatus @default(PENDING)
@@ -640,7 +652,7 @@ model RiderEarning {
   reference      String?
   organization   Organization       @relation(fields: [organizationId], references: [id])
   rider          Rider              @relation(fields: [riderId], references: [id], onDelete: Restrict)
-  consignment    Consignment        @relation(fields: [consignmentId], references: [id], onDelete: Restrict)
+  consignment    Consignment?       @relation(fields: [consignmentId], references: [id], onDelete: Restrict)
   createdAt      DateTime            @default(now())
 
   @@index([organizationId, status, createdAt])
@@ -962,4 +974,18 @@ model Setting {
   updatedAt      DateTime     @updatedAt
 
   @@unique([organizationId, scopeType, scopeId, key])
+}
+
+model RecycleBinItem {
+  id String @id @default(uuid())
+  organizationId String
+  entityType String
+  entityId String
+  label String
+  snapshot Json
+  deletedById String
+  createdAt DateTime @default(now())
+  restoredAt DateTime?
+  restoredById String?
+  @@index([organizationId, restoredAt, createdAt])
 }

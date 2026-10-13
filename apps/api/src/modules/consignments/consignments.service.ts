@@ -222,15 +222,16 @@ export class ConsignmentsService {
   async remove(id: string, actor: AuthenticatedUser) {
     if (!actor.roles.includes('ADMIN')) throw new ForbiddenException('Only an administrator can delete shipments');
     await this.prisma.$transaction(async (transaction) => {
-      const shipment = await transaction.consignment.findFirst({ where: { id, organizationId: actor.organizationId, deletedAt: null }, select: { id: true, status: true } });
+      const shipment = await transaction.consignment.findFirst({ where: { id, organizationId: actor.organizationId, deletedAt: null }, select: { id: true, status: true, cnNumber: true } });
       if (!shipment) throw new NotFoundException('Shipment not found');
       const deletedAt = new Date();
+      await transaction.recycleBinItem.create({ data: { organizationId: actor.organizationId, entityType: 'SHIPMENT', entityId: id, label: shipment.cnNumber, snapshot: { status: shipment.status }, deletedById: actor.id } });
       const changed = await transaction.consignment.updateMany({ where: { id, organizationId: actor.organizationId, deletedAt: null }, data: { deletedAt } });
       if (changed.count !== 1) throw new ConflictException('Shipment was already changed. Reload and try again.');
       await transaction.riderAssignment.updateMany({ where: { consignmentId: id, status: 'ACTIVE' }, data: { status: 'ENDED', endedAt: deletedAt } });
       await transaction.pickup.updateMany({ where: { consignmentId: id, status: { in: ['REQUESTED', 'ASSIGNED', 'IN_PROGRESS'] } }, data: { status: 'CANCELLED', failureReason: 'Shipment removed by administrator' } });
       await transaction.auditLog.create({ data: { organizationId: actor.organizationId, actorId: actor.id, action: 'dispatch.deleted', entityType: 'consignment', entityId: id, oldValues: { status: shipment.status }, newValues: { deletedAt, activeAssignmentsEnded: true, activePickupCancelled: true } } });
-    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, maxWait: 10000, timeout: 30000 });
     return { success: true };
   }
 

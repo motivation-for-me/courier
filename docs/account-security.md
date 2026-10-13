@@ -27,6 +27,10 @@ Empty credentials show configuration errors; the application never simulates ema
 
 ## Deployment
 
+The separate Payments section and its required migration are documented in [rider-payments.md](rider-payments.md). Deploy the API and web together after applying `20261013090000_rider_payment_confirmation`; payment receipt confirmation depends on the new fields and enum values.
+
+The Supabase primary database is in Mumbai (`ap-south-1`). The API function configuration and the web API proxy's `preferredRegion` therefore target Vercel Mumbai (`bom1`) to avoid routing database work through Washington. Redeploy to apply this placement, then verify both services' invocation region and compare warm request durations. Region placement reduces network distance; it does not guarantee a particular response time or remove query/cold-start costs.
+
 The API build runs `prepare:pdf`, which copies the pinned PDFKit self-contained renderer and its license into `src/generated`. Nest copies these assets into `dist/generated`, and Vercel explicitly includes them in the API function. Fonts and PDF dependencies are embedded in this renderer; PDF downloads no longer resolve the PDFKit package from runtime `node_modules`. Missing build inputs fail the build. Development and test scripts also prepare the runtime automatically. Deploy the updated build scripts, Nest configuration and Vercel configuration together; older deployments can fail with `Cannot find module 'pdfkit'`. After deployment, check `/api/v1/auth/config`, `/api/v1/health/ready`, password sign-in and a shipment PDF download.
 
 1. Ensure every account that needs access has a real email inbox. Correct old placeholder addresses through trusted administrative/database tooling before enforcing verification.
@@ -44,6 +48,10 @@ New dispatch PDFs encode `/scan/{CN}`. This page offers rider access and custome
 Customer tracking links remain available from the shipment list. The public tracking API never returns the receiver phone number, including when a signed customer link is used. Public HTML also omits the receiver phone. Existing printed QR codes continue using their original tracking URLs; download/reprint the PDF for the rider QR flow.
 
 ## Shop access
+
+Management → All accounts provides a paginated organization-wide account directory, including disabled accounts, role filtering and search by name/email/phone. It exposes account identity and verification status, never password hashes, sessions or provider identifiers. The API independently requires an administrator role and `user:view`. Google sign-in continues to require an existing active account and must match its current administrator-managed email, even for a previously linked Google identity. Google sign-in remains disabled unless explicitly configured and enabled.
+
+Delivery commands use serializable transactions with a 10-second acquisition wait and 30-second execution limit, replacing Prisma's five-second default for completion, failure and status updates. Completion preserves atomic shipment/payment/event/notification writes and idempotent replay. A transaction error rolls back the command; live database latency and connection failures still require production monitoring.
 
 Open **Management → Shops → select shop → Access**. Create a login, enable/disable it, set shipment and PDF permissions, set a new password, or send verification/reset emails. Disabled accounts remain visible for re-enabling. Permission changes invalidate old access and refresh sessions immediately. Shop permissions never grant access to another shop or company; admin/rider privileges cannot be assigned through this editor. Password changes are audited without recording passwords.
 

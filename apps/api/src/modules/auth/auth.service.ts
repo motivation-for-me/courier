@@ -1,6 +1,6 @@
 import { requirePasswordBytes } from '../../common/password';
 import { requireEmailConfiguration, sendAccountEmail } from './account-email';
-import { ConflictException, ForbiddenException, Injectable, ServiceUnavailableException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, ServiceUnavailableException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { randomBytes, createHash } from 'node:crypto';
@@ -15,9 +15,24 @@ export class AuthService {
     private readonly jwt: JwtService,
   ) {}
 
+  async listAccounts(actor: AuthenticatedUser, query: { role?: string; search?: string; page?: string }) {
+    if (!actor.roles.includes('ADMIN')) throw new ForbiddenException('Administrator access required');
+    const page = Number(query.page || 1);
+    if (!Number.isInteger(page) || page < 1 || page > 100000) throw new BadRequestException('Invalid account page');
+    const role = query.role?.trim();
+    if (role && !/^[A-Z_]{1,40}$/.test(role)) throw new BadRequestException('Invalid role filter');
+    const search = query.search?.trim().slice(0, 200);
+    const where = { organizationId: actor.organizationId, deletedAt: null, ...(role ? { roles: { some: { role: { name: role } } } } : {}), ...(search ? { OR: [{ displayName: { contains: search, mode: 'insensitive' as const } }, { email: { contains: search, mode: 'insensitive' as const } }, { phone: { contains: search } }] } : {}) };
+    const [total, users] = await Promise.all([
+      this.prisma.user.count({ where }),
+      this.prisma.user.findMany({ where, skip: (page - 1) * 50, take: 50, orderBy: [{ displayName: 'asc' }, { id: 'asc' }], select: { id: true, displayName: true, email: true, phone: true, isActive: true, emailVerifiedAt: true, createdAt: true, roles: { select: { role: { select: { name: true } } } }, rider: { select: { employeeCode: true } }, customer: { select: { name: true } } } }),
+    ]);
+    return { total, page, pages: Math.max(1, Math.ceil(total / 50)), accounts: users.map((user) => ({ ...user, roles: user.roles.map(({ role }) => role.name) })) };
+  }
+
   async login(input: LoginDto) {
     const matches = await this.prisma.user.findMany({
-      where: { email: input.email.trim().toLowerCase(), isActive: true },
+      where: { email: input.email.trim().toLowerCase(), isActive: true, deletedAt: null },
       include: { roles: { include: { role: { include: { permissions: { include: { permission: true } } } } } }, rider: true },
       take: 2,
     });
@@ -62,7 +77,7 @@ export class AuthService {
     const nextRefreshToken = randomBytes(48).toString('base64url');
     const authenticated = await this.prisma.$transaction(async (transaction) => {
       const user = await transaction.user.findFirst({
-        where: { id: session.userId, isActive: true },
+        where: { id: session.userId, isActive: true, deletedAt: null },
         include: { roles: { include: { role: { include: { permissions: { include: { permission: true } } } } } }, rider: true },
       });
       if (!user || (process.env.REQUIRE_EMAIL_VERIFICATION === 'true' && !user.emailVerifiedAt)) throw new UnauthorizedException('Invalid refresh session');
@@ -92,7 +107,7 @@ export class AuthService {
 
 
   async currentUser(id: string) {
-    const user = await this.prisma.user.findFirst({ where: { id, isActive: true }, include: { roles: { include: { role: { include: { permissions: { include: { permission: true } } } } } }, rider: true } });
+    const user = await this.prisma.user.findFirst({ where: { id, isActive: true, deletedAt: null }, include: { roles: { include: { role: { include: { permissions: { include: { permission: true } } } } } }, rider: true } });
     if (!user || (process.env.REQUIRE_EMAIL_VERIFICATION === 'true' && !user.emailVerifiedAt)) throw new UnauthorizedException('Account unavailable or email not verified');
     return this.toAuthenticatedUser(user);
   }
@@ -100,7 +115,7 @@ export class AuthService {
   async requestEmail(email: string, purpose: 'VERIFY_EMAIL' | 'RESET_PASSWORD') {
     requireEmailConfiguration();
     const message = 'If an eligible account exists, an email with the next steps will be sent.';
-    const users = await this.prisma.user.findMany({ where: { email: email.trim().toLowerCase(), isActive: true }, take: 2 });
+    const users = await this.prisma.user.findMany({ where: { email: email.trim().toLowerCase(), isActive: true, deletedAt: null }, take: 2 });
     if (users.length !== 1 || (purpose === 'VERIFY_EMAIL' && users[0].emailVerifiedAt)) return { message };
     const user = users[0];
     const token = randomBytes(32).toString('base64url');
@@ -117,7 +132,7 @@ export class AuthService {
     const passwordHash = password ? await bcrypt.hash(password, 12) : undefined;
     return this.prisma.$transaction(async (transaction) => {
       const action = await transaction.emailAction.findUnique({ where: { tokenHash: this.hash(token) }, include: { user: true } });
-      if (!action || action.purpose !== purpose || action.consumedAt || action.expiresAt <= new Date() || !action.user.isActive || action.emailAddress !== action.user.email) throw new UnauthorizedException('This link is invalid or expired. Request a new email.');
+      if (!action || action.purpose !== purpose || action.consumedAt || action.expiresAt <= new Date() || !action.user.isActive || action.user.deletedAt || action.emailAddress !== action.user.email) throw new UnauthorizedException('This link is invalid or expired. Request a new email.');
       const claimed = await transaction.emailAction.updateMany({ where: { id: action.id, consumedAt: null, expiresAt: { gt: new Date() } }, data: { consumedAt: new Date() } });
       if (claimed.count !== 1) throw new UnauthorizedException('This link has already been used.');
       await transaction.user.update({ where: { id: action.userId }, data: { emailVerifiedAt: new Date(), authVersion: { increment: 1 }, ...(passwordHash ? { passwordHash } : {}) } });
@@ -159,13 +174,14 @@ export class AuthService {
     if (!user) {
       // Google is authoritative for Gmail and verified Workspace addresses only.
       if (!payload.email.endsWith('@gmail.com') && !payload.hd) throw new UnauthorizedException('Use email and password for this address.');
-      const matches = await this.prisma.user.findMany({ where: { email: payload.email.toLowerCase(), isActive: true }, include, take: 2 });
+      const matches = await this.prisma.user.findMany({ where: { email: payload.email.toLowerCase(), isActive: true, deletedAt: null }, include, take: 2 });
       if (matches.length !== 1 || matches[0].googleSubject) throw new UnauthorizedException('An administrator must create an active account for this email first.');
-      const linked = await this.prisma.user.updateMany({ where: { id: matches[0].id, googleSubject: null, isActive: true }, data: { googleSubject: payload.sub, emailVerifiedAt: new Date(), authVersion: { increment: 1 } } });
+      const linked = await this.prisma.user.updateMany({ where: { id: matches[0].id, googleSubject: null, isActive: true, deletedAt: null }, data: { googleSubject: payload.sub, emailVerifiedAt: new Date(), authVersion: { increment: 1 } } });
       if (linked.count !== 1) throw new UnauthorizedException('Account changed. Please sign in again.');
       user = await this.prisma.user.findUniqueOrThrow({ where: { id: matches[0].id }, include });
     }
-    if (!user.isActive) throw new UnauthorizedException('Account disabled');
+    if (!user.isActive || user.deletedAt) throw new UnauthorizedException('Account disabled');
+    if (user.email.toLowerCase() !== payload.email.toLowerCase()) throw new UnauthorizedException('Google email must match the account email approved by your administrator.');
     return this.issueSession(user);
   }
 

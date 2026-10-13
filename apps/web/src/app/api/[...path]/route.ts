@@ -1,6 +1,7 @@
 import type { NextRequest } from 'next/server';
 
 export const runtime = 'nodejs';
+export const preferredRegion = 'bom1';
 export const dynamic = 'force-dynamic';
 
 const excludedRequestHeaders = new Set(['connection', 'content-length', 'host', 'transfer-encoding']);

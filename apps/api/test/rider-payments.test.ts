@@ -1,0 +1,74 @@
+import { test } from 'node:test';
+import * as assert from 'node:assert/strict';
+import { validate } from 'class-validator';
+import { Prisma } from '@prisma/client';
+import { RiderPaymentsService } from '../src/modules/riders/rider-payments.service';
+import { RiderMoneyDto, RiderPayDto } from '../src/modules/riders/rider-payments.dto';
+
+const admin: any = { id: 'admin', organizationId: 'company', roles: ['ADMIN'] };
+const rider: any = { id: 'rider-user', riderId: 'rider', organizationId: 'company', roles: ['RIDER'] };
+const profile = { id: 'rider', userId: rider.id, organization: { currencyCode: 'PKR' } };
+
+test('money validation rejects negative, exponent, excess precision and duplicate payment selections', async () => {
+  for (const amount of ['-1', '1e3', 'NaN', '0.001', '99999999999']) assert.ok((await validate(Object.assign(new RiderMoneyDto(), { amount, reason: 'Valid reason' }))).length);
+  assert.equal((await validate(Object.assign(new RiderMoneyDto(), { amount: '123.45', reason: 'Agreed fee' }))).length, 0);
+  const id = '00000000-0000-4000-8000-000000000001';
+  assert.ok((await validate(Object.assign(new RiderPayDto(), { ids: [id, id], reference: 'cash' }))).length);
+});
+test('admin pay reserves fees and bonuses atomically with exact totals and a receipt notification', async () => {
+  let write: any; let alert: any; let audit: any;
+  const entries = [{ id: 'fee', amount: new Prisma.Decimal('0.10'), currencyCode: 'PKR' }, { id: 'bonus', amount: new Prisma.Decimal('0.20'), currencyCode: 'PKR' }];
+  const tx: any = { riderEarning: { findMany: async () => entries, updateMany: async (input: any) => { write = input; return { count: 2 }; } }, auditLog: { create: async (input: any) => { audit = input.data; } }, notification: { create: async (input: any) => { alert = input.data; } } };
+  const service = new RiderPaymentsService({ rider: { findFirst: async () => profile }, $transaction: (callback: any) => callback(tx) } as any);
+  await service.pay(admin, 'rider', { ids: ['fee', 'bonus'], reference: 'bank-123' });
+  assert.equal(write.where.organizationId, admin.organizationId);
+  assert.equal(write.data.status, 'SENT');
+  assert.equal(write.data.sentById, admin.id);
+  assert.equal(write.data.paidAt, null);
+  assert.equal(audit.newValues.amount, '0.30');
+  assert.equal(alert.recipientId, rider.id);
+  assert.equal(alert.payload.section, 'payments');
+  await assert.rejects(service.pay(rider, 'rider', { ids: ['fee'], reference: 'cash' }), /Administrator/);
+  await assert.rejects(service.pay({ ...admin, id: rider.id }, 'rider', { ids: ['fee'], reference: 'cash' }), /Another administrator/);
+});
+test('pay refuses stale selection, mixed currencies and concurrent state changes before notification', async () => {
+  const tx: any = { riderEarning: { findMany: async () => [], updateMany: async () => ({ count: 0 }) }, notification: { create: () => assert.fail('Failed payment must not notify') }, auditLog: { create: () => assert.fail('Failed payment must not audit success') } };
+  const service = new RiderPaymentsService({ rider: { findFirst: async () => profile }, $transaction: (callback: any) => callback(tx) } as any);
+  await assert.rejects(service.pay(admin, 'rider', { ids: ['fee'], reference: 'cash' }), /already sent/);
+  tx.riderEarning.findMany = async () => [{ currencyCode: 'PKR', amount: new Prisma.Decimal(100) }, { currencyCode: 'AED', amount: new Prisma.Decimal(100) }];
+  await assert.rejects(service.pay(admin, 'rider', { ids: ['fee', 'bonus'], reference: 'cash' }), /one currency/);
+  tx.riderEarning.findMany = async () => [{ currencyCode: 'PKR', amount: new Prisma.Decimal(100) }];
+  await assert.rejects(service.pay(admin, 'rider', { ids: ['fee'], reference: 'cash' }), /Payment changed/);
+});
+test('receipt is rider-scoped and clears only a payment sent by a separate administrator', async () => {
+  let query: any; let update: any; let activity: any; let notifications: any;
+  let entry: any = { id: 'fee', sentById: admin.id, amount: new Prisma.Decimal(100), currencyCode: 'PKR', reference: 'cash' };
+  const tx: any = { riderEarning: { findFirst: async (input: any) => { query = input; return entry; }, updateMany: async (input: any) => { update = input; return { count: 1 }; } }, auditLog: { create: async (input: any) => { activity = input.data; } }, user: { findMany: async () => [{ id: admin.id }] }, notification: { createMany: async (input: any) => { notifications = input.data; } } };
+  const service = new RiderPaymentsService({ $transaction: (callback: any) => callback(tx) } as any);
+  await service.receipt(rider, 'fee', { decision: 'confirm' });
+  assert.equal(query.where.riderId, rider.riderId);
+  assert.equal(query.where.organizationId, rider.organizationId);
+  assert.equal(query.where.status, 'SENT');
+  assert.equal(update.data.status, 'PAID');
+  assert.equal(update.data.confirmedById, rider.id);
+  assert.ok(update.data.confirmedAt instanceof Date);
+  assert.equal(activity.action, 'rider-payment.confirmed');
+  assert.equal(notifications[0].recipientId, admin.id);
+  await service.receipt(rider, 'fee', { decision: 'dispute', reason: 'No bank transfer received' });
+  assert.deepEqual(update.data, { status: 'DISPUTED' });
+  assert.equal(activity.action, 'rider-payment.disputed');
+  entry = { ...entry, sentById: rider.id };
+  await assert.rejects(service.receipt(rider, 'fee', { decision: 'confirm' }), /Separate administrator/);
+  entry = null;
+  await assert.rejects(service.receipt(rider, 'fee', { decision: 'confirm' }), /not awaiting/);
+  await assert.rejects(service.receipt(admin, 'fee', { decision: 'confirm' }), /Rider identity/);
+});
+test('amount editing never changes paid or sent records and bonus creation requires admin ownership', async () => {
+  const tx: any = { riderEarning: { findFirst: async () => null } };
+  const service = new RiderPaymentsService({ rider: { findFirst: async () => profile }, $transaction: (callback: any) => callback(tx) } as any);
+  await assert.rejects(service.amend(admin, 'rider', 'paid-entry', { amount: '100', reason: 'Correction' }), /Only unpaid/);
+  await assert.rejects(service.record(rider, 'rider', { amount: '100', reason: 'Bonus' }), /Administrator/);
+  await assert.rejects(service.detail(rider, 'another-rider'), /Own payments/);
+  tx.consignment = { findFirst: async () => ({ events: [{ riderId: 'another-rider' }] }) };
+  await assert.rejects(service.record(admin, 'rider', { amount: '100', reason: 'Older delivery', consignmentId: 'parcel' }), /not completed by this rider/);
+});

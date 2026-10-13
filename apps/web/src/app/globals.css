@@ -1440,3 +1440,55 @@ img,svg,video,canvas { max-width:100%; }
 .assignment-loading i { height:48px; border-radius:8px; background:var(--surface-low); animation:tracking-fade 1s ease-in-out infinite alternate; }
 @media (max-width:720px) { .assignment-backdrop { align-items:end; padding:0; overflow:hidden; } .assignment-panel { width:100%; max-height:90dvh; border-radius:14px 14px 0 0; } .assignment-panel>header { padding:15px; } .rider-recommendations { padding-inline:14px; } .rider-recommendations article { grid-template-columns:25px minmax(0,1fr) auto; } .rider-recommendations article>.button { grid-column:2/-1; width:100%; } .availability { align-self:start; } }
 @media (prefers-reduced-motion:reduce) { .assignment-loading i { animation:none; } }
+.rider-payments-page > .surface-panel { margin-bottom:18px; }
+.rider-payments-page .financial-metrics { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:16px; margin-block:14px; }
+.rider-payments-page .financial-metrics > div { background:var(--surface-low); border:1px solid var(--line); border-radius:8px; padding:14px; }
+.rider-payments-page .financial-metrics p { margin-block:8px; font-size:13px; }
+.rider-payments-page .payment-entry { border-top:1px solid var(--line); padding-block:20px; overflow-wrap:anywhere; }
+.rider-payments-page .payment-entry h4 { margin-bottom:10px; }
+.rider-payments-page .payment-entry p { margin-block:8px; }
+.rider-payments-page .compact-form-grid { margin-block:16px; }
+.rider-payments-page input[type=checkbox] { width:18px; height:18px; vertical-align:middle; margin-right:8px; }
+@media (max-width:720px) { .rider-payments-page .financial-metrics { grid-template-columns:1fr; } .rider-payments-page .compact-form-grid { grid-template-columns:1fr; } }
+
+/* Account management and recovery */
+.account-directory .surface-panel { margin-bottom: 20px; }
+.account-toolbar { display: grid; grid-template-columns: minmax(200px, 1fr) minmax(140px, 240px) auto; align-items: end; gap: 16px; margin-bottom: 24px; }
+.account-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.account-editor .panel-heading { margin-bottom: 20px; }
+.account-access { display: flex; align-items: center; gap: 10px; }
+.account-access input { width: 18px; height: 18px; }
+.account-table { width: 100%; border-collapse: collapse; }
+.account-table th { padding: 14px 16px; text-align: left; }
+.account-table td { padding: 20px 16px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.account-table small { display: block; margin-top: 6px; color: var(--muted); overflow-wrap: anywhere; }
+.account-identity { display: flex; align-items: center; gap: 12px; min-width: 220px; }
+.account-avatar { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: var(--orange-soft); color: #bd430d; font-weight: 700; flex-shrink: 0; }
+.account-role-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.account-chip { display: inline-flex; align-items: center; padding: 5px 9px; border: 1px solid var(--line); border-radius: 6px; font-size: 12px; font-weight: 600; }
+.account-chip.active { color: #16704d; background: #ecf8f1; border-color: #b9e2cd; }
+.account-chip.disabled { color: #76500c; background: #fff5dc; border-color: #eddbad; }
+.account-delete { color: #b42318; }
+.account-delete-review { max-width: 300px; padding-top: 12px; }
+.account-delete-review .button { margin: 4px 6px 0 0; }
+.account-pagination { margin-top: 24px; }
+.account-directory .muted { color: var(--muted); margin: 18px 0; }
+.account-directory button:focus-visible, .account-directory input:focus-visible, .account-directory select:focus-visible { outline: 2px solid #f4511e; outline-offset: 3px; }
+@media (max-width: 700px) {
+ .account-toolbar, .account-form-grid { grid-template-columns: 1fr; }
+ .account-directory .page-header { align-items: flex-start; gap: 16px; flex-direction: column; }
+ .account-directory .workspace-actions { flex-wrap: wrap; }
+ .account-table { min-width: 700px; }
+ .account-directory .table-wrap { overflow-x: auto; }
+}
+
+
+@media (max-width: 820px) {
+ .account-directory .table-wrap { overflow-x: auto; }
+ .account-table { display: table; min-width: 700px; }
+ .account-table thead { display: table-header-group; position: static; width: auto; height: auto; clip: auto; overflow: visible; }
+ .account-table tbody { display: table-row-group; }
+ .account-table tr { display: table-row; padding: 0; border: 0; border-radius: 0; box-shadow: none; }
+ .account-table th, .account-table td { display: table-cell; width: auto; }
+}
+

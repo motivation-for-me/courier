@@ -1,17 +1,18 @@
 'use client';
 import { AccountLogin } from './account-login';
+import { RiderPayments } from './rider-payments';
 
 import { NotificationInbox } from './notification-inbox';
 
 import { Fragment, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { completePickup, completeRiderDelivery, createConsignment, dataChangedEvent, failPickup, failRiderDelivery, getAccessTokenExpiry, getAssignedPickups, getConsignments, getMyRiderAssignments, getMyRiderFinance, getNotifications, getSession, login, logout, openDispatchDocument, readAllNotifications, readNotification, sendRiderMessage, sessionExpiredEvent, startPickup, unlockRiderDispatch, updateRiderDispatchStatus, type ApiError, type AppNotification, type AuthSession, type PickupAssignment, type RiderDeliveryAssignment, type RiderFinanceSummary, type RiderScanResult, type RiderStatus } from '../lib/api';
+import { completePickup, completeRiderDelivery, createConsignment, dataChangedEvent, failPickup, failRiderDelivery, getAccessTokenExpiry, getAssignedPickups, getConsignments, getMyRiderAssignments, getNotifications, getSession, login, logout, openDispatchDocument, readAllNotifications, readNotification, sendRiderMessage, sessionExpiredEvent, startPickup, unlockRiderDispatch, updateRiderDispatchStatus, type ApiError, type AppNotification, type AuthSession, type PickupAssignment, type RiderDeliveryAssignment, type RiderScanResult, type RiderStatus } from '../lib/api';
 import { DispatchCreate } from './dispatch-create';
 import { DispatchDashboard, DispatchList, TrackingView } from './dispatch-views';
 import { RiderManagement } from './rider-management';
 import { SettingsPanel } from './settings-panel';
 
-type View = 'shipments' | 'dashboard' | 'consignments' | 'booking' | 'tracking' | 'rider' | 'riders' | 'manifest' | 'settings';
+type View = 'shipments' | 'dashboard' | 'consignments' | 'booking' | 'tracking' | 'rider' | 'riders' | 'manifest' | 'settings' | 'payments';
 
 type NavItem = { label: string; icon: string; view: View; permission?: string };
 type NavGroup = { label: string; items: NavItem[] };
@@ -31,6 +32,7 @@ const navigation: NavGroup[] = [
     label: 'Delivery',
     items: [
       { label: 'Rider Workspace', icon: 'two_wheeler', view: 'rider', permission: 'delivery:view' },
+      { label: 'Payments', icon: 'payments', view: 'payments' },
       { label: 'Management', icon: 'settings_suggest', view: 'riders', permission: 'user:view' },
     ],
   },
@@ -64,7 +66,7 @@ function StatusBadge({ status }: { status: string }) {
 
 function Sidebar({ activeView, onNavigate, user, collapsed }: { activeView: View; onNavigate: (view: View) => void; user: AuthSession['user']; collapsed: boolean }) {
   const riderOnly = user.roles.length === 1 && user.roles.includes('RIDER');
-  const visible = (item: NavItem) => riderOnly ? ['rider', 'settings'].includes(item.view) : (item.view === 'rider' && user.roles.includes('RIDER')) || ((!item.permission || user.permissions.includes(item.permission)) && (!['riders','settings'].includes(item.view) || user.roles.includes('ADMIN')));
+  const visible = (item: NavItem) => item.view === 'payments' ? user.roles.some((role) => ['ADMIN', 'RIDER'].includes(role)) : riderOnly ? ['rider', 'payments', 'settings'].includes(item.view) : (item.view === 'rider' && user.roles.includes('RIDER')) || ((!item.permission || user.permissions.includes(item.permission)) && (!['riders','settings'].includes(item.view) || user.roles.includes('ADMIN')));
   return (
     <aside className="sidebar">
       <div className="brand-lockup"><div className="brand-wordmark" aria-label="SwiftLog">Swift<span>Log</span></div></div>
@@ -87,7 +89,7 @@ function Sidebar({ activeView, onNavigate, user, collapsed }: { activeView: View
 }
 
 function MobileNavigation({ activeView, onNavigate, riderOnly = false, isAdmin = false, hasRider = false }: { activeView: View; onNavigate: (view: View) => void; riderOnly?: boolean; isAdmin?: boolean; hasRider?: boolean }) {
-  const items: Array<[View, string, string]> = riderOnly ? [['rider', 'two_wheeler', 'Deliveries'], ['settings', 'settings', 'Account']] : isAdmin ? [['dashboard', 'speed', 'Home'], ['shipments', 'inventory_2', 'Shipments'], ['consignments', 'history', 'History'], ['booking', 'add_circle', 'Create'], ['tracking', 'qr_code_scanner', 'Track'], ['riders', 'manage_accounts', 'Manage'], ['settings', 'settings', 'Account'], ...(hasRider ? [['rider', 'two_wheeler', 'Rider'] as [View, string, string]] : [])] : [['dashboard', 'speed', 'Home'], ['shipments', 'inventory_2', 'Shipments'], ['consignments', 'history', 'History'], ['booking', 'add_circle', 'Create'], ['tracking', 'qr_code_scanner', 'Track'], ['settings', 'settings', 'Account']];
+  const items: Array<[View, string, string]> = riderOnly ? [['rider', 'two_wheeler', 'Deliveries'], ['payments', 'payments', 'Payments'], ['settings', 'settings', 'Account']] : isAdmin ? [['dashboard', 'speed', 'Home'], ['shipments', 'inventory_2', 'Shipments'], ['consignments', 'history', 'History'], ['booking', 'add_circle', 'Create'], ['tracking', 'qr_code_scanner', 'Track'], ['riders', 'manage_accounts', 'Manage'], ['payments', 'payments', 'Payments'], ['settings', 'settings', 'Account'], ...(hasRider ? [['rider', 'two_wheeler', 'Rider'] as [View, string, string]] : [])] : [['dashboard', 'speed', 'Home'], ['shipments', 'inventory_2', 'Shipments'], ['consignments', 'history', 'History'], ['booking', 'add_circle', 'Create'], ['tracking', 'qr_code_scanner', 'Track'], ['settings', 'settings', 'Account']];
   return <nav className="mobile-nav" aria-label="Mobile navigation"><div className="mobile-dock">{items.filter(([view]) => view === 'booking' ? getSession()?.user.permissions.includes('shipment:create') : ['shipments', 'consignments', 'tracking'].includes(view) ? getSession()?.user.permissions.includes('shipment:view') : true).map(([view, icon, label]) => <button key={view} aria-label={label} className={activeView === view ? 'active' : ''} onClick={() => onNavigate(view)} type="button"><Icon name={icon} /><span>{label}</span></button>)}</div></nav>;
 }
 
@@ -98,7 +100,7 @@ function LegacyHeader({ view, onNavigate }: { view: View; onNavigate: (view: Vie
 
 
 function Header({ view, onNavigate, collapsed, onToggleSidebar, onLogout, riderOnly = false }: { view: View; onNavigate: (view: View) => void; collapsed: boolean; onToggleSidebar: () => void; onLogout: () => void; riderOnly?: boolean }) {
-  const title = view === 'dashboard' ? 'Courier dashboard' : view === 'shipments' ? 'Shipments' : view === 'consignments' ? 'Shipment history' : view === 'booking' ? 'Create shipment' : view === 'rider' ? 'Rider workspace' : view === 'riders' ? 'Management' : view === 'settings' ? 'Settings' : 'Track shipment';
+  const title = view === 'dashboard' ? 'Courier dashboard' : view === 'shipments' ? 'Shipments' : view === 'consignments' ? 'Shipment history' : view === 'booking' ? 'Create shipment' : view === 'rider' ? 'Rider workspace' : view === 'riders' ? 'Management' : view === 'payments' ? 'Payments' : view === 'settings' ? 'Settings' : 'Track shipment';
   return <header className="topbar"><div className="topbar-leading"><button aria-label={collapsed ? 'Open sidebar' : 'Close sidebar'} aria-expanded={!collapsed} className="icon-button sidebar-toggle" onClick={onToggleSidebar} type="button"><Icon name={collapsed ? 'dock_to_right' : 'dock_to_left'} /></button><div className="topbar-title"><span className="eyebrow">OPERATIONS</span><h1>{title}</h1></div></div><div className="topbar-actions">{!riderOnly && <label className="global-search"><Icon name="search" /><input aria-label="Search consignments" placeholder="Search CN or rider" /><kbd>CTRL K</kbd></label>}<button aria-label="Scan QR code" className="icon-button scanner" onClick={() => onNavigate(riderOnly ? 'rider' : 'tracking')} type="button"><Icon name="qr_code_scanner" /></button><div className="mobile-notifications"><NotificationInbox /></div><button aria-label="Log out" className="icon-button logout-button" title="Log out" onClick={onLogout} type="button"><Icon name="logout" /></button></div></header>;
 }
 
@@ -136,7 +138,6 @@ function RiderHome({ initialCn = '' }: { initialCn?: string }) {
   const [dispatch, setDispatch] = useState<RiderScanResult | null>(null);
   const [pickups, setPickups] = useState<PickupAssignment[]>([]);
   const [assignments, setAssignments] = useState<RiderDeliveryAssignment[]>([]);
-  const [finance, setFinance] = useState<RiderFinanceSummary | null>(null);
   const [remarks, setRemarks] = useState('');
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
@@ -148,7 +149,7 @@ function RiderHome({ initialCn = '' }: { initialCn?: string }) {
   const [initialLoading, setInitialLoading] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const loadWork = () => Promise.all([getAssignedPickups(), getMyRiderAssignments(), getMyRiderFinance()]).then(([pickupRows, assignmentRows, financeSummary]) => { setPickups(pickupRows); setAssignments(assignmentRows); setFinance(financeSummary); }).catch((error: ApiError) => setMessage(error.message));
+  const loadWork = () => Promise.all([getAssignedPickups(), getMyRiderAssignments()]).then(([pickupRows, assignmentRows]) => { setPickups(pickupRows); setAssignments(assignmentRows); }).catch((error: ApiError) => setMessage(error.message));
   useEffect(() => { void loadWork().finally(() => setInitialLoading(false)); }, []);
   useEffect(() => { if (initialCn) void openShipment(initialCn); }, [initialCn]);
   useEffect(() => () => streamRef.current?.getTracks().forEach((track) => track.stop()), []);
@@ -259,17 +260,11 @@ function RiderHome({ initialCn = '' }: { initialCn?: string }) {
     })}</div>
   </section> : null;
 
-  const financeSummary = finance && <section className="surface-panel rider-finance-summary">
-    <div className="panel-heading"><div><span className="eyebrow">MY EARNINGS</span><h3>Ride and payment summary</h3></div><small>{finance.currencyCode} {Number(finance.deliveryFee).toFixed(2)} per completed delivery</small></div>
-    <div className="rider-finance-grid"><MetricCard label="Completed rides" value={String(finance.completed)} note={`${finance.completedThisMonth} this month`} icon="route" /><MetricCard label="Completed today" value={String(finance.completedToday)} note="Paid rides recorded" icon="task_alt" /><MetricCard label="Pending pay" value={`${finance.currencyCode} ${finance.pending.toFixed(2)}`} note="Awaiting payment" icon="pending_actions" /><MetricCard label="Paid earnings" value={`${finance.currencyCode} ${finance.paid.toFixed(2)}`} note="Total paid" icon="payments" /></div>
-    {finance.recent.length > 0 && <div className="rider-earning-list">{finance.recent.map((earning) => <div key={earning.id}><span><strong>{earning.consignment.cnNumber}</strong><small>{new Date(earning.createdAt).toLocaleDateString()}</small></span><span><b>{earning.currencyCode} {Number(earning.amount).toFixed(2)}</b><small className={`status-badge ${earning.status === 'PAID' ? 'status-delivered' : 'status-transit'}`}>{earning.status}</small></span></div>)}</div>}
-  </section>;
-
   if (initialLoading) return <div className="rider-page page-content"><PageHeader eyebrow="RIDER / TODAY" title="My deliveries" description="Loading your assigned route." /><section className="metric-grid metric-skeleton" aria-label="Loading rider summary"><i /><i /><i /><i /></section><section className="surface-panel"><LoadingRows label="Loading assigned parcels" /></section></div>;
 
   return <div className="rider-page page-content">
     <PageHeader eyebrow="RIDER / TODAY" title="My deliveries" description="Update any assigned parcel directly. Scan its QR only when that is faster." action={<button className="button primary rider-camera-action" onClick={() => void openCamera()} type="button"><Icon name="qr_code_scanner" /> Scan parcel QR</button>} />
-    <section className="rider-metrics"><MetricCard label="Assigned parcels" value={String(assignments.filter((item) => item.status === 'ACTIVE').length)} note="Active workload" icon="package_2" /><MetricCard label="Pickups" value={String(pickups.length)} note="Awaiting collection" icon="inventory" /><MetricCard label="Out for delivery" value={String(assignments.filter((item) => item.consignment.status === 'OUT_FOR_DELIVERY').length)} note="On route" icon="two_wheeler" /><MetricCard label="Completed today" value={String(finance?.completedToday ?? assignments.filter((item) => item.consignment.status === 'DELIVERED').length)} note="Finished" icon="task_alt" /></section>
+    <section className="rider-metrics"><MetricCard label="Assigned parcels" value={String(assignments.filter((item) => item.status === 'ACTIVE').length)} note="Active workload" icon="package_2" /><MetricCard label="Pickups" value={String(pickups.length)} note="Awaiting collection" icon="inventory" /><MetricCard label="Out for delivery" value={String(assignments.filter((item) => item.consignment.status === 'OUT_FOR_DELIVERY').length)} note="On route" icon="two_wheeler" /><MetricCard label="Completed today" value={String(assignments.filter((item) => item.consignment.status === 'DELIVERED').length)} note="Finished" icon="task_alt" /></section>
     {message && <div className="success-callout">{message}</div>}
     <section className="surface-panel"><h3>Scanned parcel</h3><form onSubmit={unlock}><label className="field"><span>Parcel CN</span><input value={cnNumber} onChange={(event) => setCnNumber(event.target.value)} required /></label><button className="button primary" disabled={busy} type="submit">Open parcel</button></form>
       {dispatch && <><h3>{dispatch.cnNumber}</h3><StatusBadge status={dispatch.status} /><p>{dispatch.serviceType.replaceAll('_', ' ')} · Updated {new Date(dispatch.currentStatusAt).toLocaleString()}</p>
@@ -282,7 +277,7 @@ function RiderHome({ initialCn = '' }: { initialCn?: string }) {
         {!dispatch.allowedStatuses.length && <p>{dispatch.status === 'DELIVERED' ? 'Delivery completed.' : 'Confirm pickup using the collection actions below before changing delivery status.'}</p>}
       </>}
     </section>
-    {financeSummary}
+    
     <section className="surface-panel rider-admin-message"><div className="panel-heading"><div><span className="eyebrow">RIDER / ADMIN</span><h3>Message the admin team</h3></div><Icon name="support_agent" /></div><form onSubmit={sendMessageToAdmin}><textarea value={adminMessage} onChange={(event) => setAdminMessage(event.target.value)} placeholder="Share a delivery issue, route update, or support request." maxLength={500} /><button className="button primary" disabled={messageBusy || !adminMessage.trim()} type="submit"><Icon name="send" /> {messageBusy ? 'Sending...' : 'Send message'}</button></form></section>
     {assignedParcelActions}
     {pickups.length > 0 && <section className="surface-panel rider-pickups"><div className="panel-heading"><div><span className="eyebrow">PICKUPS</span><h3>Collection actions</h3></div></div>{pickups.map((pickup) => { const origin = pickup.consignment.addresses.find((address) => address.kind === 'ORIGIN'); const sender = pickup.consignment.parties.find((party) => party.kind === 'SENDER'); return <div className="rider-directory-row" key={pickup.id}><div><strong>{sender?.name || 'Sender'}</strong><small>{origin?.addressLine}{origin?.city ? `, ${origin.city}` : ''}</small></div><div className="workspace-actions"><button className="button subtle" onClick={() => void startPickup(pickup.id).then(loadWork)}>Start</button><button className="button primary" onClick={() => void completePickup(pickup.id, remarks || undefined).then(() => { setMessage('Pickup confirmed and parcel dispatched.'); void loadWork(); })}>Confirm pickup</button><button className="button subtle" onClick={() => void failPickup(pickup.id, remarks || 'Pickup failed').then(loadWork)}>Failed</button></div></div>; })}</section>}
@@ -332,7 +327,7 @@ function SectionHeading({ number, title }: { number: string; title: string }) { 
 function Field({ name, label, placeholder, wide, type = 'text' }: { name?: string; label: string; placeholder: string; wide?: boolean; type?: string }) { return <label className={wide ? 'field wide' : 'field'}><span>{label}</span><input name={name} placeholder={placeholder} type={type} /></label>; }
 
 function OperationalView({ view }: { view: View }) {
-  const labels: Record<View, [string, string, string, string]> = { tracking: ['Tracking and reports', 'Authorized visibility across movement, payment, and document records.', 'timeline', 'The API-backed operational view will appear here when its endpoint is available.'], manifest: ['Manifest management', 'Create, scan, dispatch, receive, and reconcile operational manifests.', 'receipt_long', 'Manifest commands are server-controlled and will be connected here.'], rider: ['Rider operations', 'Manage rider availability, assignments, performance, and collections.', 'two_wheeler', 'Rider data will be loaded from the authorized API scope.'], riders: ['Rider management', 'Create and manage rider accounts.', 'manage_accounts', 'Rider management is restricted to administrators.'], settings: ['Settings', 'Configure appearance and staff access.', 'settings', 'Settings are restricted to administrators.'], dashboard: ['', '', '', ''], consignments: ['', '', '', ''], shipments: ['', '', '', ''], booking: ['', '', '', ''] };
+  const labels: Record<View, [string, string, string, string]> = { payments: ['Payments', 'Rider payments', 'payments', 'Payment records'], tracking: ['Tracking and reports', 'Authorized visibility across movement, payment, and document records.', 'timeline', 'The API-backed operational view will appear here when its endpoint is available.'], manifest: ['Manifest management', 'Create, scan, dispatch, receive, and reconcile operational manifests.', 'receipt_long', 'Manifest commands are server-controlled and will be connected here.'], rider: ['Rider operations', 'Manage rider availability, assignments, performance, and collections.', 'two_wheeler', 'Rider data will be loaded from the authorized API scope.'], riders: ['Rider management', 'Create and manage rider accounts.', 'manage_accounts', 'Rider management is restricted to administrators.'], settings: ['Settings', 'Configure appearance and staff access.', 'settings', 'Settings are restricted to administrators.'], dashboard: ['', '', '', ''], consignments: ['', '', '', ''], shipments: ['', '', '', ''], booking: ['', '', '', ''] };
   const [title, description, icon, message] = labels[view];
   return <div className="page-content"><PageHeader eyebrow="OPERATIONS / WORKSPACE" title={title} description={description} /><div className="surface-panel workspace-placeholder"><div className="workspace-icon"><Icon name={icon} /></div><h3>{title} is ready for API integration</h3><p>{message}</p><div className="workspace-actions"><button className="button subtle" type="button"><Icon name="filter_alt" /> Configure filters</button><button className="button subtle" type="button"><Icon name="picture_as_pdf" /> Request PDF</button></div><div className="permission-note"><Icon name="lock" /> Backend permissions remain authoritative. This screen will never infer access from hidden buttons.</div></div></div>;
 }
@@ -344,7 +339,6 @@ export default function OperationsShell() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [sessionExpired, setSessionExpired] = useState(false);
   const [refreshVersion, setRefreshVersion] = useState(0);
-  const refreshTimer = useRef<number | null>(null);
   useEffect(() => {
     document.documentElement.dataset.theme = 'light';
     const url = new URL(window.location.href);
@@ -363,20 +357,6 @@ export default function OperationsShell() {
     return () => window.removeEventListener(sessionExpiredEvent, handleSessionExpired);
   }, []);
   useEffect(() => {
-    const refreshWorkspace = () => {
-      if (refreshTimer.current !== null) window.clearTimeout(refreshTimer.current);
-      refreshTimer.current = window.setTimeout(() => {
-        setRefreshVersion((version) => version + 1);
-        refreshTimer.current = null;
-      }, 100);
-    };
-    window.addEventListener(dataChangedEvent, refreshWorkspace);
-    return () => {
-      window.removeEventListener(dataChangedEvent, refreshWorkspace);
-      if (refreshTimer.current !== null) window.clearTimeout(refreshTimer.current);
-    };
-  }, []);
-  useEffect(() => {
     if (!session) return;
     const expiresAt = getAccessTokenExpiry(session.accessToken);
     if (!expiresAt) return;
@@ -388,7 +368,12 @@ export default function OperationsShell() {
     window.addEventListener('swiftlog.open-tracking', openTracking);
     return () => window.removeEventListener('swiftlog.open-tracking', openTracking);
   }, []);
-  useEffect(() => { if (session?.user.roles.includes('RIDER')) setView('rider'); }, [session]);
+  useEffect(() => { if (session?.user.roles.includes('RIDER') && !session.user.roles.includes('ADMIN')) setView('rider'); }, [session]);
+  useEffect(() => {
+    const openPayments = () => { if (session?.user.roles.some((role) => ['ADMIN', 'RIDER'].includes(role))) { setView('payments'); setRefreshVersion((value) => value + 1); } };
+    window.addEventListener('swiftlog.open-payments', openPayments);
+    return () => window.removeEventListener('swiftlog.open-payments', openPayments);
+  }, [session]);
   async function handleLogout() {
     await logout();
     setSession(null);
@@ -399,6 +384,6 @@ export default function OperationsShell() {
   }
   if (!session) return <AccountLogin parcelCn={scannedCn} onAuthenticated={(authenticated) => { setSessionExpired(false); setSession(authenticated); }} />;
   const riderOnly = session.user.roles.length === 1 && session.user.roles.includes('RIDER');
-  const content = view === 'dashboard' && !session.user.permissions.includes('shipment:view') ? <div className="page-content"><h2>Your account</h2><p>Shipment access is disabled for your account. Contact your administrator to change it.</p><button className="button subtle" type="button" onClick={() => setView('settings')}>Account settings</button></div> : view === 'dashboard' ? <DispatchDashboard onCreate={() => setView('booking')} onViewAll={() => setView('consignments')} /> : view === 'shipments' ? <DispatchList key="active" onCreate={() => setView('booking')} /> : view === 'consignments' ? <DispatchList key="history" history onCreate={() => setView('booking')} /> : view === 'booking' ? <Booking onNavigate={setView} /> : view === 'rider' ? session.user.roles.includes('RIDER') ? <RiderHome initialCn={scannedCn} /> : <div className={'page-content'}><h2>Rider account required</h2><p>Sign out and use the rider account provided by your administrator to open this parcel.</p></div> : view === 'riders' ? <RiderManagement /> : view === 'settings' ? <SettingsPanel appearanceOnly={riderOnly} /> : <TrackingView onBack={() => setView('consignments')} />;
+  const content = view === 'dashboard' && !session.user.permissions.includes('shipment:view') ? <div className="page-content"><h2>Your account</h2><p>Shipment access is disabled for your account. Contact your administrator to change it.</p><button className="button subtle" type="button" onClick={() => setView('settings')}>Account settings</button></div> : view === 'dashboard' ? <DispatchDashboard onCreate={() => setView('booking')} onViewAll={() => setView('consignments')} /> : view === 'shipments' ? <DispatchList key="active" onCreate={() => setView('booking')} /> : view === 'consignments' ? <DispatchList key="history" history onCreate={() => setView('booking')} /> : view === 'booking' ? <Booking onNavigate={setView} /> : view === 'rider' ? session.user.roles.includes('RIDER') ? <RiderHome initialCn={scannedCn} /> : <div className={'page-content'}><h2>Rider account required</h2><p>Sign out and use the rider account provided by your administrator to open this parcel.</p></div> : view === 'payments' ? <RiderPayments /> : view === 'riders' ? <RiderManagement /> : view === 'settings' ? <SettingsPanel appearanceOnly={riderOnly} /> : <TrackingView onBack={() => setView('consignments')} />;
   return <div className={`app-shell ${riderOnly ? 'rider-only-shell' : ''} ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}><a className="skip-link" href="#main-content">Skip to operations</a><Sidebar activeView={view} onNavigate={setView} user={session.user} collapsed={sidebarCollapsed} /><main className="main-column" id="main-content"><Header view={view} onNavigate={setView} collapsed={sidebarCollapsed} onToggleSidebar={() => setSidebarCollapsed((value) => !value)} onLogout={() => void handleLogout()} riderOnly={riderOnly} /><Fragment key={`${view}-${refreshVersion}`}>{content}</Fragment></main><MobileNavigation activeView={view} onNavigate={setView} riderOnly={riderOnly} isAdmin={session.user.roles.includes('ADMIN')} hasRider={session.user.roles.includes('RIDER')} />{sessionExpired && <SessionExpiredDialog onConfirm={confirmExpiredSession} />}<Link className="sr-only" href="/">SwiftLog Dispatch Operations</Link></div>;
 }
