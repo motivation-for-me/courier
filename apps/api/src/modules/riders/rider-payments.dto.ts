@@ -14,3 +14,6 @@ export class RiderReceiptDto {
   @IsIn(['confirm', 'dispute']) decision!: 'confirm' | 'dispute';
   @IsOptional() @IsString() @MaxLength(500) reason?: string;
 }
+export class RiderPayAllDto {
+  @Transform(({ value }) => typeof value === 'string' ? value.trim() : value) @IsString() @MinLength(3) @MaxLength(200) reference!: string;
+}

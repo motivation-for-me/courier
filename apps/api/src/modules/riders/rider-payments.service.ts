@@ -23,6 +23,22 @@ export class RiderPaymentsService {
     ]);
     return riders.map((rider) => ({ ...rider, totals: totals.filter((total) => total.riderId === rider.id) }));
   }
+  async saveDefaultFee(actor: AuthenticatedUser, id: string, input?: RiderMoneyDto) {
+    this.admin(actor);
+    return this.prisma.$transaction(async (tx) => {
+      const rider = await tx.rider.findFirst({ where: { id, organizationId: actor.organizationId }, select: { id: true, deliveryFee: true, organization: { select: { currencyCode: true } } } });
+      if (!rider) throw new NotFoundException('Rider not found');
+      const amount = new Prisma.Decimal(input?.amount ?? rider.deliveryFee);
+      if (amount.lte(0)) throw new BadRequestException('Set a delivery fee greater than zero');
+      if (input) await tx.rider.update({ where: { id }, data: { deliveryFee: amount } });
+      const missing = await tx.consignment.findMany({ where: { organizationId: actor.organizationId, deletedAt: null, status: 'DELIVERED', riderEarning: null, events: { some: { eventType: 'DELIVERED', riderId: id } } }, select: { id: true, events: { where: { eventType: 'DELIVERED' }, orderBy: [{ eventTime: 'desc' }, { id: 'desc' }], take: 1, select: { riderId: true } } } });
+      const owned = missing.filter((shipment) => shipment.events[0]?.riderId === id);
+      await tx.riderEarning.createMany({ data: owned.map((shipment) => ({ organizationId: actor.organizationId, riderId: id, consignmentId: shipment.id, amount, currencyCode: rider.organization.currencyCode, kind: 'DELIVERY', note: 'Recorded from saved rider delivery fee' })), skipDuplicates: true });
+      const legacy = await tx.riderEarning.updateMany({ where: { riderId: id, organizationId: actor.organizationId, kind: 'DELIVERY', status: 'PENDING', amount: 0, note: null, consignmentId: { not: null } }, data: { amount, note: 'Fee configured for previously unpriced delivery' } });
+      await this.audit(tx, actor, id, input ? 'rider-payment.default_fee_saved' : 'rider-payment.fees_synchronized', { amount: amount.toFixed(2), deliveriesRecorded: owned.length, previouslyUnpriced: legacy.count });
+      return { success: true, deliveriesRecorded: owned.length };
+    }, options);
+  }
   async detail(actor: AuthenticatedUser, id: string, pageInput = '1', status?: string) {
     const rider = await this.rider(actor, id);
     const page = Number(pageInput);
@@ -30,15 +46,16 @@ export class RiderPaymentsService {
     if (status && !['PENDING', 'SENT', 'DISPUTED', 'PAID', 'VOIDED'].includes(status)) throw new BadRequestException('Invalid payment status');
     const scope = { organizationId: actor.organizationId, riderId: id };
     const where: Prisma.RiderEarningWhereInput = { ...scope, ...(status ? { status: status as any } : {}) };
-    const [total, entries, totals, missing, missingCount, log] = await Promise.all([
+    const [total, entries, totals, missing, missingCount, log, unpricedCount] = await Promise.all([
       this.prisma.riderEarning.count({ where }),
       this.prisma.riderEarning.findMany({ where, orderBy: [{ createdAt: 'desc' }, { id: 'asc' }], skip: (page - 1) * 50, take: 50, include: { consignment: { select: { id: true, cnNumber: true, deliveredAt: true, serviceType: true, parties: { select: { kind: true, name: true } }, addresses: { select: { kind: true, addressLine: true, city: true } } } } } }),
       this.prisma.riderEarning.groupBy({ by: ['status', 'currencyCode', 'kind'], where: scope, _count: { _all: true }, _sum: { amount: true } }),
-      this.prisma.consignment.findMany({ where: { organizationId: actor.organizationId, status: 'DELIVERED', riderEarning: null, events: { some: { eventType: 'DELIVERED', riderId: id } } }, select: { id: true, cnNumber: true, deliveredAt: true }, orderBy: { deliveredAt: 'desc' }, take: 50 }),
-      this.prisma.consignment.count({ where: { organizationId: actor.organizationId, status: 'DELIVERED', riderEarning: null, events: { some: { eventType: 'DELIVERED', riderId: id } } } }),
+      this.prisma.consignment.findMany({ where: { organizationId: actor.organizationId, deletedAt: null, status: 'DELIVERED', riderEarning: null, events: { some: { eventType: 'DELIVERED', riderId: id } } }, select: { id: true, cnNumber: true, deliveredAt: true }, orderBy: { deliveredAt: 'desc' }, take: 50 }),
+      this.prisma.consignment.count({ where: { organizationId: actor.organizationId, deletedAt: null, status: 'DELIVERED', riderEarning: null, events: { some: { eventType: 'DELIVERED', riderId: id } } } }),
       this.prisma.auditLog.findMany({ where: { organizationId: actor.organizationId, entityType: 'rider-payment', entityId: id }, orderBy: { createdAt: 'desc' }, take: 50, select: { id: true, action: true, actorId: true, createdAt: true, newValues: true } }),
+      this.prisma.riderEarning.count({ where: { ...scope, kind: 'DELIVERY', status: 'PENDING', amount: 0, note: null, consignmentId: { not: null } } }),
     ]);
-    return { rider, entries, totals, missing, missingCount, log, total, page, pages: Math.max(1, Math.ceil(total / 50)) };
+    return { rider, entries, totals, missing, missingCount, unpricedCount, log, total, page, pages: Math.max(1, Math.ceil(total / 50)) };
   }
   async record(actor: AuthenticatedUser, id: string, input: RiderMoneyDto) {
     this.admin(actor); const rider = await this.rider(actor, id);
@@ -64,18 +81,21 @@ export class RiderPaymentsService {
       return { success: true };
     }, options);
   }
-  async pay(actor: AuthenticatedUser, id: string, input: RiderPayDto) {
+  async pay(actor: AuthenticatedUser, id: string, input: RiderPayDto, all = false) {
     this.admin(actor); const rider = await this.rider(actor, id);
     // Admin+rider accounts cannot clear both sides of their own payment.
     if (rider.userId === actor.id) throw new ForbiddenException('Another administrator must record your payment');
     return this.prisma.$transaction(async (tx) => {
-      const entries = await tx.riderEarning.findMany({ where: { id: { in: input.ids }, riderId: id, organizationId: actor.organizationId, status: { in: ['PENDING', 'DISPUTED'] } } });
-      if (entries.length !== input.ids.length) throw new ConflictException('Selection contains already sent, paid or unavailable entries');
+      const where: Prisma.RiderEarningWhereInput = { ...(all ? {} : { id: { in: input.ids } }), riderId: id, organizationId: actor.organizationId, status: all ? 'PENDING' : { in: ['PENDING', 'DISPUTED'] } };
+      const entries = await tx.riderEarning.findMany({ where });
+      if (all && entries.some((entry) => entry.kind === 'DELIVERY' && entry.amount.isZero() && !entry.note)) throw new BadRequestException('Configure the saved delivery fee to price completed deliveries first');
+      if (!entries.length || (!all && entries.length !== input.ids.length)) throw new ConflictException('Selection contains already sent, paid or unavailable entries');
       if (new Set(entries.map((entry) => entry.currencyCode)).size !== 1) throw new BadRequestException('Pay one currency at a time');
       const amount = entries.reduce((sum, entry) => sum.plus(entry.amount), new Prisma.Decimal(0));
-      const changed = await tx.riderEarning.updateMany({ where: { id: { in: input.ids }, riderId: id, organizationId: actor.organizationId, status: { in: ['PENDING', 'DISPUTED'] } }, data: { status: 'SENT', sentAt: new Date(), sentById: actor.id, reference: input.reference, paidAt: null, confirmedAt: null, confirmedById: null } });
-      if (changed.count !== input.ids.length) throw new ConflictException('Payment changed; refresh');
-      await this.audit(tx, actor, id, 'rider-payment.sent', { ids: input.ids, reference: input.reference, amount: amount.toFixed(2), currencyCode: entries[0].currencyCode });
+      if (amount.lte(0)) throw new BadRequestException('Configure the delivery fee before recording payment');
+      const changed = await tx.riderEarning.updateMany({ where, data: { status: 'SENT', sentAt: new Date(), sentById: actor.id, reference: input.reference, paidAt: null, confirmedAt: null, confirmedById: null } });
+      if (changed.count !== entries.length) throw new ConflictException('Payment changed; refresh');
+      await this.audit(tx, actor, id, 'rider-payment.sent', { ids: all ? entries.map((entry) => entry.id) : input.ids, reference: input.reference, amount: amount.toFixed(2), currencyCode: entries[0].currencyCode });
       await tx.notification.create({ data: { organizationId: actor.organizationId, recipientId: rider.userId, channel: 'IN_APP', status: 'UNREAD', template: 'RIDER_PAYMENT_SENT', payload: { title: 'Payment sent — confirm receipt', message: `${entries[0].currencyCode} ${amount.toFixed(2)}. Reference: ${input.reference}. Open Payments to confirm only after receiving it.`, section: 'payments' } } });
       return { success: true };
     }, options);

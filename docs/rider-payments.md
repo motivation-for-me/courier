@@ -17,3 +17,13 @@ Historical PAID entries are retained and labelled as legacy records if no rider 
 Apply migration `20261013090000_rider_payment_confirmation`, generate Prisma Client, and deploy API and web together. No real payments or production data were modified during implementation. Validate a delivered parcel earning, a bonus, fee editing, Pay, receipt confirmation and non-receipt from separate admin/rider accounts. Notifications here are in-app; phone push is not configured.
 
 Entries paginate at 50; totals cover all records. Missing completed deliveries show the next 50 and expose further items as fees are recorded. Payment activity shows the latest 50 actions. Monetary arithmetic uses Prisma Decimal on the server and integer cents in the browser. Paid/sent records cannot be edited, and conditional transitions inside serializable transactions prevent double settlement. Authorization is enforced by the API on every action, scoped to organization and rider.
+# Simplified fee setup and payment
+
+The administrator saves a positive per-delivery fee once from the rider payment profile. Completion records that fee automatically. If no positive fee is configured, completion leaves the delivery unpriced rather than treating a zero amount as payment owed. The payment screen prompts the administrator to configure the fee.
+
+Saving the default fee also records missing completed-delivery earnings for that rider, using the latest delivery event to check ownership. Existing legacy unpaid zero entries without a note are priced using this configured fee and audited. Existing priced, sent, disputed and cleared entries are preserved. Once configured, opening the profile automatically fills missing completed deliveries using the saved rate. Rate changes affect future deliveries and unpriced deliveries; historical priced deliveries retain their rate.
+
+“Pay all unpaid” calculates every pending delivery fee and bonus on the server, across pagination. The admin pays outside the app, enters a reference, and records the payment; the rider still confirms receipt. Sent, disputed and cleared entries are excluded. Mixed currencies require separate selected payments. Optional entry adjustments and bonus forms are collapsed by default.
+
+Successful mutations no longer remount the entire operations workspace. Management edits keep the selected record and search; only the affected resource list refreshes.
+

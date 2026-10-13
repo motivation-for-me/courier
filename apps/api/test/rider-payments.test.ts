@@ -8,6 +8,34 @@ import { RiderMoneyDto, RiderPayDto } from '../src/modules/riders/rider-payments
 const admin: any = { id: 'admin', organizationId: 'company', roles: ['ADMIN'] };
 const rider: any = { id: 'rider-user', riderId: 'rider', organizationId: 'company', roles: ['RIDER'] };
 const profile = { id: 'rider', userId: rider.id, organization: { currencyCode: 'PKR' } };
+test('saved fee prices missing deliveries once, preserves already priced amounts, and ignores another latest rider', async () => {
+  let created: any; let updated: any; let legacy: any;
+  const tx: any = { rider: { findFirst: async () => profile, update: async (input: any) => { updated = input; } }, consignment: { findMany: async () => [{ id: 'one', events: [{ riderId: 'rider' }] }, { id: 'two', events: [{ riderId: 'other' }] }] }, riderEarning: { createMany: async (input: any) => { created = input; }, updateMany: async (input: any) => { legacy = input; return { count: 1 }; } }, auditLog: { create: async () => ({}) } };
+  const service = new RiderPaymentsService({ $transaction: (callback: any) => callback(tx) } as any);
+  await service.saveDefaultFee(admin, 'rider', { amount: '125.50', reason: 'Agreed fee' });
+  assert.equal(updated.data.deliveryFee.toFixed(2), '125.50');
+  assert.equal(created.data.length, 1); assert.equal(created.data[0].consignmentId, 'one'); assert.equal(created.skipDuplicates, true);
+  assert.equal(legacy.where.status, 'PENDING'); assert.equal(legacy.where.amount, 0); assert.equal(legacy.where.note, null);
+  updated = undefined;
+  tx.rider.findFirst = async () => ({ ...profile, deliveryFee: new Prisma.Decimal('200') });
+  await service.saveDefaultFee(admin, 'rider');
+  assert.equal(updated, undefined, 'Automatic synchronization must never overwrite the configured fee');
+  assert.equal(created.data[0].amount.toFixed(2), '200.00');
+  await assert.rejects(service.saveDefaultFee(rider, 'rider', { amount: '125.50', reason: 'Agreed fee' }), /Administrator/);
+  await assert.rejects(service.saveDefaultFee(admin, 'rider', { amount: '0', reason: 'Agreed fee' }), /greater than zero/);
+});
+test('pay-all covers unpaid entries beyond pagination, excludes disputed/sent/cleared and calculates exact fee plus bonus total', async () => {
+  let where: any; let audit: any;
+  const entries = Array.from({ length: 101 }, (_, index) => ({ id: String(index), amount: new Prisma.Decimal('0.10'), currencyCode: 'PKR' }));
+  entries.push({ id: 'bonus', amount: new Prisma.Decimal('2.25'), currencyCode: 'PKR' });
+  const tx: any = { riderEarning: { findMany: async (input: any) => { where = input.where; return entries; }, updateMany: async () => ({ count: 102 }) }, auditLog: { create: async (input: any) => { audit = input.data; } }, notification: { create: async () => ({}) } };
+  const service = new RiderPaymentsService({ rider: { findFirst: async () => profile }, $transaction: (callback: any) => callback(tx) } as any);
+  await service.pay(admin, 'rider', { ids: [], reference: 'Bank 123' }, true);
+  assert.equal(where.id, undefined); assert.equal(where.status, 'PENDING'); assert.equal(where.organizationId, 'company');
+  assert.equal(audit.newValues.amount, '12.35'); assert.equal(audit.newValues.ids.length, 102);
+  tx.riderEarning.findMany = async () => [{ id: 'unpriced', kind: 'DELIVERY', amount: new Prisma.Decimal(0), note: null, currencyCode: 'PKR' }];
+  await assert.rejects(service.pay(admin, 'rider', { ids: [], reference: 'Bank 123' }, true), /price completed deliveries first/);
+});
 
 test('money validation rejects negative, exponent, excess precision and duplicate payment selections', async () => {
   for (const amount of ['-1', '1e3', 'NaN', '0.001', '99999999999']) assert.ok((await validate(Object.assign(new RiderMoneyDto(), { amount, reason: 'Valid reason' }))).length);

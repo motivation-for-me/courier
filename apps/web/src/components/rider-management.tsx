@@ -59,8 +59,11 @@ export function RiderManagement() {
   const [shopUsers, setShopUsers] = useState<ShopUserOption[]>([]);
   const [shopPricing, setShopPricing] = useState<ShopPricingAgreement | null>(null);
 
-  async function load() {
+  async function load(resource?: Resource) {
     try {
+      if (resource === 'shops') { setShops(await getCustomers()); return; }
+      if (resource === 'riders') { setRiders(await getRiders()); return; }
+      if (resource === 'shipments') { setShipments(await getConsignments()); return; }
       const [shopRows, riderRows, shipmentRows] = await Promise.all([getCustomers(), getRiders(), getConsignments()]);
       setShops(shopRows); setRiders(riderRows); setShipments(shipmentRows);
     } catch (error) { setMessage((error as ApiError).message); }
@@ -73,9 +76,9 @@ export function RiderManagement() {
   const selectedShipment = useMemo(() => shipments.find((item) => item.id === selectedId), [shipments, selectedId]);
   useEffect(() => { if (selectedShop) { getShopUsers(selectedShop.id).then(setShopUsers).catch((error: ApiError) => setMessage(error.message)); getShopPricing(selectedShop.id).then((agreements) => setShopPricing(agreements.find((item) => !item.effectiveTo) ?? agreements[0] ?? null)).catch(() => setShopPricing(null)); } else { setShopUsers([]); setShopPricing(null); } }, [selectedShop]);
 
-  async function run(action: () => Promise<unknown>, success: string) {
+  async function run(action: () => Promise<unknown>, success: string, removed = false) {
     setBusy(true); setMessage('');
-    try { await action(); setMessage(success); setSelectedId(''); setDeleteArmed(''); await load(); }
+    try { await action(); setMessage(success); if (removed) setSelectedId(''); if (!selectedId) setViewOnly(true); setDeleteArmed(''); await load(active); }
     catch (error) { setMessage((error as ApiError).message || 'The operation could not be completed.'); }
     finally { setBusy(false); }
   }
@@ -103,7 +106,7 @@ export function RiderManagement() {
 
   function armOrDelete(id: string, action: () => Promise<unknown>, success: string) {
     if (deleteArmed !== id) { setDeleteArmed(id); setMessage('Press Confirm remove to continue.'); return; }
-    void run(action, success);
+    void run(action, success, true);
   }
 
   const lists: Record<Resource, Array<{ id: string; title: string; meta: string }>> = {

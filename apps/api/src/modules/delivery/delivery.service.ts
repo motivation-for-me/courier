@@ -108,7 +108,7 @@ export class DeliveryService {
           transaction.rider.findUniqueOrThrow({ where: { id: actor.riderId }, select: { deliveryFee: true } }),
           transaction.organization.findUniqueOrThrow({ where: { id: actor.organizationId }, select: { currencyCode: true } }),
         ]);
-        await transaction.riderEarning.upsert({ where: { consignmentId }, create: { organizationId: actor.organizationId, riderId: actor.riderId, consignmentId, amount: rider.deliveryFee, currencyCode: organization.currencyCode }, update: {} });
+        if (Number(rider.deliveryFee) > 0) await transaction.riderEarning.upsert({ where: { consignmentId }, create: { organizationId: actor.organizationId, riderId: actor.riderId, consignmentId, amount: rider.deliveryFee, currencyCode: organization.currencyCode }, update: {} });
       }
       if (idempotencyKey) await transaction.idempotencyRecord.create({ data: { organizationId: actor.organizationId, actorId: actor.id, operation: 'delivery.complete', resourceKey: idempotencyKey, requestHash, response: updated } });
       return updated;
