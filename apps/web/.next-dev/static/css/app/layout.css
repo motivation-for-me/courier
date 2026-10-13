@@ -624,6 +624,8 @@ img,svg,video,canvas { max-width:100%; }
 .data-bike-loader strong { display: none; }
 
 .rider-bike-image { display:block; object-fit:contain; mix-blend-mode:multiply; animation:rider-bike-glide 1.4s ease-in-out infinite alternate; }
+.bike-inline-loader { display: grid; justify-items: center; padding: 20px; color: var(--muted); }
+.bike-inline-loader iframe { width: min(100%, 300px); height: 140px; border: 0; pointer-events: none; }
 @keyframes rider-bike-glide { from { transform:translate3d(-7px,2px,0) rotate(-.2deg); } to { transform:translate3d(7px,-2px,0) rotate(.2deg); } }
 @media (prefers-reduced-motion:reduce) { .rider-bike-image { animation:none; } }
 
@@ -1597,6 +1599,13 @@ img,svg,video,canvas { max-width:100%; }
  .payment-overview > div:nth-child(even) { padding-right: 0; }
  .payment-balance-heading, .payment-balance-footer { align-items: flex-start; flex-direction: column; gap: 6px; }
 }
+
+
+.payment-account-row { text-decoration: none; }
+.payment-process { display: flex; list-style: none; gap: 0; margin: 0 0 24px; padding: 12px 0; border-block: 1px solid var(--line); color: var(--muted); font-size: 12px; }
+.payment-process li { display: flex; align-items: center; gap: 20px; }
+.payment-process li:not(:last-child)::after { content: "?"; padding-right: 20px; color: var(--subtle); }
+@media (max-width: 600px) { .payment-process { flex-wrap: wrap; row-gap: 12px; font-size: 11px; } .payment-process li { gap: 8px; } .payment-process li:not(:last-child)::after { padding-right: 8px; } }
 
 
 /*!********************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************!*\

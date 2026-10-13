@@ -13,7 +13,7 @@ const riderAssignableStatuses = ['CONFIRMED', 'ASSIGNED_TO_RIDER', 'DISPATCHED',
 function Metric({ title, value }: { title: string; value: number }) { return <SpotlightCard className="metric-card"><div className="metric-top"><span>{title}</span><span className="metric-pulse" /></div><strong>{value}</strong><small><i /> Live API data</small></SpotlightCard>; }
 function Icon({ name }: { name: string }) { return <span aria-hidden="true" className="material-symbols-outlined icon">{name}</span>; }
 function DataSkeleton({ label = 'Loading data', rows = 5 }: { label?: string; rows?: number }) { return <div className="data-skeleton-loader" aria-label={label} aria-live="polite"><div className="table-skeleton" aria-hidden="true">{Array.from({ length: rows }, (_, index) => <div key={index}><i /><i /><i /><i /></div>)}</div></div>; }
-function BikeLoader({ label }: { label?: string }) { return <DataSkeleton label={label} rows={3} />; }
+function BikeLoader({ label = 'Loading riders' }: { label?: string }) { return <div className="bike-inline-loader" role="status"><iframe src="/rider-speed/index.html?embed" title="Delivery bike animation" tabIndex={-1} /><span>{label}</span></div>; }
 
 export function DispatchDashboard({ onCreate, onViewAll }: { onCreate: () => void; onViewAll: () => void }) {
   const [rows, setRows] = useState<DispatchSummary[]>([]); const [counts, setCounts] = useState({ today: 0, pending: 0, active: 0, delivered: 0, total: 0 }); const [error, setError] = useState(''); const [loading, setLoading] = useState(true); const [showSkeleton, setShowSkeleton] = useState(false);

@@ -30,56 +30,52 @@ async function setup(page: Page, own = false, delayed = false, failure = false) 
   return writes;
 }
 
-test('accounts toggle inline, switch exclusively, and payment records collapse completely', async ({ page }) => {
+test('account details use a separate page, Back returns to clean list, and payment records collapse', async ({ page }) => {
   await setup(page);
-  const rows = page.locator('.payment-account-row');
-  await rows.nth(0).click();
+  await page.locator('.payment-account-row').first().click();
+  await expect(page).toHaveURL(/\/payments\/riders\/rider-1$/);
+  await expect(page.locator('.payment-account-row')).toHaveCount(0);
   await expect(page.locator('.payment-account-details')).toHaveCount(1);
-  await expect(page.locator('.payment-account-region')).toHaveCount(1);
   const record = page.locator('.payment-record').first();
   await expect(record.locator('.payment-record-details')).toBeHidden();
   await record.locator('summary').first().click();
   await expect(record.locator('.payment-record-details')).toBeVisible();
   await record.locator('summary').first().click();
   await expect(record.locator('.payment-record-details')).toBeHidden();
-  await rows.nth(0).click();
+  await page.getByRole('link', { name: 'Back to accounts' }).click();
+  await expect(page).toHaveURL(/\/payments$/);
   await expect(page.locator('.payment-account-details')).toHaveCount(0);
-  await expect(page.locator('.payment-account-region')).toHaveCount(0);
-  await rows.nth(0).click(); await expect(page.locator('.payment-account-details')).toHaveCount(1);
-  await rows.nth(1).click();
-  await expect(rows.nth(0)).toHaveAttribute('aria-expanded', 'false');
-  await expect(rows.nth(1)).toHaveAttribute('aria-expanded', 'true');
+  await expect(page.locator('.payment-account-row')).toHaveCount(24);
+  await page.locator('.payment-account-row').nth(1).click();
+  await expect(page).toHaveURL(/\/payments\/riders\/rider-2$/);
   await expect(page.locator('.payment-account-details')).toHaveAttribute('id', 'payment-account-rider-2');
   await expect(page.locator('.payment-record')).toHaveCount(2);
-  await rows.nth(1).click(); await expect(page.locator('.payment-account-details')).toHaveCount(0);
 });
-test('rapid switching ignores late responses, errors never show previous-account details', async ({ page }) => {
+test('errors on another account never retain the previous account records', async ({ page }) => {
   await setup(page, false, true, true);
-  await page.locator('.payment-account-row').nth(0).click();
   await page.locator('.payment-account-row').nth(1).click();
   await expect(page.locator('.payment-account-details')).toHaveAttribute('id', 'payment-account-rider-2');
-  await expect(page.getByText('Test payment service unavailable')).toHaveCount(0);
-  await page.locator('.payment-account-row').nth(0).click();
+  await page.getByRole('link', { name: 'Back to accounts' }).click();
+  await page.locator('.payment-account-row').first().click();
   await expect(page.getByText('Test payment service unavailable')).toBeVisible();
   await expect(page.locator('.payment-account-details')).toHaveCount(0);
+  await expect(page.locator('.payment-record')).toHaveCount(0);
 });
-test('many accounts, mobile layout and keyboard collapse remain usable', async ({ page }) => {
+test('many accounts and separate detail page remain usable on mobile', async ({ page }) => {
   await setup(page); await expect(page.locator('.payment-account-row')).toHaveCount(24);
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.locator('.payment-account-row').first().click();
+  await page.locator('.payment-account-row').first().focus(); await page.keyboard.press('Enter');
   await expect(page.locator('.payment-account-details')).toBeVisible();
+  await expect(page.getByRole('list', { name: 'Payment process' })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.screenshot({ path: 'test-results/payments-mobile.png' });
-  await page.locator('.payment-account-row').first().focus(); await page.keyboard.press('Enter');
-  await expect(page.locator('.payment-account-details')).toHaveCount(0);
+  await page.getByRole('link', { name: 'Back to accounts' }).click();
   await page.setViewportSize({ width: 1360, height: 900 });
-  await page.locator('.payment-account-row').first().click();
-  await expect(page.locator('.payment-account-details')).toBeVisible();
-  await page.screenshot({ path: 'test-results/payments-desktop.png' });
   await page.getByLabel('Search riders').fill('Test rider 24');
   await expect(page.locator('.payment-account-row')).toHaveCount(1);
   await page.locator('.payment-account-row').click();
   await expect(page.locator('.payment-account-details')).toHaveAttribute('id', 'payment-account-rider-24');
+  await page.screenshot({ path: 'test-results/payments-desktop.png' });
 });
 test('fee, bonus, adjustment and pay operations preserve request payloads and open account', async ({ page }) => {
   const writes = await setup(page);
@@ -89,7 +85,7 @@ test('fee, bonus, adjustment and pay operations preserve request payloads and op
   await page.getByLabel('Saved fee per completed delivery').fill('125.50');
   await page.locator('.payment-setting').first().getByRole('button', { name: 'Save', exact: true }).click();
   await expect.poll(() => writes.find((write) => write.path.endsWith('/default-fee'))?.body.amount).toBe('125.50');
-  await expect(page.locator('.payment-account-row').first()).toHaveAttribute('aria-expanded', 'true');
+  await expect(page).toHaveURL(/\/payments\/riders\/rider-1$/);
   await page.getByText('Add bonus', { exact: true }).click();
   const bonus = page.locator('.payment-setting').nth(1);
   await bonus.getByLabel('Add rider bonus').fill('20.00'); await bonus.getByLabel('Reason').fill('Test bonus');
@@ -107,13 +103,13 @@ test('fee, bonus, adjustment and pay operations preserve request payloads and op
   await selectedPayment.getByLabel('Payment reference / method').fill('Test selected 456');
   await selectedPayment.getByRole('button', { name: 'Pay selected', exact: true }).click();
   await expect.poll(() => writes.find((write) => write.path.endsWith('/pay'))?.body.ids).toEqual(['rider-1-unpaid']);
-  const pay = page.locator('form').filter({ has: page.getByRole('button', { name: 'Record payment sent', exact: true }) });
+  const pay = page.locator('form').filter({ has: page.getByRole('button', { name: 'Pay all unpaid', exact: true }) });
   await pay.getByLabel('Payment reference / method').fill('Test bank 123');
-  await pay.getByRole('button', { name: 'Record payment sent', exact: true }).click();
+  await pay.getByRole('button', { name: 'Pay all unpaid', exact: true }).click();
   await expect.poll(() => writes.find((write) => write.path.endsWith('/pay-all'))?.body.reference).toBe('Test bank 123');
 });
 test('rider receipt and dispute actions remain available inside expanded records', async ({ page }) => {
-  const writes = await setup(page, true); page.on('dialog', (dialog) => dialog.accept());
+  const writes = await setup(page, true); await page.locator('.payment-account-row').click(); page.on('dialog', (dialog) => dialog.accept());
   const record = page.locator('.payment-record').nth(1);
   await record.locator('summary').first().click();
   await record.getByRole('button', { name: 'Yes, I received it' }).click();

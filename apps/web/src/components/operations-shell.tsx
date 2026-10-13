@@ -6,6 +6,7 @@ import { NotificationInbox } from './notification-inbox';
 
 import { Fragment, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { completePickup, completeRiderDelivery, createConsignment, dataChangedEvent, failPickup, failRiderDelivery, getAccessTokenExpiry, getAssignedPickups, getConsignments, getMyRiderAssignments, getNotifications, getSession, login, logout, openDispatchDocument, readAllNotifications, readNotification, sendRiderMessage, sessionExpiredEvent, startPickup, unlockRiderDispatch, updateRiderDispatchStatus, type ApiError, type AppNotification, type AuthSession, type PickupAssignment, type RiderDeliveryAssignment, type RiderScanResult, type RiderStatus } from '../lib/api';
 import { DispatchCreate } from './dispatch-create';
 import { DispatchDashboard, DispatchList, TrackingView } from './dispatch-views';
@@ -332,13 +333,22 @@ function OperationalView({ view }: { view: View }) {
   return <div className="page-content"><PageHeader eyebrow="OPERATIONS / WORKSPACE" title={title} description={description} /><div className="surface-panel workspace-placeholder"><div className="workspace-icon"><Icon name={icon} /></div><h3>{title} is ready for API integration</h3><p>{message}</p><div className="workspace-actions"><button className="button subtle" type="button"><Icon name="filter_alt" /> Configure filters</button><button className="button subtle" type="button"><Icon name="picture_as_pdf" /> Request PDF</button></div><div className="permission-note"><Icon name="lock" /> Backend permissions remain authoritative. This screen will never infer access from hidden buttons.</div></div></div>;
 }
 
-export default function OperationsShell() {
-  const [view, setView] = useState<View>('dashboard');
+export default function OperationsShell({ paymentPage = false, paymentRiderId = '' }: { paymentPage?: boolean; paymentRiderId?: string }) {
+  const router = useRouter();
+  function navigate(next: View) { setView(next); if (next === 'payments') router.push('/payments'); }
+  const [view, setView] = useState<View>(paymentPage ? 'payments' : 'dashboard');
   const [session, setSession] = useState<AuthSession | null>(null);
   const [scannedCn, setScannedCn] = useState('');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [sessionExpired, setSessionExpired] = useState(false);
   const [refreshVersion, setRefreshVersion] = useState(0);
+  const [showBikeIntro, setShowBikeIntro] = useState(false);
+  useEffect(() => {
+    if (sessionStorage.getItem('swiftlog.bike-intro-seen')) return;
+    setShowBikeIntro(true);
+    const timer = window.setTimeout(() => { sessionStorage.setItem('swiftlog.bike-intro-seen', 'true'); setShowBikeIntro(false); }, 2200);
+    return () => window.clearTimeout(timer);
+  }, []);
   useEffect(() => {
     document.documentElement.dataset.theme = 'light';
     const url = new URL(window.location.href);
@@ -368,12 +378,12 @@ export default function OperationsShell() {
     window.addEventListener('swiftlog.open-tracking', openTracking);
     return () => window.removeEventListener('swiftlog.open-tracking', openTracking);
   }, []);
-  useEffect(() => { if (session?.user.roles.includes('RIDER') && !session.user.roles.includes('ADMIN')) setView('rider'); }, [session]);
+  useEffect(() => { if (!paymentPage && session?.user.roles.includes('RIDER') && !session.user.roles.includes('ADMIN')) setView('rider'); }, [session, paymentPage]);
   useEffect(() => {
-    const openPayments = () => { if (session?.user.roles.some((role) => ['ADMIN', 'RIDER'].includes(role))) { setView('payments'); setRefreshVersion((value) => value + 1); } };
+    const openPayments = () => { if (session?.user.roles.some((role) => ['ADMIN', 'RIDER'].includes(role))) { const rider = sessionStorage.getItem('swiftlog.payment-rider') || session.user.riderId; router.push(rider ? `/payments/riders/${encodeURIComponent(rider)}` : '/payments'); setView('payments'); } };
     window.addEventListener('swiftlog.open-payments', openPayments);
     return () => window.removeEventListener('swiftlog.open-payments', openPayments);
-  }, [session]);
+  }, [session, router]);
   async function handleLogout() {
     await logout();
     setSession(null);
@@ -382,8 +392,9 @@ export default function OperationsShell() {
     setSessionExpired(false);
     void logout().finally(() => setSession(null));
   }
+  if (showBikeIntro) return <section className="rider-intro" aria-label="SwiftLog startup"><div className="rider-intro-stage"><iframe src="/rider-speed/index.html?embed" title="Delivery bike animation" tabIndex={-1} /><h1 className="intro-wordmark">Swift<span>Log</span></h1><button className="button subtle" type="button" onClick={() => { sessionStorage.setItem('swiftlog.bike-intro-seen', 'true'); setShowBikeIntro(false); }}>Skip intro</button></div></section>;
   if (!session) return <AccountLogin parcelCn={scannedCn} onAuthenticated={(authenticated) => { setSessionExpired(false); setSession(authenticated); }} />;
   const riderOnly = session.user.roles.length === 1 && session.user.roles.includes('RIDER');
-  const content = view === 'dashboard' && !session.user.permissions.includes('shipment:view') ? <div className="page-content"><h2>Your account</h2><p>Shipment access is disabled for your account. Contact your administrator to change it.</p><button className="button subtle" type="button" onClick={() => setView('settings')}>Account settings</button></div> : view === 'dashboard' ? <DispatchDashboard onCreate={() => setView('booking')} onViewAll={() => setView('consignments')} /> : view === 'shipments' ? <DispatchList key="active" onCreate={() => setView('booking')} /> : view === 'consignments' ? <DispatchList key="history" history onCreate={() => setView('booking')} /> : view === 'booking' ? <Booking onNavigate={setView} /> : view === 'rider' ? session.user.roles.includes('RIDER') ? <RiderHome initialCn={scannedCn} /> : <div className={'page-content'}><h2>Rider account required</h2><p>Sign out and use the rider account provided by your administrator to open this parcel.</p></div> : view === 'payments' ? <RiderPayments /> : view === 'riders' ? <RiderManagement /> : view === 'settings' ? <SettingsPanel appearanceOnly={riderOnly} /> : <TrackingView onBack={() => setView('consignments')} />;
-  return <div className={`app-shell ${riderOnly ? 'rider-only-shell' : ''} ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}><a className="skip-link" href="#main-content">Skip to operations</a><Sidebar activeView={view} onNavigate={setView} user={session.user} collapsed={sidebarCollapsed} /><main className="main-column" id="main-content"><Header view={view} onNavigate={setView} collapsed={sidebarCollapsed} onToggleSidebar={() => setSidebarCollapsed((value) => !value)} onLogout={() => void handleLogout()} riderOnly={riderOnly} /><Fragment key={`${view}-${refreshVersion}`}>{content}</Fragment></main><MobileNavigation activeView={view} onNavigate={setView} riderOnly={riderOnly} isAdmin={session.user.roles.includes('ADMIN')} hasRider={session.user.roles.includes('RIDER')} />{sessionExpired && <SessionExpiredDialog onConfirm={confirmExpiredSession} />}<Link className="sr-only" href="/">SwiftLog Dispatch Operations</Link></div>;
+  const content = view === 'dashboard' && !session.user.permissions.includes('shipment:view') ? <div className="page-content"><h2>Your account</h2><p>Shipment access is disabled for your account. Contact your administrator to change it.</p><button className="button subtle" type="button" onClick={() => setView('settings')}>Account settings</button></div> : view === 'dashboard' ? <DispatchDashboard onCreate={() => setView('booking')} onViewAll={() => setView('consignments')} /> : view === 'shipments' ? <DispatchList key="active" onCreate={() => setView('booking')} /> : view === 'consignments' ? <DispatchList key="history" history onCreate={() => setView('booking')} /> : view === 'booking' ? <Booking onNavigate={navigate} /> : view === 'rider' ? session.user.roles.includes('RIDER') ? <RiderHome initialCn={scannedCn} /> : <div className={'page-content'}><h2>Rider account required</h2><p>Sign out and use the rider account provided by your administrator to open this parcel.</p></div> : view === 'payments' ? <RiderPayments key={paymentRiderId} initialRiderId={paymentRiderId} /> : view === 'riders' ? <RiderManagement /> : view === 'settings' ? <SettingsPanel appearanceOnly={riderOnly} /> : <TrackingView onBack={() => setView('consignments')} />;
+  return <div className={`app-shell ${riderOnly ? 'rider-only-shell' : ''} ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}><a className="skip-link" href="#main-content">Skip to operations</a><Sidebar activeView={view} onNavigate={navigate} user={session.user} collapsed={sidebarCollapsed} /><main className="main-column" id="main-content"><Header view={view} onNavigate={navigate} collapsed={sidebarCollapsed} onToggleSidebar={() => setSidebarCollapsed((value) => !value)} onLogout={() => void handleLogout()} riderOnly={riderOnly} /><Fragment key={`${view}-${refreshVersion}`}>{content}</Fragment></main><MobileNavigation activeView={view} onNavigate={navigate} riderOnly={riderOnly} isAdmin={session.user.roles.includes('ADMIN')} hasRider={session.user.roles.includes('RIDER')} />{sessionExpired && <SessionExpiredDialog onConfirm={confirmExpiredSession} />}<Link className="sr-only" href="/">SwiftLog Dispatch Operations</Link></div>;
 }
