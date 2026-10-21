@@ -100,13 +100,11 @@ test('fee, bonus, adjustment and pay operations preserve request payloads and op
   await expect(page.getByRole('button', { name: 'Save', exact: true }).first()).toBeEnabled();
   await record.getByRole('checkbox').check();
   const selectedPayment = page.locator('form').filter({ has: page.getByRole('button', { name: 'Pay selected', exact: true }) });
-  await selectedPayment.getByLabel('Payment reference / method').fill('Test selected 456');
   await selectedPayment.getByRole('button', { name: 'Pay selected', exact: true }).click();
   await expect.poll(() => writes.find((write) => write.path.endsWith('/pay'))?.body.ids).toEqual(['rider-1-unpaid']);
   const pay = page.locator('form').filter({ has: page.getByRole('button', { name: 'Pay all unpaid', exact: true }) });
-  await pay.getByLabel('Payment reference / method').fill('Test bank 123');
   await pay.getByRole('button', { name: 'Pay all unpaid', exact: true }).click();
-  await expect.poll(() => writes.find((write) => write.path.endsWith('/pay-all'))?.body.reference).toBe('Test bank 123');
+  await expect.poll(() => writes.some((write) => write.path.endsWith('/pay-all'))).toBe(true);
 });
 test('rider receipt and dispute actions remain available inside expanded records', async ({ page }) => {
   const writes = await setup(page, true); await page.locator('.payment-account-row').click(); page.on('dialog', (dialog) => dialog.accept());

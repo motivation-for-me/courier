@@ -26,13 +26,37 @@ export type RiderPaymentTotal = { status: string; currencyCode: string; kind?: s
 export type RiderPaymentRider = { id: string; employeeCode: string; deliveryFee: string; isActive: boolean; user: { displayName: string; email: string }; totals: RiderPaymentTotal[] };
 export type RiderPaymentDetail = { rider: RiderPaymentRider & { organization: { currencyCode: string } }; entries: RiderPaymentEntry[]; totals: RiderPaymentTotal[]; missing: Array<{ id: string; cnNumber: string; deliveredAt?: string | null }>; missingCount: number; unpricedCount: number; total: number; page: number; pages: number; log: Array<{ id: string; action: string; actorId: string; createdAt: string; newValues: unknown }> };
 export function getPaymentRiders() { return apiRequest<RiderPaymentRider[]>('/rider-payments'); }
+export type ShopPaymentReport = { from: string; to: string; group: string; timezone: string; basis: string; totals: Array<{ currencyCode: string; netReceived: string; payments: number; shipments: number }>; periods: Array<{ period: string; currencyCode: string; netReceived: string; payments: number }>; payments: Array<{ id: string; shop: { id: string; name: string }; paidAt: string; currencyCode: string; netReceived: string; shipments: Array<{ cnNumber: string; netReceived: string }> }> };
+export function getReportShops() { return apiRequest<Array<{ id: string; name: string }>>('/reports/shops'); }
+export type ShopPayable = { shop: { id: string; name: string }; currencyCode: string; netPayable: string; shipments: Array<{ id: string; cnNumber: string; netPayable: string }> };
+export function getShopPayable(id: string) { return apiRequest<ShopPayable>(`/shops/${id}/financials/payable`); }
+export function payShopBalance(id: string, expectedAmount: string, currencyCode: string) { return apiRequest(`/shops/${id}/financials/pay-all`, { method: 'POST', body: JSON.stringify({ expectedAmount, currencyCode }) }); }
+export function getShopPaymentReport(query: string) { return apiRequest<ShopPaymentReport>(`/reports/shop-payments?${query}`); }
+export async function openShopPaymentReport(query: string, mode: 'view' | 'download') {
+  const preview = mode === 'view' ? window.open('about:blank', '_blank') : null;
+  if (preview) { preview.opener = null; preview.document.body.textContent = 'Preparing report…'; }
+  let url: string | undefined;
+  try {
+    const token = getSession()?.accessToken;
+    const response = await fetch(`${apiBaseUrl}/reports/shop-payments.pdf?${query}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+    if (!response.ok) {
+      if (response.status === 401) { clearSession(); window.dispatchEvent(new CustomEvent(sessionExpiredEvent)); }
+      const body = await response.json().catch(() => null);
+      throw new ApiError(response.status, body?.message || 'Unable to prepare report PDF');
+    }
+    url = URL.createObjectURL(await response.blob());
+    if (mode === 'view') { if (!preview) throw new ApiError(0, 'Allow pop-ups to view the report, or use Download PDF.'); preview.location.href = url; }
+    else { const link = document.createElement('a'); link.href = url; link.download = 'shop-payments-report.pdf'; document.body.appendChild(link); link.click(); link.remove(); }
+    const blobUrl = url; window.setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+  } catch (error) { preview?.close(); if (url) URL.revokeObjectURL(url); throw error; }
+}
 export function saveRiderDefaultFee(id: string, amount: string) { return apiRequest(`/rider-payments/${id}/default-fee`, { method: 'POST', body: JSON.stringify({ amount, reason: 'Configure saved delivery fee' }) }); }
 export function syncRiderDeliveryFees(id: string) { return apiRequest(`/rider-payments/${id}/sync-fees`, { method: 'POST', body: '{}' }); }
-export function payAllRiderEarnings(id: string, reference: string) { return apiRequest(`/rider-payments/${id}/pay-all`, { method: 'POST', body: JSON.stringify({ reference }) }); }
+export function payAllRiderEarnings(id: string, reference?: string) { return apiRequest(`/rider-payments/${id}/pay-all`, { method: 'POST', body: JSON.stringify({ reference }) }); }
 export function getRiderPayments(id: string, page = 1, status = '') { return apiRequest<RiderPaymentDetail>(`/rider-payments/${id}?page=${page}${status ? `&status=${status}` : ''}`); }
 export function recordRiderEarning(id: string, amount: string, reason: string, consignmentId?: string) { return apiRequest(`/rider-payments/${id}/entries`, { method: 'POST', body: JSON.stringify({ amount, reason, consignmentId }) }); }
 export function amendRiderEarning(id: string, entryId: string, amount: string, reason: string) { return apiRequest(`/rider-payments/${id}/entries/${entryId}`, { method: 'PATCH', body: JSON.stringify({ amount, reason }) }); }
-export function sendRiderPayment(id: string, ids: string[], reference: string) { return apiRequest(`/rider-payments/${id}/pay`, { method: 'POST', body: JSON.stringify({ ids, reference }) }); }
+export function sendRiderPayment(id: string, ids: string[], reference?: string) { return apiRequest(`/rider-payments/${id}/pay`, { method: 'POST', body: JSON.stringify({ ids, reference }) }); }
 export function confirmRiderPayment(entryId: string, decision: 'confirm' | 'dispute', reason?: string) { return apiRequest(`/rider-payments/entries/${entryId}/receipt`, { method: 'POST', body: JSON.stringify({ decision, reason }) }); }
 export function getNotificationInbox(unreadOnly = false) { return apiRequest<{ items: AppNotification[]; unread: number }>(`/notifications/inbox?unread=${unreadOnly}`); }
 export function getNotifications() { return apiRequest<AppNotification[]>('/notifications'); }

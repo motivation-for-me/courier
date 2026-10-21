@@ -93,10 +93,10 @@ export class RiderPaymentsService {
       if (new Set(entries.map((entry) => entry.currencyCode)).size !== 1) throw new BadRequestException('Pay one currency at a time');
       const amount = entries.reduce((sum, entry) => sum.plus(entry.amount), new Prisma.Decimal(0));
       if (amount.lte(0)) throw new BadRequestException('Configure the delivery fee before recording payment');
-      const changed = await tx.riderEarning.updateMany({ where, data: { status: 'SENT', sentAt: new Date(), sentById: actor.id, reference: input.reference, paidAt: null, confirmedAt: null, confirmedById: null } });
+      const changed = await tx.riderEarning.updateMany({ where, data: { status: 'SENT', sentAt: new Date(), sentById: actor.id, reference: input.reference || null, paidAt: null, confirmedAt: null, confirmedById: null } });
       if (changed.count !== entries.length) throw new ConflictException('Payment changed; refresh');
-      await this.audit(tx, actor, id, 'rider-payment.sent', { ids: all ? entries.map((entry) => entry.id) : input.ids, reference: input.reference, amount: amount.toFixed(2), currencyCode: entries[0].currencyCode });
-      await tx.notification.create({ data: { organizationId: actor.organizationId, recipientId: rider.userId, channel: 'IN_APP', status: 'UNREAD', template: 'RIDER_PAYMENT_SENT', payload: { title: 'Payment sent — confirm receipt', message: `${entries[0].currencyCode} ${amount.toFixed(2)}. Reference: ${input.reference}. Open Payments to confirm only after receiving it.`, section: 'payments' } } });
+      await this.audit(tx, actor, id, 'rider-payment.sent', { ids: all ? entries.map((entry) => entry.id) : input.ids, reference: input.reference || null, amount: amount.toFixed(2), currencyCode: entries[0].currencyCode });
+      await tx.notification.create({ data: { organizationId: actor.organizationId, recipientId: rider.userId, channel: 'IN_APP', status: 'UNREAD', template: 'RIDER_PAYMENT_SENT', payload: { title: 'Payment sent — confirm receipt', message: `${entries[0].currencyCode} ${amount.toFixed(2)}. Open Payments to confirm only after receiving it.`, section: 'payments' } } });
       return { success: true };
     }, options);
   }
@@ -113,7 +113,7 @@ export class RiderPaymentsService {
       if (changed.count !== 1) throw new ConflictException('Receipt already processed');
       await this.audit(tx, actor, riderId, confirmed ? 'rider-payment.confirmed' : 'rider-payment.disputed', { entryId, amount: entry.amount.toString(), reference: entry.reference, reason: input.reason || '' });
       const admins = await tx.user.findMany({ where: { organizationId: actor.organizationId, isActive: true, roles: { some: { role: { name: 'ADMIN' } } } }, select: { id: true } });
-      if (admins.length) await tx.notification.createMany({ data: admins.map((admin) => ({ organizationId: actor.organizationId, recipientId: admin.id, channel: 'IN_APP', status: 'UNREAD', template: confirmed ? 'RIDER_PAYMENT_CONFIRMED' : 'RIDER_PAYMENT_DISPUTED', payload: { title: confirmed ? 'Rider confirmed receipt' : 'Rider reports payment not received', message: `${entry.currencyCode} ${entry.amount.toString()} · ${entry.reference}${input.reason ? ` · ${input.reason}` : ''}`, section: 'payments', riderId: actor.riderId } })) });
+      if (admins.length) await tx.notification.createMany({ data: admins.map((admin) => ({ organizationId: actor.organizationId, recipientId: admin.id, channel: 'IN_APP', status: 'UNREAD', template: confirmed ? 'RIDER_PAYMENT_CONFIRMED' : 'RIDER_PAYMENT_DISPUTED', payload: { title: confirmed ? 'Rider confirmed receipt' : 'Rider reports payment not received', message: `${entry.currencyCode} ${entry.amount.toString()}${entry.reference ? ` · ${entry.reference}` : ''}${input.reason ? ` · ${input.reason}` : ''}`, section: 'payments', riderId: actor.riderId } })) });
       return { success: true };
     }, options);
   }

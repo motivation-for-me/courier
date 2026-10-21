@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { ConsignmentStatus, FinancialEntryCategory, Prisma, ShopSettlementStatus } from '@prisma/client';
 import { AuthenticatedUser } from '../../common/auth.types';
 import { PrismaService } from '../../infrastructure/prisma/prisma.service';
@@ -7,6 +7,42 @@ import { FinancialEntryDto, ShopPricingDto, ShopSettlementDto } from './dto/fina
 @Injectable()
 export class ShopFinancialsService {
   constructor(private readonly prisma: PrismaService) {}
+
+  private async payableRows(database: Prisma.TransactionClient, shopId: string, actor: AuthenticatedUser) {
+    const organization = await database.organization.findUniqueOrThrow({ where: { id: actor.organizationId }, select: { currencyCode: true } });
+    const shipments = await database.consignment.findMany({ where: { organizationId: actor.organizationId, customerId: shopId }, select: { id: true, cnNumber: true, payments: { where: { method: 'CASH', status: 'VERIFIED' }, select: { amount: true, currencyCode: true } }, financialEntries: { select: { category: true, deductFromShop: true, amount: true, currencyCode: true } }, settlementAllocations: { where: { settlement: { status: 'PAID' } }, select: { amount: true } } } });
+    const rows = shipments.map((shipment) => {
+      if ([...shipment.payments, ...shipment.financialEntries].some((entry) => entry.currencyCode !== organization.currencyCode)) throw new BadRequestException('Review mixed-currency shop balances before recording a payment');
+      const add = (values: Array<{ amount: Prisma.Decimal }>) => values.reduce((sum, value) => sum.plus(value.amount), new Prisma.Decimal(0));
+      const collected = add(shipment.payments);
+      const deductions = add(shipment.financialEntries.filter((entry) => entry.category === 'REVENUE' && entry.deductFromShop));
+      const adjustment = add(shipment.financialEntries.filter((entry) => entry.category === 'SHOP_PAYABLE_ADJUSTMENT'));
+      const paid = add(shipment.settlementAllocations);
+      return { id: shipment.id, cnNumber: shipment.cnNumber, amount: collected.minus(deductions).plus(adjustment).minus(paid), settledActivity: shipment.payments.length > 0 || shipment.settlementAllocations.length > 0 || adjustment.lt(0) };
+    });
+    const negative = rows.filter((row) => row.settledActivity && row.amount.lt(0));
+    if (negative.length) throw new BadRequestException('Review negative shop balances before recording a payment');
+    const unpaid = rows.filter((row) => row.amount.gt(0));
+    return { currencyCode: organization.currencyCode, rows: unpaid, total: unpaid.reduce((sum, row) => sum.plus(row.amount), new Prisma.Decimal(0)) };
+  }
+  async payable(shopId: string, actor: AuthenticatedUser) {
+    this.admin(actor); const shop = await this.shop(shopId, actor);
+    const result = await this.prisma.$transaction((transaction) => this.payableRows(transaction, shopId, actor), { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead, maxWait: 10000, timeout: 30000 });
+    return { shop, currencyCode: result.currencyCode, netPayable: result.total.toFixed(2), shipments: result.rows.map((row) => ({ id: row.id, cnNumber: row.cnNumber, netPayable: row.amount.toFixed(2) })) };
+  }
+  async payAll(shopId: string, actor: AuthenticatedUser, expectedAmount: string, expectedCurrency: string) {
+    this.admin(actor); await this.shop(shopId, actor);
+    return this.prisma.$transaction(async (transaction) => {
+      const result = await this.payableRows(transaction, shopId, actor);
+      if (!result.total.equals(expectedAmount) || result.currencyCode !== expectedCurrency) throw new ConflictException('The shop balance changed. Refresh the balance and confirm the amount before recording payment');
+      if (result.total.lte(0)) throw new BadRequestException('No unpaid shop balance remains');
+      const payment = await transaction.shopSettlement.create({ data: { organizationId: actor.organizationId, customerId: shopId, amount: result.total, currencyCode: result.currencyCode, paidAt: new Date(), createdById: actor.id, allocations: { create: result.rows.map((row) => ({ consignmentId: row.id, amount: row.amount })) } }, select: { id: true, amount: true, paidAt: true } });
+      await transaction.auditLog.create({ data: { organizationId: actor.organizationId, actorId: actor.id, action: 'shop.settlement.created', entityType: 'shop_settlement', entityId: payment.id, newValues: { shopId, amount: result.total.toFixed(2), allocationCount: result.rows.length } } });
+      const recipients = await transaction.user.findMany({ where: { organizationId: actor.organizationId, customerId: shopId, isActive: true, deletedAt: null, roles: { some: { role: { name: 'SHOP' } } } }, select: { id: true } });
+      if (recipients.length) await transaction.notification.createMany({ data: recipients.map((user) => ({ organizationId: actor.organizationId, recipientId: user.id, channel: 'IN_APP', status: 'UNREAD', template: 'SHOP_PAYMENT_RECORDED', payload: { title: 'Shop payment recorded', message: `${result.currencyCode} ${result.total.toFixed(2)} paid by admin. View Reports for details.`, section: 'reports' } })) });
+      return { success: true, paymentId: payment.id };
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, maxWait: 10000, timeout: 30000 });
+  }
 
   async pricing(shopId: string, actor: AuthenticatedUser) {
     this.admin(actor); await this.shop(shopId, actor);

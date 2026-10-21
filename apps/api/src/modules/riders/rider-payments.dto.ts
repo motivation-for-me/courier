@@ -8,12 +8,12 @@ export class RiderMoneyDto {
 }
 export class RiderPayDto {
   @IsArray() @ArrayMinSize(1) @ArrayMaxSize(100) @ArrayUnique() @IsUUID('4', { each: true }) ids!: string[];
-  @Transform(({ value }) => typeof value === 'string' ? value.trim() : value) @IsString() @MinLength(3) @MaxLength(200) reference!: string;
+  @Transform(({ value }) => typeof value === 'string' ? value.trim() : value) @IsOptional() @IsString() @MaxLength(200) reference?: string;
 }
 export class RiderReceiptDto {
   @IsIn(['confirm', 'dispute']) decision!: 'confirm' | 'dispute';
   @IsOptional() @IsString() @MaxLength(500) reason?: string;
 }
 export class RiderPayAllDto {
-  @Transform(({ value }) => typeof value === 'string' ? value.trim() : value) @IsString() @MinLength(3) @MaxLength(200) reference!: string;
+  @Transform(({ value }) => typeof value === 'string' ? value.trim() : value) @IsOptional() @IsString() @MaxLength(200) reference?: string;
 }

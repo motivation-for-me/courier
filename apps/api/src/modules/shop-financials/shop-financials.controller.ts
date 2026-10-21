@@ -2,12 +2,16 @@ import { Body, Controller, Get, Param, Post, Put, Query } from '@nestjs/common';
 import { CurrentUser } from '../../common/current-user.decorator';
 import { AuthenticatedUser } from '../../common/auth.types';
 import { RequirePermission } from '../../common/permissions.decorator';
-import { FinancialEntryDto, ShopPricingDto, ShopSettlementDto } from './dto/financial.dto';
+import { FinancialEntryDto, ShopPayAllDto, ShopPricingDto, ShopSettlementDto } from './dto/financial.dto';
 import { ShopFinancialsService } from './shop-financials.service';
 
 @Controller('shops/:shopId/financials')
 export class ShopFinancialsController {
   constructor(private readonly financials: ShopFinancialsService) {}
+  @Get('payable') @RequirePermission('payment:view')
+  payable(@Param('shopId') shopId: string, @CurrentUser() actor: AuthenticatedUser) { return this.financials.payable(shopId, actor); }
+  @Post('pay-all') @RequirePermission('payment:settle')
+  payAll(@Param('shopId') shopId: string, @Body() input: ShopPayAllDto, @CurrentUser() actor: AuthenticatedUser) { return this.financials.payAll(shopId, actor, input.expectedAmount, input.currencyCode); }
 
   @Get('summary') @RequirePermission('payment:view')
   summary(@Param('shopId') shopId: string, @Query('from') from: string | undefined, @Query('to') to: string | undefined, @CurrentUser() actor: AuthenticatedUser) { return this.financials.summary(shopId, actor, from, to); }

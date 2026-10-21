@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { ArrayMinSize, IsArray, IsBoolean, IsDateString, IsEnum, IsNumber, IsOptional, IsString, IsUUID, Min, MinLength, ValidateNested } from 'class-validator';
+import { ArrayMinSize, IsArray, IsBoolean, IsDateString, IsEnum, IsNumber, IsOptional, IsString, IsUUID, Matches, Min, MinLength, ValidateNested } from 'class-validator';
 import { FinancialEntryCategory, FinancialEntryType } from '@prisma/client';
 
 export class ShopPricingDto {
@@ -33,4 +33,8 @@ export class ShopSettlementDto {
   @IsOptional() @IsString() reference?: string;
   @IsOptional() @IsString() remarks?: string;
   @IsArray() @ArrayMinSize(1) @ValidateNested({ each: true }) @Type(() => SettlementAllocationDto) allocations!: SettlementAllocationDto[];
+}
+export class ShopPayAllDto {
+  @IsString() @Matches(/^(0|[1-9]\d{0,11})(\.\d{1,2})?$/) expectedAmount!: string;
+  @IsString() @Matches(/^[A-Z]{3}$/) currencyCode!: string;
 }

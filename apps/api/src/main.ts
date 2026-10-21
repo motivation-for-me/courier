@@ -1,4 +1,5 @@
-import { ValidationPipe } from '@nestjs/common';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
+import type { IncomingMessage, ServerResponse } from 'node:http';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
@@ -46,11 +47,11 @@ function requireRuntimeConfiguration() {
     return { port, webOrigins, isProduction };
 }
 
-async function bootstrap() {
+async function createApplication() {
   loadRepositoryEnvironment();
   const configuration = requireRuntimeConfiguration();
   const { AppModule } = await import('./app.module');
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { abortOnError: false });
   app.use(helmet({ contentSecurityPolicy: false }));
   app.setGlobalPrefix('api/v1');
   if (!configuration.isProduction) {
@@ -65,7 +66,44 @@ async function bootstrap() {
   });
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
   app.useGlobalFilters(new PrismaExceptionFilter());
-  await app.listen(configuration.port);
+  try {
+    await app.init();
+  } catch (error) {
+    await app.close().catch(() => {});
+    throw error;
+  }
+  return app;
 }
 
-void bootstrap();
+let application: Promise<INestApplication> | undefined;
+function getApplication() {
+  // Export a callable handler immediately. Vercel must not have to wait for a
+  // database connection or a background app.listen() before finding the server.
+  if (!application) application = createApplication().catch((error: unknown) => {
+    application = undefined;
+    throw error;
+  });
+  return application;
+}
+
+export default async function handler(request: IncomingMessage, response: ServerResponse) {
+  try {
+    const app = await getApplication();
+    app.getHttpAdapter().getInstance()(request, response);
+  } catch (error) {
+    // Keep connection strings and other configuration values out of responses
+    // and startup logs. Allow a later invocation to retry initialization.
+    console.error('Courier API initialization failed', error instanceof Error ? error.name : 'UnknownError');
+    if (!response.headersSent) {
+      response.writeHead(503, { 'content-type': 'application/json', 'cache-control': 'no-store', 'retry-after': '5' });
+      response.end(JSON.stringify({ statusCode: 503, message: 'Courier API could not start. Check the API service logs and configuration.' }));
+    }
+  }
+}
+
+if (require.main === module && process.env.VERCEL !== '1') {
+  void getApplication().then((app) => app.listen(Number(process.env.PORT ?? process.env.API_PORT ?? 3001))).catch((error: unknown) => {
+    console.error('Courier API startup failed', error instanceof Error ? error.name : 'UnknownError');
+    process.exitCode = 1;
+  });
+}

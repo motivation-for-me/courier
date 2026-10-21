@@ -27,6 +27,8 @@ Empty credentials show configuration errors; the application never simulates ema
 
 ## Deployment
 
+The API entrypoint exports a default HTTP request handler immediately for Vercel. Nest initializes lazily on the first request; concurrent requests share that initialization and warm requests reuse the app. Importing `main.js` does not launch a background listener. Running `node dist/main.js` outside Vercel still starts the local API listener. Initialization failures return a generic 503 and allow a later retry rather than leaving Vercel with no server export. Deploy this entrypoint fix to resolve `No exports found in module "/var/task/main.js"`; changing account emails or Google settings does not fix that startup error.
+
 The separate Payments section and its required migration are documented in [rider-payments.md](rider-payments.md). Deploy the API and web together after applying `20261013090000_rider_payment_confirmation`; payment receipt confirmation depends on the new fields and enum values.
 
 The Supabase primary database is in Mumbai (`ap-south-1`). The API function configuration and the web API proxy's `preferredRegion` therefore target Vercel Mumbai (`bom1`) to avoid routing database work through Washington. Redeploy to apply this placement, then verify both services' invocation region and compare warm request durations. Region placement reduces network distance; it does not guarantee a particular response time or remove query/cold-start costs.
