@@ -1,4 +1,23 @@
 // Log classifications, never raw driver errors: they can contain credentials.
+export function databaseConnectionDiagnostics(environment: NodeJS.ProcessEnv = process.env) {
+  function describe(value: string | undefined) {
+    if (!value) return { configured: false };
+    try {
+      const url = new URL(value);
+      if (!['postgres:', 'postgresql:'].includes(url.protocol)) return { configured: true, validPostgresUrl: false };
+      return {
+        configured: true,
+        host: url.hostname,
+        port: url.port || '5432',
+        username: /^postgres(?:\.[a-z0-9]+)?$/.test(url.username) ? url.username : '[custom username]',
+        passwordPresent: Boolean(url.password),
+        surroundingWhitespace: value !== value.trim(),
+      };
+    } catch { return { configured: true, validPostgresUrl: false }; }
+  }
+  return { runtimeVariable: 'DATABASE_URL', runtime: describe(environment.DATABASE_URL), migrations: describe(environment.DIRECT_URL) };
+}
+
 export function startupDiagnostics(error: unknown) {
   const value = error as { name?: unknown; errorCode?: unknown; code?: unknown; message?: unknown } | null;
   const message = typeof value?.message === 'string' ? value.message : '';
