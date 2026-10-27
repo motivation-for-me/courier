@@ -350,9 +350,10 @@ export default function OperationsShell({ paymentPage = false, paymentRiderId = 
     if (getSession()) setShowBikeIntro(false);
   }, []);
   useEffect(() => {
-    if (!showBikeIntro) return;
-    const timer = setTimeout(() => { setShowBikeIntro(false); }, 2700);
-    return () => clearTimeout(timer);
+    if (showBikeIntro) {
+      const timer = setTimeout(() => { setShowBikeIntro(false); }, 2700);
+      return () => clearTimeout(timer);
+    }
   }, [showBikeIntro]);
   useEffect(() => {
     document.documentElement.dataset.theme = 'light';

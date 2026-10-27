@@ -6,6 +6,7 @@ import helmet from 'helmet';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { PrismaExceptionFilter } from './common/prisma-exception.filter';
+import { startupDiagnostics } from './common/startup-diagnostics';
 
 function loadRepositoryEnvironment() {
   if (process.env.DATABASE_URL) return;
@@ -93,7 +94,7 @@ export default async function handler(request: IncomingMessage, response: Server
   } catch (error) {
     // Keep connection strings and other configuration values out of responses
     // and startup logs. Allow a later invocation to retry initialization.
-    console.error('Courier API initialization failed', error instanceof Error ? error.name : 'UnknownError');
+    console.error('Courier API initialization failed', startupDiagnostics(error));
     if (!response.headersSent) {
       response.writeHead(503, { 'content-type': 'application/json', 'cache-control': 'no-store', 'retry-after': '5' });
       response.end(JSON.stringify({ statusCode: 503, message: 'Courier API could not start. Check the API service logs and configuration.' }));
@@ -103,7 +104,7 @@ export default async function handler(request: IncomingMessage, response: Server
 
 if (require.main === module && process.env.VERCEL !== '1') {
   void getApplication().then((app) => app.listen(Number(process.env.PORT ?? process.env.API_PORT ?? 3001))).catch((error: unknown) => {
-    console.error('Courier API startup failed', error instanceof Error ? error.name : 'UnknownError');
+    console.error('Courier API startup failed', startupDiagnostics(error));
     process.exitCode = 1;
   });
 }
