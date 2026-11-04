@@ -19,7 +19,7 @@ export class CustomersService {
       where: { organizationId: actor.organizationId, deletedAt: null, ...(actor.roles.includes('SHOP') ? { id: actor.customerId } : {}), ...(search ? { OR: [{ name: { contains: search, mode: 'insensitive' as const } }, { phone: { contains: search } }] } : {}) },
       orderBy: { name: 'asc' },
       take: 100,
-      select: { id: true, name: true, email: true, phone: true, addresses: { orderBy: { label: 'asc' }, select: { id: true, label: true, addressLine: true, city: true, region: true, countryCode: true } }, _count: { select: { projects: true, consignments: true } } },
+      select: { id: true, name: true, email: true, phone: true, addresses: { orderBy: { label: 'asc' }, select: { id: true, label: true, addressLine: true, city: true, region: true, countryCode: true } }, _count: { select: { consignments: true } } },
     });
   }
 

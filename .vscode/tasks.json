@@ -35,6 +35,15 @@
 			"command": "Get-Content .env | ForEach-Object { if ($_ -match '^\\s*([^#=]+)=(.*)$') { [Environment]::SetEnvironmentVariable($matches[1].Trim(), $matches[2]) } }; $env:DATABASE_URL=$env:DIRECT_URL; $env:BOOTSTRAP_ORGANIZATION_NAME='Tezgam'; $env:BOOTSTRAP_ADMIN_NAME='Umar Rasheed'; $env:BOOTSTRAP_ADMIN_EMAIL='ww.umar.rasheed@gmail.com'; $env:BOOTSTRAP_ADMIN_PASSWORD='Um@rkhatana123'; npm run bootstrap:admin --workspace @courier/api",
 			"isBackground": false,
 			"problemMatcher": []
+		},
+		{
+			"label": "Typecheck API after customer fix",
+			"type": "shell",
+			"command": "npm run typecheck --workspace @courier/api",
+			"isBackground": false,
+			"problemMatcher": [
+				"$tsc"
+			]
 		}
 	]
 }
