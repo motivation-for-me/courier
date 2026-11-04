@@ -57,7 +57,7 @@ async function main() {
       const user = existingUser ?? await tx.user.create({ data: { organizationId: organization.id, email, displayName, passwordHash: await bcrypt.hash(password, 12) } });
       await tx.userRole.createMany({ data: [{ userId: user.id, roleId: adminRole.id, organizationId: organization.id }], skipDuplicates: true });
       await tx.auditLog.create({ data: { organizationId: organization.id, actorId: user.id, action: existingUser ? 'admin.bootstrap_synchronized' : 'admin.bootstrap_created', entityType: 'user', entityId: user.id, newValues: { email, role: 'ADMIN' } } });
-    }, { timeout: 15000 });
+    }, { timeout: 60000 });
     console.log(`Administrator account and permissions synchronized for ${email}.`);
   } finally {
     await prisma.$disconnect();

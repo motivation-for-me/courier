@@ -10,6 +10,8 @@ Next.js web -> NestJS API -> Prisma -> Supabase PostgreSQL
 
 Supabase PostgreSQL is the only application database. `DATABASE_URL` is the runtime URL and `DIRECT_URL` is the Prisma migration URL. The Supabase Data API is not used as the persistence layer.
 
+For Prisma runtime compatibility, configure `DATABASE_URL` with the Supabase **session pooler** connection on port `5432`. Do not use the transaction pooler on port `6543` unless the connection is explicitly configured for Prisma/PgBouncer prepared-statement behavior. A transaction-pooler URL can produce PostgreSQL errors such as `prepared statement "s19" does not exist` during authenticated requests.
+
 ## Required configuration
 
 - `DATABASE_URL`
