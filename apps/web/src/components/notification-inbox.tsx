@@ -84,17 +84,17 @@ export function NotificationInbox() {
       if (item) await readNotification(item.id); else await readAllNotifications();
       window.dispatchEvent(new Event(notificationsChanged));
       if (item?.payload?.section === 'reports') {
-        window.dispatchEvent(new CustomEvent('swiftlog.open-reports'));
+        window.dispatchEvent(new CustomEvent('bcs.open-reports'));
         setOpen(false);
       }
       if (item?.payload?.section === 'payments') {
-        if (item.payload.riderId) sessionStorage.setItem('swiftlog.payment-rider', item.payload.riderId);
-        window.dispatchEvent(new CustomEvent('swiftlog.open-payments'));
+        if (item.payload.riderId) sessionStorage.setItem('bcs.payment-rider', item.payload.riderId);
+        window.dispatchEvent(new CustomEvent('bcs.open-payments'));
         setOpen(false);
       }
       if (item?.payload?.cnNumber) {
-        sessionStorage.setItem('swiftlog.tracking-query', item.payload.cnNumber);
-        window.dispatchEvent(new CustomEvent('swiftlog.open-tracking'));
+        sessionStorage.setItem('bcs.tracking-query', item.payload.cnNumber);
+        window.dispatchEvent(new CustomEvent('bcs.open-tracking'));
         setOpen(false);
       }
     } catch (failure) { setError(failure instanceof Error ? failure.message : 'Could not mark notifications as read.'); }

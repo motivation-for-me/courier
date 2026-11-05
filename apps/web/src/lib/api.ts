@@ -1,3 +1,5 @@
+import { cacheOfflineValue, clearOfflineCache, offlineCacheKey as buildOfflineCacheKey, queueOfflineOperation, readOfflineValue } from './offline-db';
+
 export class ApiError extends Error {
   constructor(public readonly status: number, message: string) {
     super(message);
@@ -132,12 +134,28 @@ export async function logout(): Promise<void> {
     }
   } finally {
     clearSession();
+    await clearOfflineCache().catch(() => undefined);
   }
+}
+
+function offlineCacheKey(path: string) {
+  const userId = getSession()?.user.id ?? 'anonymous';
+  return buildOfflineCacheKey(userId, path);
+}
+
+function isOfflineCacheable(path: string) {
+  return path.startsWith('/dispatches') || path.startsWith('/riders/me/assignments') || path.startsWith('/pickups/assigned') || path.startsWith('/reports/shop-payments?');
 }
 
 export async function apiRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
   const method = (options.method ?? 'GET').toUpperCase();
-  if (typeof navigator !== 'undefined' && !navigator.onLine && method !== 'GET' && method !== 'HEAD') throw new ApiError(0, 'You are offline. Reconnect before saving changes.');
+  const offline = typeof navigator !== 'undefined' && !navigator.onLine;
+  if (offline && method !== 'GET' && method !== 'HEAD') throw new ApiError(0, 'You are offline. Reconnect before saving changes.');
+  if (offline && method === 'GET' && isOfflineCacheable(path)) {
+    const cached = await readOfflineValue<T>(offlineCacheKey(path)).catch(() => undefined);
+    if (cached) return cached.value;
+    throw new ApiError(0, 'This information has not been synchronized for offline use yet.');
+  }
   const accessToken = getSession()?.accessToken;
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), 20_000);
@@ -156,6 +174,10 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}): Pr
     });
   } catch (error) {
     if (controller.signal.aborted) throw new ApiError(0, 'The API did not respond within 20 seconds. Check the API and database connection, then try again.');
+    if (method === 'GET' && isOfflineCacheable(path)) {
+      const cached = await readOfflineValue<T>(offlineCacheKey(path)).catch(() => undefined);
+      if (cached) return cached.value;
+    }
     throw new ApiError(0, typeof navigator !== 'undefined' && !navigator.onLine ? 'You are offline. Reconnect and try again.' : 'Unable to reach the courier API. Please wait a moment and try again.');
   } finally {
     window.clearTimeout(timeout);
@@ -183,6 +205,7 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}): Pr
   } catch {
     throw new ApiError(response.status, `The API returned an invalid response for ${path}. Refresh the page and try again.`);
   }
+  if (method === 'GET' && isOfflineCacheable(path)) await cacheOfflineValue(offlineCacheKey(path), result).catch(() => undefined);
   if (method !== 'GET' && method !== 'HEAD' && !path.startsWith('/auth/')) {
     window.dispatchEvent(new CustomEvent(dataChangedEvent, { detail: { method, path } }));
   }
@@ -232,7 +255,7 @@ export async function openDispatchDocument(id: string, mode: 'view' | 'download'
     throw new ApiError(response.status, body?.message ?? 'Unable to open dispatch PDF');
   }
   const disposition = response.headers.get('content-disposition') ?? '';
-  const filename = disposition.match(/filename="([^"]+)"/)?.[1] ?? 'swiftlog-dispatch.pdf';
+  const filename = disposition.match(/filename="([^"]+)"/)?.[1] ?? 'bcs-dispatch.pdf';
   const url = URL.createObjectURL(await response.blob());
   if (mode === 'view') {
     if (preview) preview.location.href = url;
@@ -245,9 +268,14 @@ export async function openDispatchDocument(id: string, mode: 'view' | 'download'
 }
 
 export function createConsignment(payload: unknown) {
+  const key = typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    return queueOfflineOperation('/consignments', payload, key, getSession()?.user.id).then(() => ({ id: `offline:${key}`, cnNumber: `Pending sync (${key.slice(0, 8)})`, status: 'PENDING_SYNC' }));
+  }
   return apiRequest<{ id: string; cnNumber: string; status: string }>('/consignments', {
     method: 'POST',
     body: JSON.stringify(payload),
+    headers: { 'Idempotency-Key': key },
   });
 }
 
@@ -299,9 +327,17 @@ export function getAssignedPickups() { return apiRequest<PickupAssignment[]>('/p
 export function getMyRiderAssignments() { return apiRequest<RiderDeliveryAssignment[]>('/riders/me/assignments'); }
 export type RiderFinanceSummary = { completed: number; completedToday: number; completedThisMonth: number; pending: number; paid: number; deliveryFee: string | number; currencyCode: string; recent: Array<{ id: string; amount: string | number; currencyCode: string; status: string; paidAt?: string | null; createdAt: string; consignment: { cnNumber: string } }> };
 export function getMyRiderFinance() { return apiRequest<RiderFinanceSummary>('/riders/me/finance'); }
-export function startPickup(id: string) { return apiRequest(`/pickups/${id}/start`, { method: 'POST', body: '{}' }); }
-export function completePickup(id: string, remarks?: string) { return apiRequest(`/pickups/${id}/complete`, { method: 'POST', body: JSON.stringify({ remarks }) }); }
-export function failPickup(id: string, reason: string) { return apiRequest(`/pickups/${id}/fail`, { method: 'POST', body: JSON.stringify({ reason }) }); }
+export function startPickup(id: string) { return offlineMutation(`/pickups/${id}/start`, {}, `pickup-start-${id}`, { queued: true }); }
+function offlineMutation<T>(path: string, body: unknown, key: string, queuedResponse: T): Promise<T> {
+  if (typeof navigator !== 'undefined' && !navigator.onLine) return queueOfflineOperation(path, body, key, getSession()?.user.id).then(() => queuedResponse);
+  return apiRequest<T>(path, { method: 'POST', headers: { 'Idempotency-Key': key }, body: JSON.stringify(body) });
+}
+export function completePickup(id: string, remarks?: string) { return offlineMutation(`/pickups/${id}/complete`, { remarks }, `pickup-complete-${id}`, { queued: true }); }
+export function failPickup(id: string, reason: string) { return offlineMutation(`/pickups/${id}/fail`, { reason }, `pickup-fail-${id}`, { queued: true }); }
+export function recordOfflineTransitScan(consignmentId: string, scanLabel: 'ARRIVAL' | 'DISPATCH', remarks?: string) {
+  const body = { remarks: `${scanLabel} scan${remarks ? `: ${remarks}` : ''}` };
+  return offlineMutation(`/transit/${consignmentId}/move`, body, `transit-scan-${consignmentId}-${scanLabel}`, { queued: true });
+}
 
 export function getProjects(customerId?: string) {
   const query = customerId ? `?customerId=${encodeURIComponent(customerId)}` : '';
@@ -316,26 +352,39 @@ export type RiderScanResult = { id: string; cnNumber: string; status: string; se
 export type RiderStatus = 'OUT_FOR_DELIVERY' | 'DELIVERED' | 'DELIVERY_FAILED';
 
 export function unlockRiderDispatch(cnNumber: string) {
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    const userId = getSession()?.user.id ?? 'anonymous';
+    return readOfflineValue<RiderDeliveryAssignment[]>(buildOfflineCacheKey(userId, '/riders/me/assignments')).then((cached) => {
+      const assignment = cached?.value.find((item) => item.consignment.cnNumber.toUpperCase() === cnNumber.trim().toUpperCase());
+      if (!assignment) throw new ApiError(0, 'This CN number is not available in the synchronized rider cache.');
+      return {
+        id: assignment.consignment.id,
+        cnNumber: assignment.consignment.cnNumber,
+        status: assignment.consignment.status,
+        serviceType: assignment.consignment.serviceType,
+        assignedToActor: assignment.status === 'ACTIVE',
+        currentStatusAt: assignment.consignment.currentStatusAt,
+        parties: assignment.consignment.parties,
+        addresses: assignment.consignment.addresses,
+        items: assignment.consignment.items,
+        events: [],
+        allowedStatuses: assignment.allowedStatuses,
+      };
+    });
+  }
   return apiRequest<RiderScanResult>('/delivery/scan', { method: 'POST', body: JSON.stringify({ cnNumber: cnNumber.trim() }) });
 }
 
 export function updateRiderDispatchStatus(id: string, status: RiderStatus, remarks?: string) {
-  return apiRequest<{ id: string; cnNumber: string; status: string; allowedStatuses: RiderStatus[] }>(`/delivery/${id}/status`, { method: 'POST', body: JSON.stringify({ status, remarks }) });
+  return offlineMutation(`/delivery/${id}/status`, { status, remarks }, `rider-status-${id}-${status}`, { id, status, allowedStatuses: [] });
 }
 
 export function completeRiderDelivery(id: string, collectedAmount?: number, remarks?: string) {
-  return apiRequest<{ id: string; cnNumber: string; status: string }>(`/delivery/${id}/complete`, {
-    method: 'POST',
-    headers: { 'Idempotency-Key': `rider-complete-${id}` },
-    body: JSON.stringify({ collectedAmount, remarks }),
-  });
+  return offlineMutation(`/delivery/${id}/complete`, { collectedAmount, remarks }, `rider-complete-${id}`, { id, cnNumber: '', status: 'PENDING_SYNC' });
 }
 
 export function failRiderDelivery(id: string, reason: string, remarks?: string) {
-  return apiRequest<{ id: string }>(`/delivery/${id}/failed`, {
-    method: 'POST',
-    body: JSON.stringify({ reason, remarks }),
-  });
+  return offlineMutation(`/delivery/${id}/failed`, { reason, remarks }, `rider-failed-${id}-${reason}`, { id });
 }
 
 export type RiderOption = { id: string; employeeCode: string; isActive: boolean; vehicleDetails?: { vehicleNumber?: string } | null; serviceAreas: string[]; dailyCapacity: number; deliveryFee: string | number; availability: 'AVAILABLE' | 'BUSY' | 'OFF_DUTY'; branch?: BranchOption | null; user: { id: string; displayName: string; email: string; phone?: string | null }; assignments: Array<{ consignmentId: string }>; earnings?: Array<{ amount: string | number; status: string }> };

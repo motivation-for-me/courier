@@ -13,6 +13,7 @@ import { DispatchCreate } from './dispatch-create';
 import { DispatchDashboard, DispatchList, TrackingView } from './dispatch-views';
 import { RiderManagement } from './rider-management';
 import { SettingsPanel } from './settings-panel';
+import { OfflineShipmentReports } from './offline-shipment-reports';
 
 type View = 'shipments' | 'dashboard' | 'consignments' | 'booking' | 'tracking' | 'rider' | 'riders' | 'manifest' | 'settings' | 'payments' | 'reports';
 
@@ -72,7 +73,7 @@ function Sidebar({ activeView, onNavigate, user, collapsed }: { activeView: View
   const visible = (item: NavItem) => item.view === 'reports' ? user.roles.some((role) => ['ADMIN', 'SHOP'].includes(role)) : item.view === 'payments' ? user.roles.some((role) => ['ADMIN', 'RIDER'].includes(role)) : riderOnly ? ['rider', 'payments', 'settings'].includes(item.view) : (item.view === 'rider' && user.roles.includes('RIDER')) || ((!item.permission || user.permissions.includes(item.permission)) && (!['riders','settings'].includes(item.view) || user.roles.includes('ADMIN')));
   return (
     <aside className="sidebar">
-      <div className="brand-lockup"><div className="brand-wordmark" aria-label="SwiftLog">Swift<span>Log</span></div></div>
+      <div className="brand-lockup"><div className="brand-wordmark" aria-label="Brisk Career System">Brisk<span>Career System</span></div></div>
       <div className="hub-context"><span className="live-dot" /> COMPANY DISPATCH <b>LIVE</b></div>
       <nav className="sidebar-nav" aria-label="Primary navigation">
         {navigation.filter((group) => group.items.some(visible)).map((group) => (
@@ -91,9 +92,30 @@ function Sidebar({ activeView, onNavigate, user, collapsed }: { activeView: View
   );
 }
 
-function MobileNavigation({ activeView, onNavigate, riderOnly = false, isAdmin = false, hasRider = false }: { activeView: View; onNavigate: (view: View) => void; riderOnly?: boolean; isAdmin?: boolean; hasRider?: boolean }) {
-  const items: Array<[View, string, string]> = riderOnly ? [['rider', 'two_wheeler', 'Deliveries'], ['payments', 'payments', 'Payments'], ['reports', 'description', 'Reports'], ['settings', 'settings', 'Account']] : isAdmin ? [['dashboard', 'speed', 'Home'], ['shipments', 'inventory_2', 'Shipments'], ['consignments', 'history', 'History'], ['booking', 'add_circle', 'Create'], ['tracking', 'qr_code_scanner', 'Track'], ['riders', 'manage_accounts', 'Manage'], ['payments', 'payments', 'Payments'], ['reports', 'description', 'Reports'], ['settings', 'settings', 'Account'], ...(hasRider ? [['rider', 'two_wheeler', 'Rider'] as [View, string, string]] : [])] : [['dashboard', 'speed', 'Home'], ['shipments', 'inventory_2', 'Shipments'], ['consignments', 'history', 'History'], ['booking', 'add_circle', 'Create'], ['tracking', 'qr_code_scanner', 'Track'], ['reports', 'description', 'Reports'], ['settings', 'settings', 'Account']];
-  return <nav className="mobile-nav" aria-label="Mobile navigation"><div className="mobile-dock">{items.filter(([view]) => view === 'reports' ? getSession()?.user.roles.some((role) => ['ADMIN', 'SHOP'].includes(role)) : view === 'booking' ? getSession()?.user.permissions.includes('shipment:create') : ['shipments', 'consignments', 'tracking'].includes(view) ? getSession()?.user.permissions.includes('shipment:view') : true).map(([view, icon, label]) => <button key={view} aria-label={label} className={activeView === view ? 'active' : ''} onClick={() => onNavigate(view)} type="button"><Icon name={icon} /><span>{label}</span></button>)}</div></nav>;
+function MobileNavigation({ activeView, onNavigate, user }: { activeView: View; onNavigate: (view: View) => void; user: AuthSession['user'] }) {
+  const [open, setOpen] = useState(false);
+  const riderOnly = user.roles.length === 1 && user.roles.includes('RIDER');
+  const visible = (item: NavItem) => item.view === 'reports' ? user.roles.some((role) => ['ADMIN', 'SHOP'].includes(role)) : item.view === 'payments' ? user.roles.some((role) => ['ADMIN', 'RIDER'].includes(role)) : riderOnly ? ['rider', 'payments', 'settings'].includes(item.view) : (item.view === 'rider' && user.roles.includes('RIDER')) || ((!item.permission || user.permissions.includes(item.permission)) && (!['riders', 'settings'].includes(item.view) || user.roles.includes('ADMIN')));
+  const activeGroup = navigation.find((group) => group.items.some((item) => item.view === activeView));
+
+  function navigate(view: View) {
+    setOpen(false);
+    onNavigate(view);
+  }
+
+  return <nav className={`mobile-nav ${open ? 'open' : ''}`} aria-label="Mobile navigation">
+    <button className="mobile-menu-trigger" aria-expanded={open} aria-controls="mobile-navigation-menu" onClick={() => setOpen((value) => !value)} type="button">
+      <span className="mobile-menu-icon"><Icon name={open ? 'close' : 'menu'} /></span>
+      <span><b>{open ? 'Close menu' : 'Open menu'}</b><small>{activeGroup?.label ?? 'Operations'}</small></span>
+      <Icon name={open ? 'expand_less' : 'expand_more'} />
+    </button>
+    <div className="mobile-menu-panel" id="mobile-navigation-menu" aria-hidden={!open}>
+      {navigation.filter((group) => group.items.some(visible)).map((group) => <section key={group.label} className="mobile-menu-group">
+        <span className="mobile-menu-label">{group.label}</span>
+        <div className="mobile-menu-items">{group.items.filter(visible).map((item) => <button key={item.label} className={`mobile-menu-item ${activeView === item.view ? 'active' : ''}`} onClick={() => navigate(item.view)} type="button"><Icon name={item.icon} /><span>{item.label}</span>{activeView === item.view && <Icon name="check" />}</button>)}</div>
+      </section>)}
+    </div>
+  </nav>;
 }
 
 function LegacyHeader({ view, onNavigate }: { view: View; onNavigate: (view: View) => void }) {
@@ -322,7 +344,10 @@ function LegacyBooking({ onNavigate }: { onNavigate: (view: View) => void }) {
 
 function Booking({ onNavigate }: { onNavigate: (view: View) => void }) {
   const [createdCn, setCreatedCn] = useState('');
-  if (createdCn) return <div className="page-content"><div className="surface-panel workspace-placeholder"><div className="workspace-icon"><Icon name="verified" /></div><h3>Dispatch created</h3><p>The permanent dispatch number is <strong>{createdCn}</strong>.</p><div className="workspace-actions"><button className="button primary" onClick={() => onNavigate('shipments')} type="button">View dispatches</button><button className="button subtle" onClick={() => setCreatedCn('')} type="button">Create another</button></div></div></div>;
+  if (createdCn) {
+    const pending = createdCn.startsWith('Pending sync');
+    return <div className="page-content"><div className="surface-panel workspace-placeholder"><div className="workspace-icon"><Icon name={pending ? 'sync_problem' : 'verified'} /></div><h3>{pending ? 'Dispatch saved offline' : 'Dispatch created'}</h3><p>{pending ? <>This shipment is queued locally as <strong>{createdCn}</strong>. It cannot be dispatched until the server confirms creation.</> : <>The permanent dispatch number is <strong>{createdCn}</strong>.</>}</p><div className="workspace-actions"><button className="button primary" onClick={() => onNavigate('shipments')} type="button">View dispatches</button><button className="button subtle" onClick={() => setCreatedCn('')} type="button">Create another</button></div></div></div>;
+  }
   return <DispatchCreate onDone={setCreatedCn} onCancel={() => onNavigate('dashboard')} />;
 }
 
@@ -381,19 +406,19 @@ export default function OperationsShell({ paymentPage = false, paymentRiderId = 
   }, [session]);
   useEffect(() => {
     const openTracking = () => { setView('tracking'); setRefreshVersion((version) => version + 1); };
-    window.addEventListener('swiftlog.open-tracking', openTracking);
-    return () => window.removeEventListener('swiftlog.open-tracking', openTracking);
+    window.addEventListener('bcs.open-tracking', openTracking);
+    return () => window.removeEventListener('bcs.open-tracking', openTracking);
   }, []);
   useEffect(() => { if (!paymentPage && !reportPage && session?.user.roles.includes('RIDER') && !session.user.roles.includes('ADMIN')) setView('rider'); }, [session, paymentPage, reportPage]);
   useEffect(() => {
-    const openPayments = () => { if (session?.user.roles.some((role) => ['ADMIN', 'RIDER'].includes(role))) { const rider = sessionStorage.getItem('swiftlog.payment-rider') || session.user.riderId; router.push(rider ? `/payments/riders/${encodeURIComponent(rider)}` : '/payments'); setView('payments'); } };
-    window.addEventListener('swiftlog.open-payments', openPayments);
-    return () => window.removeEventListener('swiftlog.open-payments', openPayments);
+    const openPayments = () => { if (session?.user.roles.some((role) => ['ADMIN', 'RIDER'].includes(role))) { const rider = sessionStorage.getItem('bcs.payment-rider') || session.user.riderId; router.push(rider ? `/payments/riders/${encodeURIComponent(rider)}` : '/payments'); setView('payments'); } };
+    window.addEventListener('bcs.open-payments', openPayments);
+    return () => window.removeEventListener('bcs.open-payments', openPayments);
   }, [session, router]);
   useEffect(() => {
     const openReports = () => { if (session?.user.roles.some((role) => ['ADMIN', 'SHOP'].includes(role))) navigate('reports'); };
-    window.addEventListener('swiftlog.open-reports', openReports);
-    return () => window.removeEventListener('swiftlog.open-reports', openReports);
+    window.addEventListener('bcs.open-reports', openReports);
+    return () => window.removeEventListener('bcs.open-reports', openReports);
   }, [session, router]);
   async function handleLogout() {
     await logout();
@@ -404,9 +429,9 @@ export default function OperationsShell({ paymentPage = false, paymentRiderId = 
     setSessionExpired(false);
     void logout().finally(() => { setShowBikeIntro(true); setSession(null); });
   }
-  if (showBikeIntro) return <section className="rider-intro" aria-label="SwiftLog startup"><div className="rider-intro-stage"><iframe src="/rider-speed/index.html?embed" title="Delivery bike animation" tabIndex={-1} /><h1 className="intro-wordmark">Swift<span>Log</span></h1></div></section>;
+  if (showBikeIntro) return <section className="rider-intro" aria-label="Brisk Career System startup"><div className="rider-intro-stage"><iframe src="/rider-speed/index.html?embed" title="Delivery bike animation" tabIndex={-1} /><h1 className="intro-wordmark">Brisk<span>Career System</span></h1></div></section>;
   if (!session) return <AccountLogin parcelCn={scannedCn} onAuthenticated={(authenticated) => { setSessionExpired(false); setSession(authenticated); }} />;
   const riderOnly = session.user.roles.length === 1 && session.user.roles.includes('RIDER');
-  const content = view === 'reports' ? <ShopPaymentReports /> : view === 'dashboard' && !session.user.permissions.includes('shipment:view') ? <div className="page-content"><h2>Your account</h2><p>Shipment access is disabled for your account. Contact your administrator to change it.</p><button className="button subtle" type="button" onClick={() => setView('settings')}>Account settings</button></div> : view === 'dashboard' ? <DispatchDashboard onCreate={() => setView('booking')} onViewAll={() => setView('consignments')} /> : view === 'shipments' ? <DispatchList key="active" onCreate={() => setView('booking')} /> : view === 'consignments' ? <DispatchList key="history" history onCreate={() => setView('booking')} /> : view === 'booking' ? <Booking onNavigate={navigate} /> : view === 'rider' ? session.user.roles.includes('RIDER') ? <RiderHome initialCn={scannedCn} /> : <div className={'page-content'}><h2>Rider account required</h2><p>Sign out and use the rider account provided by your administrator to open this parcel.</p></div> : view === 'payments' ? <RiderPayments key={paymentRiderId} initialRiderId={paymentRiderId} /> : view === 'riders' ? <RiderManagement /> : view === 'settings' ? <SettingsPanel appearanceOnly={riderOnly} /> : <TrackingView onBack={() => setView('consignments')} />;
-  return <div className={`app-shell ${riderOnly ? 'rider-only-shell' : ''} ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}><a className="skip-link" href="#main-content">Skip to operations</a><Sidebar activeView={view} onNavigate={navigate} user={session.user} collapsed={sidebarCollapsed} /><main className="main-column" id="main-content"><Header view={view} onNavigate={navigate} collapsed={sidebarCollapsed} onToggleSidebar={() => setSidebarCollapsed((value) => !value)} onLogout={() => void handleLogout()} riderOnly={riderOnly} /><Fragment key={`${view}-${refreshVersion}`}>{content}</Fragment></main><MobileNavigation activeView={view} onNavigate={navigate} riderOnly={riderOnly} isAdmin={session.user.roles.includes('ADMIN')} hasRider={session.user.roles.includes('RIDER')} />{sessionExpired && <SessionExpiredDialog onConfirm={confirmExpiredSession} />}<Link className="sr-only" href="/">SwiftLog Dispatch Operations</Link></div>;
+  const content = view === 'reports' ? <><OfflineShipmentReports /><ShopPaymentReports /></> : view === 'dashboard' && !session.user.permissions.includes('shipment:view') ? <div className="page-content"><h2>Your account</h2><p>Shipment access is disabled for your account. Contact your administrator to change it.</p><button className="button subtle" type="button" onClick={() => setView('settings')}>Account settings</button></div> : view === 'dashboard' ? <DispatchDashboard onCreate={() => setView('booking')} onViewAll={() => setView('consignments')} /> : view === 'shipments' ? <DispatchList key="active" onCreate={() => setView('booking')} /> : view === 'consignments' ? <DispatchList key="history" history onCreate={() => setView('booking')} /> : view === 'booking' ? <Booking onNavigate={navigate} /> : view === 'rider' ? session.user.roles.includes('RIDER') ? <RiderHome initialCn={scannedCn} /> : <div className={'page-content'}><h2>Rider account required</h2><p>Sign out and use the rider account provided by your administrator to open this parcel.</p></div> : view === 'payments' ? <RiderPayments key={paymentRiderId} initialRiderId={paymentRiderId} /> : view === 'riders' ? <RiderManagement /> : view === 'settings' ? <SettingsPanel appearanceOnly={riderOnly} /> : <TrackingView onBack={() => setView('consignments')} />;
+  return <div className={`app-shell ${riderOnly ? 'rider-only-shell' : ''} ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}><a className="skip-link" href="#main-content">Skip to operations</a><Sidebar activeView={view} onNavigate={navigate} user={session.user} collapsed={sidebarCollapsed} /><main className="main-column" id="main-content"><Header view={view} onNavigate={navigate} collapsed={sidebarCollapsed} onToggleSidebar={() => setSidebarCollapsed((value) => !value)} onLogout={() => void handleLogout()} riderOnly={riderOnly} /><Fragment key={`${view}-${refreshVersion}`}>{content}</Fragment></main><MobileNavigation activeView={view} onNavigate={navigate} user={session.user} />{sessionExpired && <SessionExpiredDialog onConfirm={confirmExpiredSession} />}<Link className="sr-only" href="/">Brisk Career System Dispatch Operations</Link></div>;
 }

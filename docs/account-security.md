@@ -19,7 +19,7 @@ When real email addresses and providers are ready, set `ACCOUNT_EMAIL_ENABLED=tr
 Set these values on the API service (keep credentials out of the web bundle):
 
 - `RESEND_API_KEY`: Resend sending key.
-- `EMAIL_FROM`: sender such as `SwiftLog <accounts@your-domain.com>`; the domain must be verified in Resend.
+- `EMAIL_FROM`: sender such as `Brisk Career System <accounts@your-domain.com>`; the domain must be verified in Resend.
 - `APP_PUBLIC_URL`: public website origin, e.g. `https://courier-six-henna.vercel.app`.
 - `GOOGLE_CLIENT_ID`: Google OAuth **Web application** client ID. Configure the public website and local development origins as authorized JavaScript origins in Google Cloud. This uses Google Identity Services credential callbacks, not an OAuth redirect callback. No Google client secret is required for this ID-token flow.
 

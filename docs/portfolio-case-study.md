@@ -6,9 +6,9 @@
 
 ### Recommended title
 
-**SwiftLog / Tezgam Courier Operations Platform**
+**Brisk Career System Courier Operations Platform**
 
-The repository currently uses both **SwiftLog** and **Tezgam** in its product documentation. Choose one public product name before publishing the portfolio. The product should not be presented with both names unless the relationship is intentional.
+The public product name is **Brisk Career System (BCS)**.
 
 ### One-line description
 
@@ -244,7 +244,7 @@ Do **not** publish a specific user count, shipment volume, uptime percentage, re
 
 ### Case-study version
 
-**SwiftLog / Tezgam is a courier operations platform designed for real-world shipment handling.** I built the system around the full operational lifecycle: booking, pickup, dispatch, rider assignment, out-for-delivery work, delivery confirmation, failed attempts, customer tracking, documents, COD, settlements, and audit history.
+**Brisk Career System is a courier operations platform designed for real-world shipment handling.** I built the system around the full operational lifecycle: booking, pickup, dispatch, rider assignment, out-for-delivery work, delivery confirmation, failed attempts, customer tracking, documents, COD, settlements, and audit history.
 
 The key challenge was preserving operational correctness while supporting different users and devices. Administrators need dense desktop controls, riders need fast mobile actions, shops need scoped shipment and finance views, and customers need a simple tracking experience. I addressed this with a responsive Next.js frontend and a NestJS API that owns authorization, state transitions, financial rules, and data integrity.
 

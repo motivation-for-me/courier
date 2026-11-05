@@ -8,13 +8,13 @@ const manrope = Manrope({ subsets: ['latin'], variable: '--font-sans', display: 
 const jetbrainsMono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-mono', display: 'swap' });
 
 export const metadata: Metadata = {
-  title: 'SwiftLog | Courier Operations',
+  title: 'Brisk Career System | Courier Operations',
   description: 'Responsive courier dispatch, pickup, tracking, and delivery operations.',
-  applicationName: 'SwiftLog',
+  applicationName: 'Brisk Career System',
   manifest: '/manifest.webmanifest',
-  appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: 'SwiftLog' },
+  appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: 'Brisk Career System' },
   formatDetection: { telephone: false },
-  icons: { icon: [{ url: '/icons/swiftlog-192.png', sizes: '192x192', type: 'image/png' }], apple: [{ url: '/icons/swiftlog-192.png', sizes: '192x192', type: 'image/png' }] },
+  icons: { icon: [{ url: '/icons/bcs-192.png', sizes: '192x192', type: 'image/png' }], apple: [{ url: '/icons/bcs-192.png', sizes: '192x192', type: 'image/png' }] },
 };
 
 export const viewport = { themeColor: '#102238', width: 'device-width', initialScale: 1, viewportFit: 'cover' };

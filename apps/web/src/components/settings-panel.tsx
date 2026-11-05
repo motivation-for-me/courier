@@ -6,7 +6,7 @@ import { enableMyRiderAccess, getSession, type ApiError } from '../lib/api';
 
 type Theme = 'light';
 const themes: Array<{ id: Theme; name: string; note: string; colors: string[] }> = [
-  { id: 'light', name: 'Swift Light', note: 'Bright neutral workspace', colors: ['#f8f9ff', '#16263b', '#f05a1a'] },
+  { id: 'light', name: 'BCS Light', note: 'Bright neutral workspace', colors: ['#f8f9ff', '#16263b', '#f05a1a'] },
 ];
 
 function Icon({ name }: { name: string }) {
@@ -22,13 +22,13 @@ export function SettingsPanel({ appearanceOnly = false }: { appearanceOnly?: boo
 
   useEffect(() => {
     setTheme('light');
-    localStorage.setItem('swiftlog-theme', 'light');
+    localStorage.setItem('bcs-theme', 'light');
     document.documentElement.dataset.theme = 'light';
   }, []);
 
   function chooseTheme(value: Theme) {
     setTheme(value);
-    localStorage.setItem('swiftlog-theme', value);
+    localStorage.setItem('bcs-theme', value);
     document.documentElement.dataset.theme = value;
   }
 

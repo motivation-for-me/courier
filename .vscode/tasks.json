@@ -44,6 +44,20 @@
 			"problemMatcher": [
 				"$tsc"
 			]
+		},
+		{
+			"label": "Build web after BCS navigation update",
+			"type": "shell",
+			"command": "npm run build --workspace @courier/web",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Rename legacy brand icons",
+			"type": "shell",
+			"command": "Move-Item 'apps/web/public/icons/swiftlog-192.png' 'apps/web/public/icons/bcs-192.png'; Move-Item 'apps/web/public/icons/swiftlog-512.png' 'apps/web/public/icons/bcs-512.png'; Move-Item 'apps/web/public/icons/swiftlog-maskable-512.png' 'apps/web/public/icons/bcs-maskable-512.png'",
+			"isBackground": false,
+			"problemMatcher": []
 		}
 	]
 }
