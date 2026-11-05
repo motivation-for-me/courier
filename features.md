@@ -1,10 +1,10 @@
-# Brisk Career System — Feature Guide
+# Brisk Courier System — Feature Guide
 
 This document is a client-facing inventory of the capabilities currently represented in the repository. It distinguishes the active product experience from backend-only or legacy modules so demonstrations do not promise unfinished screens.
 
 ## Product overview
 
-Brisk Career System is a responsive courier operations system for creating shipments, assigning riders, managing pickup and delivery work, tracking parcels, producing delivery documents, and maintaining shop and courier financial records. It runs as a Next.js web application with a NestJS API and PostgreSQL/Prisma data layer.
+Brisk Courier System is a responsive courier operations system for creating shipments, assigning riders, managing pickup and delivery work, tracking parcels, producing delivery documents, and maintaining shop and courier financial records. It runs as a Next.js web application with a NestJS API and PostgreSQL/Prisma data layer.
 
 The application supports three primary user types:
 

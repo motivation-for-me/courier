@@ -39,7 +39,7 @@ export function PublicTracking() {
 
   return <main className="public-track-page">
     <header className="public-track-nav"><a href="/" className="public-wordmark">Brisk<span>Career System</span></a><button className="track-back-button" onClick={() => router.push('/')} type="button">Back</button></header>
-    <section className="track-hero"><div><span className="track-kicker">LIVE DELIVERY</span><h1>{loading ? 'Finding your parcel' : shipment ? shipment.status === 'DELIVERED' ? 'Delivered safely' : 'Your parcel is moving' : 'Shipment not found'}</h1><p>{shipment ? `Latest update from ${shipment.organization?.name || 'Brisk Career System'}` : 'Enter the CN printed on your parcel label.'}</p></div>{shipment && <div className="track-reference"><span>Consignment number</span><strong>{shipment.cnNumber}</strong><small>Updated {new Date(shipment.currentStatusAt).toLocaleString()}</small></div>}</section>
+    <section className="track-hero"><div><span className="track-kicker">LIVE DELIVERY</span><h1>{loading ? 'Finding your parcel' : shipment ? shipment.status === 'DELIVERED' ? 'Delivered safely' : 'Your parcel is moving' : 'Shipment not found'}</h1><p>{shipment ? `Latest update from ${shipment.organization?.name || 'Brisk Courier System'}` : 'Enter the CN printed on your parcel label.'}</p></div>{shipment && <div className="track-reference"><span>Consignment number</span><strong>{shipment.cnNumber}</strong><small>Updated {new Date(shipment.currentStatusAt).toLocaleString()}</small></div>}</section>
 
     {loading && <section className="track-loading" aria-label="Loading tracking details"><i /><i /><i /></section>}
     {error && <section className="track-message"><strong>Tracking unavailable</strong><p>{error}</p></section>}
@@ -57,6 +57,6 @@ export function PublicTracking() {
       </div>
 
     </>}
-    <footer className="public-track-footer"><span>Brisk Career System courier operations</span><span>Keep your CN for delivery support</span></footer>
+    <footer className="public-track-footer"><span>Brisk Courier System courier operations</span><span>Keep your CN for delivery support</span></footer>
   </main>;
 }

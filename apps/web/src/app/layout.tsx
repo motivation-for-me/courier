@@ -8,11 +8,11 @@ const manrope = Manrope({ subsets: ['latin'], variable: '--font-sans', display: 
 const jetbrainsMono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-mono', display: 'swap' });
 
 export const metadata: Metadata = {
-  title: 'Brisk Career System | Courier Operations',
+  title: 'Brisk Courier System | Courier Operations',
   description: 'Responsive courier dispatch, pickup, tracking, and delivery operations.',
-  applicationName: 'Brisk Career System',
+  applicationName: 'Brisk Courier System',
   manifest: '/manifest.webmanifest',
-  appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: 'Brisk Career System' },
+  appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: 'Brisk Courier System' },
   formatDetection: { telephone: false },
   icons: { icon: [{ url: '/icons/bcs-192.png', sizes: '192x192', type: 'image/png' }], apple: [{ url: '/icons/bcs-192.png', sizes: '192x192', type: 'image/png' }] },
 };

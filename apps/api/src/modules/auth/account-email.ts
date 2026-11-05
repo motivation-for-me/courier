@@ -11,7 +11,7 @@ export async function sendAccountEmail(email: string, purpose: 'VERIFY_EMAIL' | 
   if (!origin) throw new ServiceUnavailableException('The account website URL is not configured.');
   const url = new URL(purpose === 'VERIFY_EMAIL' ? '/account/verify' : '/account/reset', origin);
   url.hash = new URLSearchParams({ token }).toString();
-  const title = purpose === 'VERIFY_EMAIL' ? 'Verify your Brisk Career System email' : 'Reset your Brisk Career System password';
+  const title = purpose === 'VERIFY_EMAIL' ? 'Verify your Brisk Courier System email' : 'Reset your Brisk Courier System password';
   let response: Response;
   try {
     response = await fetch('https://api.resend.com/emails', {

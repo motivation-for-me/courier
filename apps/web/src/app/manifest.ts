@@ -2,7 +2,7 @@ import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Brisk Career System Courier Operations', short_name: 'BCS',
+    name: 'Brisk Courier System Courier Operations', short_name: 'BCS',
     description: 'Courier shipment, pickup, tracking, delivery and shop operations.',
     start_url: '/', scope: '/', display: 'standalone', orientation: 'any',
     background_color: '#f4f6fa', theme_color: '#102238', categories: ['business', 'productivity'],

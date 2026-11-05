@@ -1,4 +1,4 @@
-/* Brisk Career System PWA worker: authenticated API responses and mutations are never cached. */
+/* Brisk Courier System PWA worker: authenticated API responses and mutations are never cached. */
 const VERSION='bcs-pwa-v6', STATIC_CACHE=`${VERSION}-static`, PAGE_CACHE=`${VERSION}-pages`, OFFLINE_URL='/offline.html';
 const PRECACHE=[OFFLINE_URL,'/manifest.webmanifest','/icons/bcs-192.png','/icons/bcs-512.png','/icons/bcs-maskable-512.png'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(STATIC_CACHE).then(cache=>cache.addAll(PRECACHE))));
