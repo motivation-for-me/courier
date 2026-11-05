@@ -55,9 +55,58 @@
 		{
 			"label": "Rename legacy brand icons",
 			"type": "shell",
-			"command": "Move-Item 'apps/web/public/icons/swiftlog-192.png' 'apps/web/public/icons/bcs-192.png'; Move-Item 'apps/web/public/icons/swiftlog-512.png' 'apps/web/public/icons/bcs-512.png'; Move-Item 'apps/web/public/icons/swiftlog-maskable-512.png' 'apps/web/public/icons/bcs-maskable-512.png'",
+			"command": "Write-Output 'BCS icons are already named bcs-*.png'",
 			"isBackground": false,
 			"problemMatcher": []
+		},
+		{
+			"label": "Build web application",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"build",
+				"--workspace",
+				"@courier/web"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Replace mockup branding",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"-e",
+				"console.log('BCS mockup branding is already applied')"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Apply mockup branding",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				".tmp-rebrand-ui.js"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Verify web production build",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"build",
+				"--workspace",
+				"@courier/web"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
 		}
 	]
 }

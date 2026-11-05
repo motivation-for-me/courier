@@ -71,10 +71,10 @@ export class ShopReportsService {
   async pdf(actor: AuthenticatedUser, query: ReportQuery) {
     const report = await this.report(actor, query);
     const PDFDocument: typeof PDFKitDocument = require('../../generated/pdfkit-runtime.cjs');
-    const document = new PDFDocument({ size: 'A4', margin: 42, info: { Title: 'Shop payments report', Author: 'SwiftLog' } });
+    const document = new PDFDocument({ size: 'A4', margin: 42, info: { Title: 'Shop payments report', Author: 'Brisk Career System' } });
     const chunks: Buffer[] = [];
     const complete = new Promise<Buffer>((resolve, reject) => { document.on('data', (chunk: Buffer) => chunks.push(chunk)); document.on('end', () => resolve(Buffer.concat(chunks))); document.on('error', reject); });
-    document.font('Helvetica-Bold').fontSize(20).text('SwiftLog | Shop payments');
+    document.font('Helvetica-Bold').fontSize(20).text('BCS | Shop payments');
     document.font('Helvetica').fontSize(10).text(`${report.from} to ${report.to} | ${report.timezone}`);
     document.moveDown().text('Net payments recorded after delivery-fee deductions. Based on payment date.');
     for (const total of report.totals) document.moveDown().font('Helvetica-Bold').fontSize(13).text(`${total.currencyCode} ${total.netReceived} received | ${total.payments} payments | ${total.shipments} shipments`);

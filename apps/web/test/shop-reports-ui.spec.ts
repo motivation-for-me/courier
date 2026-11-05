@@ -2,7 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 async function setup(page: Page, role = 'ADMIN') {
   const requests: URL[] = [];
   await page.addInitScript(({ role }) => {
-    sessionStorage.setItem('swiftlog.bike-intro-seen', 'true');
+    sessionStorage.setItem('bcs.bike-intro-seen', 'true');
     sessionStorage.setItem('courier.auth-session', JSON.stringify({ accessToken: `test.${btoa(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 3600 }))}.test`, refreshToken: 'test', user: { id: 'test', displayName: 'Test member', organizationId: 'org', roles: [role], permissions: [] } }));
   }, { role });
   await page.route('**/api/v1/**', async (route) => {

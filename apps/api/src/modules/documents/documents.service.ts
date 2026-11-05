@@ -40,7 +40,7 @@ export class DocumentsService {
     const PDFDocument: typeof PDFKitDocument = require('../../generated/pdfkit-runtime.cjs');
     const scanUrl = `${process.env.APP_PUBLIC_URL || process.env.WEB_ORIGIN || 'http://localhost:3000'}/scan/${encodeURIComponent(shipment.cnNumber)}`;
     const qr = await QRCode.toBuffer(scanUrl, { width: 240, margin: 1, errorCorrectionLevel: 'M' });
-    const document = new PDFDocument({ size: 'A4', margin: 42, info: { Title: `SwiftLog Dispatch ${shipment.cnNumber}`, Author: shipment.organization.name } });
+    const document = new PDFDocument({ size: 'A4', margin: 42, info: { Title: `BCS Dispatch ${shipment.cnNumber}`, Author: shipment.organization.name } });
     const chunks: Buffer[] = [];
     document.on('data', (chunk) => chunks.push(chunk));
     const complete = new Promise<Buffer>((resolve, reject) => { document.on('end', () => resolve(Buffer.concat(chunks))); document.on('error', reject); });
@@ -50,7 +50,7 @@ export class DocumentsService {
     const destination = shipment.addresses.find((address) => address.kind === 'DESTINATION');
     const assignment = shipment.assignments[0];
     document.rect(0, 0, 595, 92).fill('#16263b');
-    document.fillColor('#ffffff').fontSize(24).font('Helvetica-Bold').text('SWIFTLOG', 42, 28).fontSize(10).font('Helvetica').text('PROFESSIONAL DISPATCH RECORD', 42, 59);
+    document.fillColor('#ffffff').fontSize(24).font('Helvetica-Bold').text('BCS', 42, 28).fontSize(10).font('Helvetica').text('BRISK CAREER SYSTEM DISPATCH RECORD', 42, 59);
     document.fontSize(10).text(shipment.organization.name, 360, 31, { width: 190, align: 'right' }).text(`Created ${shipment.createdAt.toLocaleString()}`, 360, 50, { width: 190, align: 'right' });
     document.fillColor('#0b1c30').font('Helvetica-Bold').fontSize(19).text(shipment.cnNumber, 42, 112);
     document.fontSize(10).fillColor('#5a6478').text(`STATUS  ${shipment.status.replaceAll('_', ' ')}`, 42, 140).text(`TYPE  ${shipment.serviceType}`, 250, 140);
