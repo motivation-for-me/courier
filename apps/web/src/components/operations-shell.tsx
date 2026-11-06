@@ -73,7 +73,7 @@ function Sidebar({ activeView, onNavigate, user, collapsed }: { activeView: View
   const visible = (item: NavItem) => item.view === 'reports' ? user.roles.some((role) => ['ADMIN', 'SHOP'].includes(role)) : item.view === 'payments' ? user.roles.some((role) => ['ADMIN', 'RIDER'].includes(role)) : riderOnly ? ['rider', 'payments', 'settings'].includes(item.view) : (item.view === 'rider' && user.roles.includes('RIDER')) || ((!item.permission || user.permissions.includes(item.permission)) && (!['riders','settings'].includes(item.view) || user.roles.includes('ADMIN')));
   return (
     <aside className="sidebar">
-      <div className="brand-lockup"><div className="brand-wordmark" aria-label="Brisk Courier System">Brisk<span>Career System</span></div></div>
+      <div className="brand-lockup"><div className="brand-wordmark" aria-label="Brisk Courier System">Brisk<span>Courier System</span></div></div>
       <div className="hub-context"><span className="live-dot" /> COMPANY DISPATCH <b>LIVE</b></div>
       <nav className="sidebar-nav" aria-label="Primary navigation">
         {navigation.filter((group) => group.items.some(visible)).map((group) => (
@@ -429,7 +429,7 @@ export default function OperationsShell({ paymentPage = false, paymentRiderId = 
     setSessionExpired(false);
     void logout().finally(() => { setShowBikeIntro(true); setSession(null); });
   }
-  if (showBikeIntro) return <section className="rider-intro" aria-label="Brisk Courier System startup"><div className="rider-intro-stage"><iframe src="/rider-speed/index.html?embed" title="Delivery bike animation" tabIndex={-1} /><h1 className="intro-wordmark">Brisk<span>Career System</span></h1></div></section>;
+  if (showBikeIntro) return <section className="rider-intro" aria-label="BCS startup"><div className="rider-intro-stage"><iframe src="/rider-speed/index.html?embed" title="Delivery bike animation" tabIndex={-1} /><h1 className="intro-wordmark">BCS</h1></div></section>;
   if (!session) return <AccountLogin parcelCn={scannedCn} onAuthenticated={(authenticated) => { setSessionExpired(false); setSession(authenticated); }} />;
   const riderOnly = session.user.roles.length === 1 && session.user.roles.includes('RIDER');
   const content = view === 'reports' ? <><OfflineShipmentReports /><ShopPaymentReports /></> : view === 'dashboard' && !session.user.permissions.includes('shipment:view') ? <div className="page-content"><h2>Your account</h2><p>Shipment access is disabled for your account. Contact your administrator to change it.</p><button className="button subtle" type="button" onClick={() => setView('settings')}>Account settings</button></div> : view === 'dashboard' ? <DispatchDashboard onCreate={() => setView('booking')} onViewAll={() => setView('consignments')} /> : view === 'shipments' ? <DispatchList key="active" onCreate={() => setView('booking')} /> : view === 'consignments' ? <DispatchList key="history" history onCreate={() => setView('booking')} /> : view === 'booking' ? <Booking onNavigate={navigate} /> : view === 'rider' ? session.user.roles.includes('RIDER') ? <RiderHome initialCn={scannedCn} /> : <div className={'page-content'}><h2>Rider account required</h2><p>Sign out and use the rider account provided by your administrator to open this parcel.</p></div> : view === 'payments' ? <RiderPayments key={paymentRiderId} initialRiderId={paymentRiderId} /> : view === 'riders' ? <RiderManagement /> : view === 'settings' ? <SettingsPanel appearanceOnly={riderOnly} /> : <TrackingView onBack={() => setView('consignments')} />;
