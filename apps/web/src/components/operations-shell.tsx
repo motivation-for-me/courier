@@ -93,29 +93,10 @@ function Sidebar({ activeView, onNavigate, user, collapsed }: { activeView: View
 }
 
 function MobileNavigation({ activeView, onNavigate, user }: { activeView: View; onNavigate: (view: View) => void; user: AuthSession['user'] }) {
-  const [open, setOpen] = useState(false);
   const riderOnly = user.roles.length === 1 && user.roles.includes('RIDER');
   const visible = (item: NavItem) => item.view === 'reports' ? user.roles.some((role) => ['ADMIN', 'SHOP'].includes(role)) : item.view === 'payments' ? user.roles.some((role) => ['ADMIN', 'RIDER'].includes(role)) : riderOnly ? ['rider', 'payments', 'settings'].includes(item.view) : (item.view === 'rider' && user.roles.includes('RIDER')) || ((!item.permission || user.permissions.includes(item.permission)) && (!['riders', 'settings'].includes(item.view) || user.roles.includes('ADMIN')));
-  const activeGroup = navigation.find((group) => group.items.some((item) => item.view === activeView));
-
-  function navigate(view: View) {
-    setOpen(false);
-    onNavigate(view);
-  }
-
-  return <nav className={`mobile-nav ${open ? 'open' : ''}`} aria-label="Mobile navigation">
-    <button className="mobile-menu-trigger" aria-expanded={open} aria-controls="mobile-navigation-menu" onClick={() => setOpen((value) => !value)} type="button">
-      <span className="mobile-menu-icon"><Icon name={open ? 'close' : 'menu'} /></span>
-      <span><b>{open ? 'Close menu' : 'Open menu'}</b><small>{activeGroup?.label ?? 'Operations'}</small></span>
-      <Icon name={open ? 'expand_less' : 'expand_more'} />
-    </button>
-    <div className="mobile-menu-panel" id="mobile-navigation-menu" aria-hidden={!open}>
-      {navigation.filter((group) => group.items.some(visible)).map((group) => <section key={group.label} className="mobile-menu-group">
-        <span className="mobile-menu-label">{group.label}</span>
-        <div className="mobile-menu-items">{group.items.filter(visible).map((item) => <button key={item.label} className={`mobile-menu-item ${activeView === item.view ? 'active' : ''}`} onClick={() => navigate(item.view)} type="button"><Icon name={item.icon} /><span>{item.label}</span>{activeView === item.view && <Icon name="check" />}</button>)}</div>
-      </section>)}
-    </div>
-  </nav>;
+  const items = navigation.flatMap((group) => group.items).filter(visible).slice(0, 5);
+  return <nav className="mobile-nav" aria-label="Mobile navigation">{items.map((item) => <button key={item.view} className={activeView === item.view ? 'active' : ''} onClick={() => onNavigate(item.view)} type="button"><Icon name={item.icon} /><span>{item.label}</span></button>)}</nav>;
 }
 
 function LegacyHeader({ view, onNavigate }: { view: View; onNavigate: (view: View) => void }) {
@@ -126,7 +107,7 @@ function LegacyHeader({ view, onNavigate }: { view: View; onNavigate: (view: Vie
 
 function Header({ view, onNavigate, collapsed, onToggleSidebar, onLogout, user, riderOnly = false }: { view: View; onNavigate: (view: View) => void; collapsed: boolean; onToggleSidebar: () => void; onLogout: () => void; user: AuthSession['user']; riderOnly?: boolean }) {
   const title = view === 'dashboard' ? 'Courier dashboard' : view === 'shipments' ? 'Shipments' : view === 'consignments' ? 'Shipment history' : view === 'booking' ? 'Create shipment' : view === 'rider' ? 'Rider workspace' : view === 'riders' ? 'Management' : view === 'reports' ? 'Reports' : view === 'payments' ? 'Payments' : view === 'settings' ? 'Settings' : 'Track shipment';
-  return <header className="topbar"><div className="topbar-leading"><button aria-label={collapsed ? 'Open sidebar' : 'Close sidebar'} aria-expanded={!collapsed} className="icon-button sidebar-toggle" onClick={onToggleSidebar} type="button"><Icon name={collapsed ? 'dock_to_right' : 'dock_to_left'} /></button><div className="topbar-title"><span className="eyebrow">OPERATIONS</span><h1>{title}</h1></div></div><div className="topbar-actions">{!riderOnly && <label className="global-search"><Icon name="search" /><input aria-label="Search consignments" placeholder="Search CN or rider" /><kbd>CTRL K</kbd></label>}<button aria-label="Scan QR code" className="icon-button scanner" onClick={() => onNavigate(riderOnly ? 'rider' : 'tracking')} type="button"><Icon name="qr_code_scanner" /></button><MobileNavigation activeView={view} onNavigate={onNavigate} user={user} /><div className="mobile-notifications"><NotificationInbox /></div><button aria-label="Log out" className="icon-button logout-button" title="Log out" onClick={onLogout} type="button"><Icon name="logout" /></button></div></header>;
+  return <header className="topbar"><div className="topbar-leading"><button aria-label={collapsed ? 'Open sidebar' : 'Close sidebar'} aria-expanded={!collapsed} className="icon-button sidebar-toggle" onClick={onToggleSidebar} type="button"><Icon name={collapsed ? 'dock_to_right' : 'dock_to_left'} /></button><div className="topbar-title"><span className="eyebrow">OPERATIONS</span><h1>{title}</h1></div></div><div className="topbar-actions">{!riderOnly && <label className="global-search"><Icon name="search" /><input aria-label="Search consignments" placeholder="Search CN or rider" /><kbd>CTRL K</kbd></label>}<button aria-label="Scan QR code" className="icon-button scanner" onClick={() => onNavigate(riderOnly ? 'rider' : 'tracking')} type="button"><Icon name="qr_code_scanner" /></button><div className="mobile-notifications"><NotificationInbox /></div><button aria-label="Log out" className="icon-button logout-button" title="Log out" onClick={onLogout} type="button"><Icon name="logout" /></button></div></header>;
 }
 
 function SessionExpiredDialog({ onConfirm }: { onConfirm: () => void }) {
@@ -429,9 +410,9 @@ export default function OperationsShell({ paymentPage = false, paymentRiderId = 
     setSessionExpired(false);
     void logout().finally(() => { setShowBikeIntro(true); setSession(null); });
   }
-  if (showBikeIntro) return <section className="rider-intro" aria-label="BCS startup"><div className="rider-intro-stage"><iframe src="/rider-speed/index.html?embed" title="Delivery bike animation" tabIndex={-1} /><h1 className="intro-wordmark">BCS</h1></div></section>;
+  if (showBikeIntro) return <section className="rider-intro" aria-label="BCS startup"><div className="rider-intro-stage"><iframe src="/rider-speed/index.html?embed" title="Delivery bike animation" tabIndex={-1} /><img className="bcs-intro-logo" src="/icons/bcs-192.png" alt="BCS" /></div></section>;
   if (!session) return <AccountLogin parcelCn={scannedCn} onAuthenticated={(authenticated) => { setSessionExpired(false); setSession(authenticated); }} />;
   const riderOnly = session.user.roles.length === 1 && session.user.roles.includes('RIDER');
   const content = view === 'reports' ? <><OfflineShipmentReports /><ShopPaymentReports /></> : view === 'dashboard' && !session.user.permissions.includes('shipment:view') ? <div className="page-content"><h2>Your account</h2><p>Shipment access is disabled for your account. Contact your administrator to change it.</p><button className="button subtle" type="button" onClick={() => setView('settings')}>Account settings</button></div> : view === 'dashboard' ? <DispatchDashboard onCreate={() => setView('booking')} onViewAll={() => setView('consignments')} /> : view === 'shipments' ? <DispatchList key="active" onCreate={() => setView('booking')} /> : view === 'consignments' ? <DispatchList key="history" history onCreate={() => setView('booking')} /> : view === 'booking' ? <Booking onNavigate={navigate} /> : view === 'rider' ? session.user.roles.includes('RIDER') ? <RiderHome initialCn={scannedCn} /> : <div className={'page-content'}><h2>Rider account required</h2><p>Sign out and use the rider account provided by your administrator to open this parcel.</p></div> : view === 'payments' ? <RiderPayments key={paymentRiderId} initialRiderId={paymentRiderId} /> : view === 'riders' ? <RiderManagement /> : view === 'settings' ? <SettingsPanel appearanceOnly={riderOnly} /> : <TrackingView onBack={() => setView('consignments')} />;
-  return <div className={`app-shell ${riderOnly ? 'rider-only-shell' : ''} ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}><a className="skip-link" href="#main-content">Skip to operations</a><Sidebar activeView={view} onNavigate={navigate} user={session.user} collapsed={sidebarCollapsed} /><main className="main-column" id="main-content"><Header view={view} onNavigate={navigate} collapsed={sidebarCollapsed} onToggleSidebar={() => setSidebarCollapsed((value) => !value)} onLogout={() => void handleLogout()} user={session.user} riderOnly={riderOnly} /><Fragment key={`${view}-${refreshVersion}`}>{content}</Fragment></main>{sessionExpired && <SessionExpiredDialog onConfirm={confirmExpiredSession} />}<Link className="sr-only" href="/">Brisk Courier System Dispatch Operations</Link></div>;
+  return <div className={`app-shell ${riderOnly ? 'rider-only-shell' : ''} ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}><a className="skip-link" href="#main-content">Skip to operations</a><Sidebar activeView={view} onNavigate={navigate} user={session.user} collapsed={sidebarCollapsed} /><main className="main-column" id="main-content"><Header view={view} onNavigate={navigate} collapsed={sidebarCollapsed} onToggleSidebar={() => setSidebarCollapsed((value) => !value)} onLogout={() => void handleLogout()} user={session.user} riderOnly={riderOnly} /><Fragment key={`${view}-${refreshVersion}`}>{content}</Fragment></main><MobileNavigation activeView={view} onNavigate={navigate} user={session.user} />{sessionExpired && <SessionExpiredDialog onConfirm={confirmExpiredSession} />}<Link className="sr-only" href="/">Brisk Courier System Dispatch Operations</Link></div>;
 }

@@ -153,6 +153,32 @@
 			"isBackground": false,
 			"problemMatcher": [],
 			"group": "build"
+		},
+		{
+			"label": "Build PWA login route",
+			"type": "shell",
+			"command": "npm run build --workspace @courier/web",
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Generate QR image once",
+			"type": "shell",
+			"command": "C:\\Users\\MUGHAL TRADERS\\Desktop\\courier\\.venv\\Scripts\\python.exe",
+			"args": [
+				"C:\\Users\\MUGHAL TRADERS\\Desktop\\courier\\qr.py"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Build restored mobile navigation",
+			"type": "shell",
+			"command": "npm run build --workspace @courier/web",
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
 		}
 	]
 }
